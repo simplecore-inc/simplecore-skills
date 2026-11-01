@@ -20,7 +20,10 @@ Read this before planning a screen or dispatching agents for screen work.
      appears where the task is first-time or rare, or a consequence must be understood, in one or
      two sentences in the page header. Cards appear where a state or a sum answers the persona's
      question, and pressing one filters the list. A notice is raised by a state (a limit reached, a
-     provider missing, failures above zero), sits above the cards, and names its action. A census
+     provider missing, failures above zero), names its action, and sits directly under the cards:
+     the page reads header, cards, notices, then the list. The card strip is collapsible to a
+     one-line summary, so a persona who knows the figures gives the list the room. Misreading: a
+     notice drawn above the cards because it is more urgent; urgency is its tone, not its place. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
