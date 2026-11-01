@@ -41,15 +41,25 @@ The repository is not in the mapping: the generator does not write it (`template
 ## Usage
 
 ```bash
-# Promote (skips if destination exists)
+# Promote as a tracked render: write absent or untouched files, merge into edited ones
 yo simplix:promote EntityName --module <promoteModule>
 
-# Force overwrite existing files in src/
-yo simplix:promote EntityName --module <promoteModule> --force
+# Report every promoted file; non-zero on stale, conflict and no-base
+yo simplix:generated
 ```
 
-With `--force`, the form this handbook uses, promote overwrites `src/` without asking; without it,
-a file that already exists in `src/` is skipped. Either way the collision check below comes first.
+Every promoted file opens with `// @simplix-generated` and `// @simplix-render <fingerprint> promote
+<Entity> --module <module>`, and promote stores the render under `.simplix/bases/` (committed). A
+later generate then promote rewrites an untouched file, merges the template change three ways into an
+edited one, leaves a deleted one deleted, and never overwrites an edited file whose merge conflicts:
+the merge with markers goes to `generated/conflicts/<path>.conflict` and promote exits non-zero.
+Resolve it in the file, then promote again. A conflict is the expected outcome when the template and
+the customisation both append after the last method of a class.
+
+`--force` overwrites edits and removals and is never the regeneration path. `--adopt` stamps files
+promoted before tracked renders existed and stores the current render as their base, once per project.
+The collision check below still comes first: a hand-authored `XService` with no stamp reads as
+`no-base`, is kept, and fails promote.
 
 **IMPORTANT**: Always use `yo simplix:promote` instead of manual file operations. The command ensures:
 - Files are deleted from `generated/` after copying (no duplicate classes)
@@ -62,8 +72,8 @@ a file that already exists in `src/` is skipped. Either way the collision check 
 # Generate CRUD files first
 yo simplix:generate CmsContentLink --force
 
-# Promote to src/ (use --force if files already exist)
-yo simplix:promote CmsContentLink --module <promoteModule> --force
+# Promote to src/
+yo simplix:promote CmsContentLink --module <promoteModule>
 ```
 
 It reports one `From` / `To` pair per artefact - service, controller, DTOs, service test - and a
@@ -80,7 +90,7 @@ Example: `promoteModule: <module>` creates `modules/<module>`; `promoteModule: <
 
 ## Before generating: the collision check (MANDATORY)
 
-**`yo simplix:promote --force` OVERWRITES `src/` files silently** (§ Usage). Before generating an entity `X`,
+**`yo simplix:promote --force` OVERWRITES `src/` files silently** (§ Usage), and a promote without it keeps an unstamped file only by failing. Before generating an entity `X`,
 verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
 `modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
 hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
@@ -157,7 +167,8 @@ find generated -name "EntityName*" -type f
 
 ## Checklist
 
-- [ ] Run `yo simplix:promote EntityName --module <promoteModule> --force`
+- [ ] Run `yo simplix:promote EntityName --module <promoteModule>`, and resolve every reported conflict in the file
+- [ ] `yo simplix:generated` exits 0, and `.simplix/bases/` is committed with the promoted files
 - [ ] Verify no files remain in `generated/` for the entity
 - [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
 - [ ] The service's ID-mismatch guard throws the `{error.<domain>.idCannotChange}` placeholder (#3)
