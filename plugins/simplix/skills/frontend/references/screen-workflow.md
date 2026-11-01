@@ -4,9 +4,21 @@ Read this before planning a screen or dispatching agents for screen work.
 
 ## Rules
 
-1. **Four steps, in order.** Template on the kit, then scaffold, then customise to the board, then
-   bring the board into agreement. A gap at any step is closed at that step's layer, not worked
-   around in a later one.
+0. **A screen is designed for its purpose before it is scaffolded.** Decide, per screen, the
+   persona and the one question they bring to it; whether it shows a description, cards and
+   notices, each with its reason (none is a decision too); the list presentation, leading column,
+   default sort (never the primary key) and filters; the detail sections in reading order. Write
+   the decision where a machine can check it (a design manifest with one entry per routed screen,
+   which the project's gate refuses a route without) and draw the board frame from it by hand.
+   **A frame mirrored from the screen's own template is not a design, and agreement against such a
+   frame proves nothing**: both sides come from one render, so zero differences says the template
+   matches itself. A screen whose blocks are still the empty stub, or whose list still sorts by its
+   primary key, has not been customised.
+   - Misreading: "the board frame was generated from the same template, so 0 differences was read
+     as done".
+1. **Four steps, in order, after step 0.** Template on the kit, then scaffold, then customise to
+   the step-0 design and its board frame, then bring the board into agreement. A gap at any step is
+   closed at that step's layer, not worked around in a later one.
 2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
    edited. The CLI rewrites an untouched file, and merges a template change into an edited one
    three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is
