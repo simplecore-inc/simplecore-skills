@@ -38,8 +38,10 @@ Read this before planning a screen or dispatching agents for screen work.
      base, three-way merge); a blocks file the generator writes once as an empty stub and then
      disowns is the mechanism that makes every screen differ, and is fixed in the generator.
    - **One blocks template, customised through its slots.** List-detail pages share one page and
-     blocks template; every other page kind starts from one unified blocks template with the same
-     slots and differs only in which slots are on. Customising is turning a slot on or off,
+     blocks template; every other page starts from the blocks template of its screen type (a
+     dashboard, a tabbed page without a list, a record, the system pages), one template per type
+     reused by every screen of that type, all types sharing one slot vocabulary. Screens that look
+     alike are the same type; a type is added only when none fits, with the reason recorded. Customising is turning a slot on or off,
      inserting into it or removing from it; design inside a slot is free, nothing is drawn outside
      the slots, and a need no slot meets becomes a new slot in the template. Every existing
      screen is brought onto it, with no exception list. A census
