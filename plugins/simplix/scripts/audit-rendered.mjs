@@ -2112,6 +2112,9 @@ const unresolvedKeyOnTheScreen = {
       const box = el.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) continue;
       if (el.closest(o.keyTextIgnoreSelector)) continue;
+      // Drawn in a monospaced face, the text is an identifier the screen shows on purpose (a class
+      // name, a setting key), whatever class or slot put the face there.
+      if (/mono|courier|consolas|menlo/i.test(style.fontFamily)) continue;
 
       compared += 1;
 
@@ -3973,6 +3976,7 @@ const FIXTURES = {
           <p>번역 키 form.originalApproverName 을 카탈로그에 등록하세요.</p>
           <p class=mono>gate.form.graceUnit</p>
           <code>t("gate.form.notify")</code>
+          <span class=id-face style="font-family:Menlo,monospace">dev.example.core.exception.GeneralException</span>
         </div>`,
       // A page with no text nodes of that shape at all - the check has to say it compared plenty
       // and found none, rather than inventing a finding out of the chrome.
