@@ -101,13 +101,20 @@ Read this before planning a screen or dispatching agents for screen work.
 5. **A requested change is lifted, then swept.** Once it works on the screen it was asked for,
    apply it at the first layer of 4 that owns it, census every screen it reaches, fix each, and
    check each before calling the request done.
-6. **Agreement is measured, down to the detail.** Compare app screen and board frame by rendered
-   metrics for every control role and every kit part both sides draw (buttons and their icon gaps,
-   explanation cards, record heads, toolbars, badges, footers): height, padding, gap, radius,
-   border, background, font, variant. A part on one side only is a difference.
-   Every rendered value also belongs to the design's token set; a computed value outside it is a
-   defect, found by a rendered check and kept out by a source check on arbitrary values. Report how much of each screen stays customised. An
-   item customised on a second screen is the signal to lift it.
+6. **The board is the plan; its design direction carries into the screen.** A board frame is
+   drawn before the backend exists, so its data (fields, counts, rows, text) differs from the
+   screen and need not match. What must agree is the design direction: which regions the page
+   has and in what order (description, figure tiles, notices, time range, tabs), the figure kinds,
+   the list presentation (table or cards, leading column, default sort, row-action kinds), the
+   detail layout (sections, order, header emphasis) and the tokens. The work runs from the board
+   to the screen: the story is generated from the story template and customised as a design, the
+   screen is generated from the page template, and the story's design decisions are brought into
+   it. Compare the two by region signature (which regions and control kinds appear, in what order;
+   no text, no counts, no pixels), on a sample of screens rather than on every one; a difference
+   is a gap in the template (fixed there) or a deliberate difference with its reason. Every
+   rendered value also belongs to the design's token set; a computed value outside it is a
+   defect, found by a rendered check and kept out by a source check on arbitrary values. An item
+   customised on a second screen is the signal to lift it.
    - `node <plugin>/scripts/compare-rendered.mjs --app <url> --board <url> --root-slot <slot>`
      measures both pages and lists every role property that differs. It refuses (exit 2) when the
      root slot is missing on either side or the two roots carry different `data-design`.
