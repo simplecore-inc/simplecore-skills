@@ -72,3 +72,14 @@ against the preflight, and screens are rebuilt one at a time as a simulation of 
 
 Misreading: one screen rebuilt cleanly, so every screen is done. A clean rebuild settles its type,
 not the others, and only when the rebuild before it found nothing new.
+
+## The kit holds the region contract
+
+What a page type holds, region by region, is data in the UI kit, not prose in this skill: the
+kit ships a machine-readable region contract (for each page type, its ordered regions, the one
+part filling each, the control kinds a region may hold, and the blocks slot that feeds it), and
+every kit part declares the region it belongs to. Read the kit's contract before designing or
+customising a screen; where the kit has none, writing it is the first step of the preflight.
+The rendered check compares each screen's region signature (which controls appear in which
+region) with its type's contract, so a second way of drawing a region fails the moment it is
+rendered, on any screen, without anyone comparing screens by eye.
