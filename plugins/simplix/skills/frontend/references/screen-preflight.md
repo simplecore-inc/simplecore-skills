@@ -1,5 +1,11 @@
 # Screen preflight: settle the problems before the first screen, then widen one screen at a time
 
+The aim is a common start, not total control: the templates fix the minimum every screen (and
+every promoted backend file) starts from, so none sets off in its own direction, and customisation
+after generation is free. Checks guard the start and drift away from the template; they do not
+constrain what a screen does inside a slot, and a regeneration conflict resolved by hand is an
+acceptable cost, not a defect to engineer away.
+
 Read before any change that reaches more than one screen: a new template, a new slot, a new kit
 part, a rule the user set for "every screen", a regeneration of a domain. The ways such a change
 went wrong are known, and each has a check that runs before anything is written.
