@@ -32,6 +32,14 @@ Read this before planning a screen or dispatching agents for screen work.
      frame instead of laying a second one beside it, and `simplix generated --adopt <frame>` gives
      a hand-drawn frame the render's header and records its base. Two frames for one screen are
      the symptom.
+   - A scaffold that routes a list also inserts its menu entry. `routes.<group>.menu.gate`
+     (`{ subject: "SUBJECTS.{{entityCamel}}", table: { file: "<subjects file>" } }`) makes that
+     entry read the project's subjects table (invariant #52) and adds the key the table lacks with
+     the list endpoint's group; without it the gate carries the group as an inline literal.
+   - `generated.after` (`[{ cwd, command }]`) runs once after `simplix scaffold`, `simplix add-page`
+     and `simplix generated --all`, never for the report. A project sets it to refresh what the
+     frames read from the generated files, such as the board's entity catalogs, so a new frame draws
+     words instead of raw keys. A failing step skips the later ones and fails the command.
    - Regenerate a domain (`simplix meta`) only while the backend answers: the non-base locales
      take their words from the server's translations, and a run against a server that is down
      writes the base locale's words into every locale (the CLI warns `No server translations`).

@@ -355,7 +355,10 @@ so a missing entry is a compile error on the generated page - supply the real gr
 a plausible one. Where the project keeps `SUBJECTS` in its UI package, that empty file
 shadows the real table and is reverted instead, with the page importing from the package
 (`scaffold/overview.md` § Scaffolding into a module that already has widgets). The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
-fails on an ungated `showNew`.
+fails on an ungated `showNew`. The menu entry a scaffold inserts follows the same rule: a project
+that keeps its groups in a table sets `routes.<group>.menu.gate` in `simplix.config.ts`
+(`screen-workflow.md`), so the entry reads `SUBJECTS.<key>` and the table gains the key instead of
+the entry carrying the group as a string literal.
 
 ## #53 Detail-row enums go through the field their tone source names, resolved first
 
