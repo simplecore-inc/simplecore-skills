@@ -16,6 +16,18 @@ Read this before planning a screen or dispatching agents for screen work.
    primary key, has not been customised.
    - Misreading: "the board frame was generated from the same template, so 0 differences was read
      as done".
+   - **Description, cards and notices are present by design, never by accident.** A description
+     appears where the task is first-time or rare, or a consequence must be understood, in one or
+     two sentences in the page header. Cards appear where a state or a sum answers the persona's
+     question, and pressing one filters the list. A notice is raised by a state (a limit reached, a
+     provider missing, failures above zero), sits above the cards, and names its action. A census
+     table of every screen with these three columns, as built and as designed, shows the drift.
+   - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
+     (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
+     the screen into the list-and-detail every scaffold gives. The part goes into the kit, generic
+     and token-only, with its Storybook template and tests, so the next screen can reuse it.
+   - Misreading: "most screens are a list and a detail, so the screens are finished" while the
+     description, cards and notices were never decided.
 1. **Four steps, in order, after step 0.** Template on the kit, then scaffold, then customise to
    the step-0 design and its board frame, then bring the board into agreement. A gap at any step is
    closed at that step's layer, not worked around in a later one.
