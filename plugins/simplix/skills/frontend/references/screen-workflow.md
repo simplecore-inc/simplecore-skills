@@ -30,7 +30,11 @@ Read this before planning a screen or dispatching agents for screen work.
      uses; a second mechanism beside it is a defect even when it works. Rebuilding a part that exists
      needs a stated reason in its doc comment; when the existing one lacks a behaviour, the
      behaviour is added to it. The screen that already uses the part well is the reference the
-     others are made identical to. A census
+     others are made identical to. Every screen's blocks file starts from the same template
+     render and is customised from it, so the template offers one slot per region (one figure
+     slot, one notice slot); a template that offers two ways to draw the figures produces two
+     kinds of screen. Misreading: writing a new screen's blocks from a sibling screen or from
+     memory instead of from the template render. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
