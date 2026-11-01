@@ -1994,6 +1994,41 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     },
   },
   {
+    id: "scheduler-lock-on-primitive-return",
+    invariant: "Scope (scheduler jobs)",
+    level: "error",
+    desc: "A @SchedulerLock method returns a primitive - ShedLock's proxy refuses to lock it (LockingNotSupportedException) when the tick fires, so the job fails on every run while it compiles, starts and passes any test that calls the method directly. Return void, or an object or Optional the proxy can answer null for when another server holds the lock",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c) =>
+      lineHits(stripCommentsAndStrings(c), /^\s*@SchedulerLock\b/, (_line, lines, i) => {
+        let j = i + 1;
+        while (j < lines.length && /^\s*(@|$)/.test(lines[j])) j++;
+        const declaration = lines[j] ?? "";
+        const m = declaration.match(/^\s*(?:(?:public|protected|private|static|final|synchronized)\s+)*([\w.]+)\s+\w+\s*\(/);
+        return Boolean(m) && /^(?:int|long|boolean|double|float|short|byte|char)$/.test(m[1]);
+      }),
+    samples: {
+      file: "modules/common/worker/src/main/java/app/web/common/worker/scheduler/TickScheduler.java",
+      broken: `    @Scheduled(cron = "30 * * * * *")
+    @SchedulerLock(name = "TickScheduler_judge", lockAtMostFor = "50s")
+    public int judge() {
+        return breakers.judgeAll();
+    }`,
+      fixed: `    @Scheduled(cron = "30 * * * * *")
+    @SchedulerLock(name = "TickScheduler_judge", lockAtMostFor = "50s")
+    public void judge() {
+        breakers.judgeAll();
+    }`,
+      hit: [
+        { note: "a boolean return with a further annotation between", source: `    @SchedulerLock(name = "TickScheduler_sweep")\n    @SchedulerName("sweep")\n    public boolean sweep() {\n        return true;\n    }` },
+      ],
+      miss: [
+        { note: "an Optional return, which the proxy answers with null when the lock is held elsewhere", source: `    @SchedulerLock(name = "TickScheduler_enqueue")\n    public Optional<String> enqueue() {\n        return queue.enqueue();\n    }` },
+        { note: "a primitive return on a method without a lock", source: `    @Scheduled(cron = "0 * * * * *")\n    public int count() {\n        return 0;\n    }` },
+      ],
+    },
+  },
+  {
     id: "banned-exception-type",
     invariant: "#3",
     level: "error",
