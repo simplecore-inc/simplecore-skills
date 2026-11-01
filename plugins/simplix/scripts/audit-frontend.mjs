@@ -3444,11 +3444,18 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     // of every catalogue that publishes it: a key defined in no app at all is reported, and one
     // defined in some but not others is not. That is the honest limit of what a file can be asked
     // here, and it is the half that catches the defect this widening exists for.
+    //
+    // **A key the file compares its own lookup against is optional by design.** i18next returns
+    // the key when the catalogue holds none, so a read written `line !== "screen.area.description"`
+    // has decided what a missing entry means (no line is drawn) and the catalogue is free to omit
+    // it. Reporting that read would force every catalogue to carry an empty value, which
+    // `empty-locale-value` then reports in turn.
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
     check: (c, file) => {
       const binds = translatorBindings(c);
       if (binds.size === 0) return [];
       const hits = [];
+      const guardsItsOwnKey = (key) => new RegExp(`[!=]==\\s*"${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`).test(c);
       for (const [alias, ns] of binds) {
         const keys = localeKeys(ns, file);
         if (!keys) continue;
@@ -3466,7 +3473,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
           hits.push(
             ...lineHits(c, pattern, (line) => {
               pattern.lastIndex = 0;
-              return [...line.matchAll(pattern)].some((m) => !keys.has(m[1]));
+              return [...line.matchAll(pattern)].some((m) => !keys.has(m[1]) && !guardsItsOwnKey(m[1]));
             }),
           );
         }
@@ -3511,6 +3518,15 @@ return <ErrorPageLayout action={t("error.goHome")} />;`,
 return <EmptyState title={t("area.title")} />;`,
         },
         miss: [
+          {
+            note: "an optional line: the read compares its result with its own key, so a catalogue without the entry draws no line instead of printing the key",
+            files: widgets,
+            source: `const { t } = useTranslation("site/widgets");
+const line = t("screen.area.description");
+const description = line && line !== "screen.area.description" ? line : undefined;
+
+return <Header title={t("area.title")} description={description} />;`,
+          },
           {
             note: "the app under test owns the key while the app that sorts first does not — the owning catalogue answers, not the one directory order reaches",
             file: "apps/z-second/src/widgets/error/error-pages.tsx",
