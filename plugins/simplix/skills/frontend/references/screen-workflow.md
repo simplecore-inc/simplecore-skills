@@ -23,7 +23,11 @@ Read this before planning a screen or dispatching agents for screen work.
      provider missing, failures above zero), names its action, and sits directly under the cards:
      the page reads header, cards, notices, then the list. The card strip is collapsible to a
      one-line summary, so a persona who knows the figures gives the list the room. Misreading: a
-     notice drawn above the cards because it is more urgent; urgency is its tone, not its place. A census
+     notice drawn above the cards because it is more urgent; urgency is its tone, not its place.
+     The order and the fold belong to the page shell, which already has them: a screen passes
+     its cards and notices as data and never composes the strip, the toggle or the order itself.
+     Before building a fold, a toggle or a summary row, grep the kit for the one a page already
+     uses; a second mechanism beside it is a defect even when it works. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
