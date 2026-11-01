@@ -333,6 +333,25 @@ function entityIdIndex(files) {
   _entityIdIndex = map;
   return map;
 }
+let _formulaEntityIndex = null;
+/**
+ * The entities that declare a Hibernate {@code @Formula} field, by simple name.
+ *
+ * <p>A formula is a column Hibernate computes in the select it writes itself, so a native query
+ * mapped onto such an entity has to carry that column too; {@code select *} never does.
+ */
+function formulaEntityIndex(files) {
+  if (_formulaEntityIndex) return _formulaEntityIndex;
+  const set = new Set();
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    if (!src.includes("@Entity") || !src.includes("@Formula")) continue;
+    if (/@Formula\s*\(/.test(stripComments(src))) set.add(path.basename(abs, ".java"));
+  }
+  _formulaEntityIndex = set;
+  return set;
+}
 let _encryptedFieldIndex = null;
 /**
  * Which fields of each entity are stored encrypted, by the entity's simple name.
@@ -1850,6 +1869,72 @@ public class AreaRestController {
     },
   },
   {
+    id: "native-select-star-into-formula-entity",
+    invariant: "#4",
+    level: "error",
+    desc: "A native query selects `*` and maps the rows onto an entity that declares a `@Formula` field. A formula is computed in the select Hibernate writes itself, so the native result set has no column for it and every call fails at runtime with 「Unable to find column position by name」 - the method compiles, and the job or endpoint calling it fails on each run. Select the ids natively (keeping the lock) and load the entities through the repository, or name every column including the formula",
+    appliesTo: isRepository,
+    check: (c, rel, ctx) => {
+      const formulas = ctx?.formulas;
+      if (!formulas?.size) return [];
+      const clean = stripComments(c);
+      const out = [];
+      for (const m of clean.matchAll(/@Query\s*\(([\s\S]*?)\)\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*(?:List|Optional|Stream|Page|Slice|Set|Collection)?\s*<?\s*(\w+)\s*>?\s+\w+\s*\(/g)) {
+        const args = m[1];
+        if (!/nativeQuery\s*=\s*true/.test(args)) continue;
+        const sql = [...args.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((x) => x[1]).join("");
+        if (!/\bselect\s+(?:\w+\.)?\*/i.test(sql)) continue;
+        if (!formulas.has(m[2])) continue;
+        out.push({ line: clean.slice(0, m.index).split("\n").length,
+          excerpt: `native select * onto ${m[2]}, which declares a @Formula column` });
+      }
+      return out;
+    },
+    samples: {
+      file: "packages/domain-order/src/main/java/app/domain/order/OrderRepository.java",
+      broken: `public interface OrderRepository extends SimpliXBaseRepository<Order, String> {
+    @Query(value = "select * from orders where expires_at <= :now "
+            + "order by expires_at limit :limit for update skip locked", nativeQuery = true)
+    List<Order> lockExpired(@Param("now") Instant now, @Param("limit") int limit);
+}`,
+      fixed: `public interface OrderRepository extends SimpliXBaseRepository<Order, String> {
+    @Query(value = "select order_id from orders where expires_at <= :now "
+            + "order by expires_at limit :limit for update skip locked", nativeQuery = true)
+    List<String> lockExpiredIds(@Param("now") Instant now, @Param("limit") int limit);
+
+    default List<Order> lockExpired(Instant now, int limit) {
+        return findAllById(lockExpiredIds(now, limit));
+    }
+}`,
+      ctx: { formulas: new Set(["Order"]) },
+      hit: [
+        {
+          note: "an aliased star returning one entity",
+          source: `public interface OrderRepository extends SimpliXBaseRepository<Order, String> {
+    @Query(value = "select o.* from orders o where o.code = :code", nativeQuery = true)
+    Optional<Order> findByCodeNative(@Param("code") String code);
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "a native star onto an entity with no formula",
+          source: `public interface HoldRepository extends SimpliXBaseRepository<Hold, String> {
+    @Query(value = "select * from holds where expires_at <= :now", nativeQuery = true)
+    List<Hold> lockExpired(@Param("now") Instant now);
+}`,
+        },
+        {
+          note: "a JPQL query onto the formula entity",
+          source: `public interface OrderRepository extends SimpliXBaseRepository<Order, String> {
+    @Query("select o from Order o where o.expiresAt <= :now")
+    List<Order> findExpired(@Param("now") Instant now);
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "searchdto-data-annotation",
     invariant: "#6",
     level: "error",
@@ -3320,7 +3405,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath() };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();
