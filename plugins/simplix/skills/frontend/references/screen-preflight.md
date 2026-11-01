@@ -25,6 +25,14 @@ them is fixed by repeating the rule; each is fixed by the mechanism named beside
 Misreading: "the agent was told, so the next screens will follow". Telling is not a mechanism; the
 generator, the template and the checks are.
 
+## The kit's region contract is the authority
+
+What a page type draws in each region (the part, the `page.blocks` slot, the controls a region may
+hold) is not restated here: the kit ships it as metadata (`regions.json` in the design kit, for
+console-clarity `packages/console-clarity/regions.json`) and enforces it with a source check and a
+rendered check beside it. Read it before naming a part or a slot in a plan; a region it lacks is
+added there, with both checks proving it on a hit and a miss.
+
 ## The preflight, in order
 
 1. **Census what exists.** For the region the change touches (figures, notices, a fold, tabs, a
