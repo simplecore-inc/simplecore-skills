@@ -2494,6 +2494,44 @@ public class ApiExceptionAdvice {
     },
   },
   {
+    id: "keyword-search-field-without-contains",
+    invariant: "#15",
+    level: "error",
+    desc: "A SearchDTO field joins the keyword search (`keyword = true`) without CONTAINS among its operators. The searchable layer refuses the whole keyword query (SEARCH_INVALID_QUERY_SYNTAX, 「Keyword field ... must be a String that allows the CONTAINS operator」), so every word typed into the list's search box empties the list behind an error, on every field, not only this one. Give the field CONTAINS (in the generator input's searchOperators and on the DTO) or take it out of the keyword search",
+    appliesTo: isDtoContainer,
+    check: (c) => {
+      const clean = stripComments(c);
+      const out = [];
+      for (const m of clean.matchAll(/@SearchableField\s*\(([^)]*)\)/g)) {
+        const args = m[1];
+        if (!/keyword\s*=\s*true/.test(args)) continue;
+        const ops = (args.match(/operators\s*=\s*\{([^}]*)\}/) ?? [null, ""])[1];
+        if (/\bCONTAINS\b/.test(ops)) continue;
+        const field = (args.match(/entityField\s*=\s*"([\w.]+)"/) ?? [null, "?"])[1];
+        out.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${field} is a keyword field without CONTAINS` });
+      }
+      return out;
+    },
+    samples: {
+      file: "modules/catalog/src/main/java/app/web/catalog/dto/VoiceDTOs.java",
+      broken: `public class VoiceDTOs {
+    public static class VoiceSearchDTO {
+        @SearchableField(entityField = "code", operators = {EQUALS, IN}, sortable = true, keyword = true)
+        private String code;
+    }
+}`,
+      fixed: `public class VoiceDTOs {
+    public static class VoiceSearchDTO {
+        @SearchableField(entityField = "code", operators = {EQUALS, IN, CONTAINS}, sortable = true, keyword = true)
+        private String code;
+
+        @SearchableField(entityField = "status", operators = {EQUALS, IN}, sortable = true)
+        private String status;
+    }
+}`,
+    },
+  },
+  {
     id: "search-on-encrypted-column",
     invariant: "#15③",
     level: "error",
