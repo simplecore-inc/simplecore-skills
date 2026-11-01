@@ -20,6 +20,7 @@ them is fixed by repeating the rule; each is fixed by the mechanism named beside
 | Every screen is regenerated at once, so a defect in the template lands on all of them before one is seen | the pilot sequence below |
 | A kit part takes a per-screen presentation flag (draw these row actions as labelled buttons), so one screen opts out of the look every other screen has, often with a borrowed action type for a verb no type names | a part presents one way; a verb no type names gets its own icon or a new type in the kit, and a boolean prop that changes look rather than content is removed or carries a written reason |
 | A value renderer adds its own controls (copy, show whole) inside a list cell, so a row carries two kinds of buttons and one list looks unlike the others | a row's actions live only in its action strip; a cell shows a value, and copy or the whole text belongs to the detail |
+| A screen design records a decision (a description shown, a figure row) and nothing checks the built screen against it, so the design file says one thing and every screen renders another | each recorded decision has a rendered check: what the design says is shown renders in every locale, what it says is absent renders nothing |
 | A rule lives in prose only | each rule gets a machine check with a hit and a miss case before the widening starts |
 
 Misreading: "the agent was told, so the next screens will follow". Telling is not a mechanism; the
