@@ -34,7 +34,9 @@ Read this before planning a screen or dispatching agents for screen work.
      render and is customised from it, so the template offers one slot per region (one figure
      slot, one notice slot); a template that offers two ways to draw the figures produces two
      kinds of screen. Misreading: writing a new screen's blocks from a sibling screen or from
-     memory instead of from the template render. A census
+     memory instead of from the template render. The generator keeps the blocks file a tracked render (fingerprint,
+     base, three-way merge); a blocks file the generator writes once as an empty stub and then
+     disowns is the mechanism that makes every screen differ, and is fixed in the generator. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
