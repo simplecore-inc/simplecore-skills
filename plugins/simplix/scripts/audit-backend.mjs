@@ -2852,6 +2852,9 @@ public class PublicContentRestController {
         const before = clean.slice(0, m.index);
         const start = Math.max(before.lastIndexOf(";"), before.lastIndexOf("{"), before.lastIndexOf("}"));
         if (/@Transient\b/.test(before.slice(start + 1))) continue;
+        // A @Formula field has no column of its own: it reads another table's text, and is
+        // translated where that text is stored, never here.
+        if (/@Formula\b/.test(before.slice(start + 1))) continue;
         // The raw source at the same offsets: comment and string bodies are blanked in `clean`.
         const comment = c.slice(start + 1, m.index).match(/@Comment\s*\(\s*"([^"]*)"/)?.[1] ?? "";
         if (declared.has(`${field}I18n`)) continue;
@@ -2878,6 +2881,10 @@ public class PublicContentRestController {
       ],
       miss: [
         { note: "a code, an id and a username are not display text", source: `@Entity\npublic class Area {\n    @Comment("Stable code clients refer to")\n    private String areaCode;\n    private String areaId;\n    private String username;\n}` },
+        {
+          note: "a derived name read through @Formula has no column to translate",
+          source: `@Entity\npublic class Order {\n    @Formula("(select u.display_name from users u where u.user_id = owner_id)")\n    private String ownerName;\n}`,
+        },
         {
           note: "allow-listed with its reason",
           source: `@Entity\npublic class Team {\n    private String name;\n}`,
