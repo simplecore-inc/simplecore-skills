@@ -1994,6 +1994,45 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     },
   },
   {
+    id: "lazy-relation-with-wide-json-include",
+    invariant: "#5 (entity-to-DTO mapping)",
+    level: "error",
+    desc: "A LAZY @ManyToOne/@OneToOne whose @JsonIncludeProperties names more than the id - a detail read through findById(id, DetailDTO.class) serializes the uninitialized proxy with its id alone, while a search that joins the relation answers every named property, so the detail draws the raw id where the list draws the name. Load the relation EAGER, or include only the id",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c) =>
+      lineHits(stripCommentsAndStrings(c), /@(?:ManyToOne|OneToOne)\b.*FetchType\.LAZY/, (_line, lines, i) => {
+        // The annotations stacked on the same field, up to its declaration.
+        for (let j = i; j < lines.length && j < i + 12; j++) {
+          if (j > i && !/^\s*(@|\}|\)|"|,|$)/.test(lines[j]) && /;\s*$/.test(lines[j])) break;
+          const include = lines.slice(j).join("\n").match(/^\s*@JsonIncludeProperties\s*\(\s*\{([^}]*)\}/);
+          if (include) return include[1].includes(",");
+        }
+        return false;
+      }),
+    samples: {
+      file: "packages/domain-billing/src/main/java/app/domain/billing/entity/Subscription.java",
+      broken: `@Entity
+public class Subscription extends BaseEntity<String> {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", insertable = false, updatable = false)
+    @JsonIncludeProperties({"planId", "name"})
+    private Plan plan;
+}`,
+      fixed: `@Entity
+public class Subscription extends BaseEntity<String> {
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "plan_id", insertable = false, updatable = false)
+    @JsonIncludeProperties({"planId", "name"})
+    private Plan plan;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", insertable = false, updatable = false)
+    @JsonIncludeProperties({"ownerId"})
+    private Owner owner;
+}`,
+    },
+  },
+  {
     id: "scheduler-lock-on-primitive-return",
     invariant: "Scope (scheduler jobs)",
     level: "error",

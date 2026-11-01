@@ -513,3 +513,11 @@ private String channelId;  // Both exist
 | `@ManyToMany Set<E>` | `Set<String> eIds` + entityField path | **EXCLUDE** (separate API) | `Set<E>` |
 | `@OneToMany` (parent) | Skip | Skip (or parentId) | Include if tree |
 | Self-reference | Skip in Search | `parentId` if needed | `children` list |
+## A lazy relation names only its id
+
+A `FetchType.LAZY` `@ManyToOne`/`@OneToOne` whose `@JsonIncludeProperties` names more than the id
+answers two different shapes: the search joins the relation and serializes every named property,
+while `findById(id, DetailDTO.class)` serializes the uninitialized proxy with its id alone. The list
+draws the referenced record's name and the detail draws its raw id. Load such a relation `EAGER`
+(the referenced table is small and always shown) or include only the id. The audit's
+`lazy-relation-with-wide-json-include` refuses the shape.
