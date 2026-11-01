@@ -75,7 +75,11 @@ Read this before planning a screen or dispatching agents for screen work.
    gets a generic one in the CLI, with tests and no product names. A hand-built screen is the last
    resort, and a comment states why no generator change could serve it.
 9. **The shell belongs to the app.** The kit gives the shell parts and a generic `app-shell`
-   start. Each app generates it once and owns the result.
+   start. Each app generates it once and owns the result. A page the shell draws in place of
+   itself for a refused self read (an identity the server will not let this app act as) is named
+   in the app's `root-layout.blocks.tsx` as `refusalPages`, error code to page component; both
+   `app-shell` templates return it through the kit's `useShellRefusalScreen`, so the root layout
+   stays an untouched render. A root layout written by hand calls the same hook with the same map.
 10. **The trap.** Hand-composing one screen from kit parts looks equivalent and is faster once.
     It is the drift #67 describes: the next screen copies the hand-built one, not the template.
 11. **Every mistake the workflow produces becomes a case below, and a check where a machine can
@@ -326,6 +330,17 @@ Read this before planning a screen or dispatching agents for screen work.
   template improvement, and it had to be added by hand.
 - **Prevention.** The CLI keeps each file's last render as a merge base, and carries template
   changes into edited files by a three-way merge. It reports a conflict instead of writing it.
+
+## A hand branch in a generated root layout met the template's own branch
+- **What happened.** A root layout generated from `app-shell` was edited by hand to return a page
+  for one refusal. When that branch was lifted into the template as a blocks key, regenerating
+  merged the hand branch and the template's branch at the same lines and reported a conflict.
+- **Prevention.** To lift a hand edit into the template its file came from, write the file back to
+  its recorded base (`.simplix/generated/<path>`, once `git diff HEAD -- <path>` shows nothing that
+  is not yours), put the hand branch's data in the blocks file, then run the file's origin command
+  (`add-page <kind> <name> ...`). `generated --all` is the wrong command in a shared checkout: it
+  also rewrites every other screen whose template another change touched. The report must read
+  untouched for the file afterwards.
 
 ## A focus tint was the only focus mark, and forced colors removed it
 - **What happened.** The language selector, and every control written the same way, showed
