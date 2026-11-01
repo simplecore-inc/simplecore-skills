@@ -93,3 +93,13 @@ customising a screen; where the kit has none, writing it is the first step of th
 The rendered check compares each screen's region signature (which controls appear in which
 region) with its type's contract, so a second way of drawing a region fails the moment it is
 rendered, on any screen, without anyone comparing screens by eye.
+
+## The re-audit is a script, run until it prints clean
+
+Every defect class found during the work becomes one counting line in a re-audit script (a grep,
+a contract check, a rendered check) over the skill, the kit, the templates, the generators and the
+generated screens; the script exits non-zero while any count is above 0. It runs after every step
+and every landed change, and its table is what a report quotes. A class found later is added as a
+line before it is fixed. Prove each line on a known hit before trusting a 0: a command whose
+failure is swallowed reports 0 for the wrong reason (a grep exiting 1 and its output discarded).
+The work is finished when the script prints clean, never when a reading of the code finds nothing.
