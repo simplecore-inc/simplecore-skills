@@ -36,7 +36,13 @@ Read this before planning a screen or dispatching agents for screen work.
      kinds of screen. Misreading: writing a new screen's blocks from a sibling screen or from
      memory instead of from the template render. The generator keeps the blocks file a tracked render (fingerprint,
      base, three-way merge); a blocks file the generator writes once as an empty stub and then
-     disowns is the mechanism that makes every screen differ, and is fixed in the generator. A census
+     disowns is the mechanism that makes every screen differ, and is fixed in the generator.
+   - **One blocks template, customised through its slots.** List-detail pages share one page and
+     blocks template; every other page kind starts from one unified blocks template with the same
+     slots and differs only in which slots are on. Customising is turning a slot on or off,
+     inserting into it or removing from it; design inside a slot is free, nothing is drawn outside
+     the slots, and a need no slot meets becomes a new slot in the template. Every existing
+     screen is brought onto it, with no exception list. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
