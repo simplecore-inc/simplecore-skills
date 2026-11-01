@@ -389,6 +389,17 @@ const DEFAULTS = {
    */
   restoreControlSelector: '[data-part="console-notice-menu"]',
 
+  /**
+   * The row of status cards a list page leads with: the figures its rows are cut by.
+   *
+   * <p>Named as the console kit marks it. A shell that marks its card row differently names its own
+   * selector through `--options`.
+   */
+  statusCardsSelector: '[data-slot="status-card-fold"], [data-part="status-card-strip"]',
+
+  /** What a standing page notice is drawn as: the kit's notice card, or a message by its role. */
+  pageNoticeSelector: '[data-slot="console-notice-card"], [role="alert"], [role="note"], [role="status"]',
+
   /** What a message draws to reach a reader who cannot separate two tints. */
   messageGlyphSelector: 'svg, img, [role="img"]',
 
@@ -1799,6 +1810,50 @@ const theFigureRowSitsAgainstTheHeader = {
 };
 
 /**
+ * A page notice drawn above the status cards.
+ *
+ * The rule: on a console page the status cards come first and the notices sit directly under them.
+ * A notice reads as being about the figures it follows; drawn above them it reads as a banner the
+ * figures hang under, and the reader meets the sentence before the number it is about. Read from
+ * the page because the order is the shell's and the blocks', and only the painted page holds both.
+ *
+ * **What counts.** Each element matching `pageNoticeSelector` in the page's own column, not
+ * floating, not inside an opened surface and not inside the card row, that comes before the first
+ * card row in document order. A page with no card row is not this rule's subject.
+ */
+const noticesFollowTheStatusCards = {
+  id: "noticesFollowTheStatusCards",
+  grade: "error",
+  title: "a page notice drawn above the status cards, so the sentence comes before the figures it is about",
+  page: (o) => {
+    const findings = [];
+    const main = document.querySelector("main, [role=main]");
+    if (!main) return { compared: 0, findings };
+    const cards = main.querySelector(o.statusCardsSelector);
+    if (!cards) return { compared: 0, findings };
+    const floating = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const p = getComputedStyle(n).position;
+        if (p === "fixed" || p === "sticky") return true;
+      }
+      return false;
+    };
+    let compared = 0;
+    for (const el of main.querySelectorAll(o.pageNoticeSelector)) {
+      if (cards.contains(el) || el.contains(cards)) continue;
+      if (floating(el) || el.closest(o.openedSurfaceSelector)) continue;
+      if (el.parentElement && el.parentElement.closest(o.pageNoticeSelector)) continue;
+      compared += 1;
+      if (el.compareDocumentPosition(cards) & Node.DOCUMENT_POSITION_FOLLOWING) {
+        findings.push(`"${(el.textContent || "").trim().slice(0, 60)}" stands above the status cards; move it directly under them`);
+        if (findings.length >= o.maxFindings) break;
+      }
+    }
+    return { compared, findings };
+  },
+};
+
+/**
  * A card region that does not read loudest first.
  *
  * The defect it exists to catch: a screen draws 「들어가지 못한 행이 112행 남아 있습니다」 in amber
@@ -2582,6 +2637,7 @@ export const checks = [
   standingMessageDrawsNoClose,
   theFigureRowSitsAgainstTheHeader,
   theCardRegionReadsLoudestFirst,
+  noticesFollowTheStatusCards,
   textBoxesOverlap,
   blockInsideParagraph,
   pressableControlsTakeThePress,
@@ -2743,6 +2799,28 @@ const FIXTURES = {
       // Too little text to say what language the page is in.
       "a page of figures":
         `<html lang=en><style>body{margin:0;font:14px sans-serif}</style><p>12 · 340 · 7</p><p>운영</p>`,
+    },
+  },
+  noticesFollowTheStatusCards: {
+    broken: {
+      // The screen this was written from: a jobs list whose failed-jobs notice stood over its cards.
+      "a notice above the card row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
+        <main><div data-slot="console-notice-card" role=alert>2 jobs failed in the last hour</div>
+        <div data-slot="status-card-fold"><div class=c>Failed 2</div><div class=c>Running 5</div></div><table><tr><td>row</td></tr></table></main>`,
+    },
+    quiet: {
+      "the notice directly under the card row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
+        <main><div data-slot="status-card-fold"><div class=c>Failed 2</div><div class=c>Running 5</div></div>
+        <div data-slot="console-notice-card" role=alert>2 jobs failed in the last hour</div><table><tr><td>row</td></tr></table></main>`,
+      "a notice on a page with no card row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}</style>
+        <main><div data-slot="console-notice-card" role=note>Settings apply at the next request</div><form><input></form></main>`,
+      "a toast floating over the page above the cards":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
+        <main><div role=status style="position:fixed;top:0;right:0">Saved</div>
+        <div data-slot="status-card-fold"><div class=c>Failed 2</div></div></main>`,
     },
   },
   theCardRegionReadsLoudestFirst: {
