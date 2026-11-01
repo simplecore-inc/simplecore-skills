@@ -42,16 +42,31 @@ generator, the template and the checks are.
    order check. Prove each on a broken and a fixed form.
 5. **Pilot on one screen, then widen** (below).
 
-## Pilot, then widen
+## Simulate one screen at a time, then widen
 
-1. **The reference screen regenerates to itself.** Regenerating the reference screen under the new
-   template changes nothing it shows; a diff there is a template defect.
-2. **One screen of the simplest shape** (a list with no figures, or the plainest page of a type):
-   rendered from the template, customised only inside slots, checked in the browser in every
-   locale, its board frame generated from the matching story template and measured.
-3. **One screen that exercises the new slot** (figures that narrow the list, a tabbed page).
-4. **Widen by cluster**, one cluster at a time, each closed by the checks and a browser pass before
-   the next starts. A defect found in a cluster goes into the template and is regenerated into the
-   screens already done, never patched on the screen where it was seen.
-5. The census table (every screen: type, generated from, slots used, checks) is updated after each
-   step, so the remaining set is always visible.
+Before the change is applied to the screens, the skill, the templates and the kit are re-checked
+against the preflight, and screens are rebuilt one at a time as a simulation of the workflow:
+
+1. **Re-check first.** Read the skill sections, the templates and the kit parts the screen will
+   use, and fix any that still teach a second path or disown a generated file. The census of
+   step 1 above is current before the first screen.
+2. **Rebuild one screen from nothing** through the documented steps only: design, scaffold or
+   add-page from the type template, customise inside slots, board frame from the story template,
+   checks, browser in every locale. Rebuild means regenerate from the template and port the
+   screen's customisation into the slots, never edit the old file toward the new shape.
+3. **Log every trial and error**: a step the documentation did not cover, a command that failed,
+   a slot that was missing, a check that did not catch something, a choice the agent had to make
+   alone. Each one is fixed at its cause (the skill, the template, the kit, the generator or the
+   check) before the next screen, and the fixed screens are regenerated.
+4. **Repeat on another screen of the same type** while the last rebuild produced any trial and
+   error. The type is settled when one rebuild produces none.
+5. **Move to the next type** and repeat steps 2 to 4. The reference screen of each type
+   regenerates to itself (the rendered screen does not change).
+6. **Then widen** across the remaining screens of the settled types, one cluster at a time,
+   closed by the checks and a browser pass; a defect found there goes into the template and is
+   regenerated into the screens already done.
+7. The census table (every screen: type, generated from, slots used, checks, trial-and-error log
+   entries) is updated after each screen.
+
+Misreading: one screen rebuilt cleanly, so every screen is done. A clean rebuild settles its type,
+not the others, and only when the rebuild before it found nothing new.
