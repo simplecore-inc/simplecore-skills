@@ -30,21 +30,16 @@ Read this before planning a screen or dispatching agents for screen work.
      uses; a second mechanism beside it is a defect even when it works. Rebuilding a part that exists
      needs a stated reason in its doc comment; when the existing one lacks a behaviour, the
      behaviour is added to it. The screen that already uses the part well is the reference the
-     others are made identical to. Every screen's blocks file starts from the same template
-     render and is customised from it, so the template offers one slot per region (one figure
-     slot, one notice slot); a template that offers two ways to draw the figures produces two
-     kinds of screen. Misreading: writing a new screen's blocks from a sibling screen or from
-     memory instead of from the template render. The generator keeps the blocks file a tracked render (fingerprint,
-     base, three-way merge); a blocks file the generator writes once as an empty stub and then
-     disowns is the mechanism that makes every screen differ, and is fixed in the generator.
-   - **One blocks template, customised through its slots.** List-detail pages share one page and
-     blocks template; every other page starts from the blocks template of its screen type (a
-     dashboard, a tabbed page without a list, a record, the system pages), one template per type
-     reused by every screen of that type, all types sharing one slot vocabulary. Screens that look
-     alike are the same type; a type is added only when none fits, with the reason recorded. Customising is turning a slot on or off,
-     inserting into it or removing from it; design inside a slot is free, nothing is drawn outside
-     the slots, and a need no slot meets becomes a new slot in the template. Every existing
-     screen is brought onto it, with no exception list. A census
+     others are made identical to. Each screen type has one template that lays down a complete page of
+     that type (header and its description from the screen catalog, figures, notices, tabs, the
+     list or the type's body, panels), reused by every screen of that type. A screen is generated
+     once from it and then edited directly; a blocks file holds a departure worth naming, never the
+     whole screen, and departures many screens repeat are counted and lifted into the template.
+     The cause of screens that diverge is an empty start: a template that lays down a stub and
+     leaves the author to build the screen from nothing, from a sibling or from memory. Misreading:
+     forbidding hand edits after generation, or building merge machinery so that every screen can
+     be regenerated; the aim is a common start, and a generated file edited by hand is the
+     intended life of a screen. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
