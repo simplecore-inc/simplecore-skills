@@ -390,12 +390,12 @@ const DEFAULTS = {
   restoreControlSelector: '[data-part="console-notice-menu"]',
 
   /**
-   * The row of status cards a list page leads with: the figures its rows are cut by.
+   * The figure row a page leads with: the counts its rows are cut by.
    *
-   * <p>Named as the console kit marks it. A shell that marks its card row differently names its own
-   * selector through `--options`.
+   * <p>Named as the console kit marks it (its tile row). A shell that marks its figure row
+   * differently names its own selector through `--options`.
    */
-  statusCardsSelector: '[data-slot="status-card-fold"], [data-part="status-card-strip"]',
+  statusCardsSelector: '[data-slot="console-tile-gutter"], [data-part="console-tile-gutter"]',
 
   /** What a standing page notice is drawn as: the kit's notice card, or a message by its role. */
   pageNoticeSelector: '[data-slot="console-notice-card"], [role="alert"], [role="note"], [role="status"]',
@@ -1810,9 +1810,9 @@ const theFigureRowSitsAgainstTheHeader = {
 };
 
 /**
- * A page notice drawn above the status cards.
+ * A page notice drawn above the figure row.
  *
- * The rule: on a console page the status cards come first and the notices sit directly under them.
+ * The rule: on a console page the figures come first and the notices sit directly under them.
  * A notice reads as being about the figures it follows; drawn above them it reads as a banner the
  * figures hang under, and the reader meets the sentence before the number it is about. Read from
  * the page because the order is the shell's and the blocks', and only the painted page holds both.
@@ -1824,7 +1824,7 @@ const theFigureRowSitsAgainstTheHeader = {
 const noticesFollowTheStatusCards = {
   id: "noticesFollowTheStatusCards",
   grade: "error",
-  title: "a page notice drawn above the status cards, so the sentence comes before the figures it is about",
+  title: "a page notice drawn above the figure row, so the sentence comes before the figures it is about",
   page: (o) => {
     const findings = [];
     const main = document.querySelector("main, [role=main]");
@@ -1845,7 +1845,7 @@ const noticesFollowTheStatusCards = {
       if (el.parentElement && el.parentElement.closest(o.pageNoticeSelector)) continue;
       compared += 1;
       if (el.compareDocumentPosition(cards) & Node.DOCUMENT_POSITION_FOLLOWING) {
-        findings.push(`"${(el.textContent || "").trim().slice(0, 60)}" stands above the status cards; move it directly under them`);
+        findings.push(`"${(el.textContent || "").trim().slice(0, 60)}" stands above the figure row; move it directly under it`);
         if (findings.length >= o.maxFindings) break;
       }
     }
@@ -2810,12 +2810,12 @@ const FIXTURES = {
       "a notice above the card row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
         <main><div data-slot="console-notice-card" role=alert>2 jobs failed in the last hour</div>
-        <div data-slot="status-card-fold"><div class=c>Failed 2</div><div class=c>Running 5</div></div><table><tr><td>row</td></tr></table></main>`,
+        <div data-slot="console-tile-gutter"><div class=c>Failed 2</div><div class=c>Running 5</div></div><table><tr><td>row</td></tr></table></main>`,
     },
     quiet: {
       "the notice directly under the card row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
-        <main><div data-slot="status-card-fold"><div class=c>Failed 2</div><div class=c>Running 5</div></div>
+        <main><div data-slot="console-tile-gutter"><div class=c>Failed 2</div><div class=c>Running 5</div></div>
         <div data-slot="console-notice-card" role=alert>2 jobs failed in the last hour</div><table><tr><td>row</td></tr></table></main>`,
       "a notice on a page with no card row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}</style>
@@ -2823,7 +2823,7 @@ const FIXTURES = {
       "a toast floating over the page above the cards":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.c{display:inline-block;width:200px;height:80px;border:1px solid #ddd}</style>
         <main><div role=status style="position:fixed;top:0;right:0">Saved</div>
-        <div data-slot="status-card-fold"><div class=c>Failed 2</div></div></main>`,
+        <div data-slot="console-tile-gutter"><div class=c>Failed 2</div></div></main>`,
     },
   },
   theCardRegionReadsLoudestFirst: {
