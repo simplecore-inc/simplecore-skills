@@ -55,10 +55,13 @@ Read this before planning a screen or dispatching agents for screen work.
    three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is
    reported, never written. Block files hold the decisions that belong to one screen only.
    - `simplix generated` lists every generated file and story as `untouched`, `edited` or `stale`
-     (untouched, but the current templates render something else) and exits non-zero only for a
-     stale one. Each file records the command that made it after its `@simplix-render`
-     fingerprint, which is what lets the report re-render it; a file stamped without one is
-     `unchecked`. The project's `pnpm lint` runs it.
+     (untouched, but the current templates render something else). It fails only for a page file
+     (page, crud-page or list-page under `src/pages/<page>/`, or the root layout) that lacks the
+     generated marker, that is, a screen that did not start from its template; stale, conflict and
+     no-base are reported and fail only under `--check`. Stale is the normal state of an edited
+     page after a later template change. Each file records the command that made it after its
+     `@simplix-render` fingerprint, which is what lets the report re-render it; a file stamped
+     without one is `unchecked`.
    - `simplix generated --all` regenerates every recorded screen and page; an edited file is
      `merged`, `current`, `conflict` (left alone unless `--write-conflicts`) or `no base`.
    - An edited file with no base is adopted after a reviewed diff: `simplix generated --adopt

@@ -54,8 +54,8 @@ added there, with both checks proving it on a hit and a miss.
    shared by two operations), uncommitted work of another agent in the same files, the CLI build
    the regeneration runs from, board frames drawn by hand, preferences stored under a second key.
    Each gets its resolution in the plan.
-4. **Write the checks first**: the generated-state check (fingerprint present, 0 stale, 0
-   conflict), the fence that refuses a screen composing the region outside its slot, the rendered
+4. **Write the checks first**: the generated-state check (every page carries the generated marker;
+   stale and conflict are reported, not failures), the fence that refuses a screen composing the region outside its slot, the rendered
    order check. Prove each on a broken and a fixed form.
 5. **Pilot on one screen, then widen** (below).
 
