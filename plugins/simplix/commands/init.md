@@ -5,7 +5,7 @@ argument-hint: "[--project | --global] [path]"
 
 # SimpliX Init
 
-Wire this repository for the SimpliX handbooks. Two halves, and a project needs both:
+Wire this repository for the SimpliX handbooks. A project needs the routing block and the gate config:
 
 - **the routing block** in an instruction file, which tells Claude the skills are a first-touch
   gate. It travels with the repository and works without the plugin.
@@ -25,7 +25,7 @@ the two you did.
 
 2. Report what it found in one short paragraph: the matched subprojects with their paths
    and markers, which skills therefore apply, and - from `routedBy` and each match's
-   `skillGate` / `e2eGate` - which of the two halves is already in place. A gate reads as
+   `skillGate` / `e2eGate` - whether the routing block and the gate config are already in place. A gate reads as
    armed only when every key its hook needs is present; `skillGateMissing` /
    `e2eGateMissing` name the keys a declared gate lacks, and such a gate refuses nothing.
    `routedBy` may name a file above the scanned directory, up to the repository root.
@@ -38,7 +38,7 @@ the two you did.
      has no SimpliX marker; offer instead to re-run against a subdirectory.
    - `routedBy` already set → the routing exists in that file. Read it, report whether it
      still matches what the detector found, and offer to update only the parts that drifted.
-   - `wired: true` → both halves are in place. Say so and stop; there is nothing to write.
+   - `wired: true` → the routing block and the gate config are both in place. Say so and stop; there is nothing to write.
 
 3. Read the block templates:
 
@@ -84,6 +84,8 @@ the two you did.
    - `skills` are the skills whose invocation opens the edit gate: the subproject's handbook,
      plus `simplix:frontend-e2e` for a frontend since a browser audit reads and fixes the same
      files. A backend gets `["simplix:backend"]` and no `e2eGate` - it serves no screens.
+   - `uiExtensions` (optional, default `[".tsx"]`) lists the file extensions the e2e gate counts as
+     screens.
    - `sourceDirs` and `uiDirs` are project-relative prefixes. **Read them off the repository** -
      the source roots the detector's markers point at, the Gradle `settings.gradle` includes,
      the pnpm workspace globs. Never copy the example: a layout this plugin assumed rather than
@@ -92,8 +94,8 @@ the two you did.
 
    Say what each gate does in one clause, because the user has no reason to know: the skill gate
    refuses an edit (Write, Edit, MultiEdit) under those directories until the handbook is loaded;
-   the e2e gate stops a session that changed screens once, at its end, when none of them was
-   opened in a browser or the convention audit never ran. Both have escape hatches
+   the e2e gate stops a session that changed screens once, at its end, when `simplix:frontend-e2e`
+   was never invoked or the convention audit (`audit-frontend.mjs`) never ran in full. Both have escape hatches
    (`SIMPLIX_SKILL_GATE=off`, `SIMPLIX_E2E_GATE=off`) for scripted migrations.
 
 7. Verify what you wrote, and report the result:

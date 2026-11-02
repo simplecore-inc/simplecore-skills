@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * Completion gate - a session that changed screens does not end without those screens having
- * been driven in a browser, nor without the convention audit having run.
+ * Completion gate - a session that changed screens does not end without the browser-audit skill
+ * having been invoked, nor without the convention audit having run.
+ *
+ * The gate cannot see a browser: it checks that the skill which prescribes the browser pass was
+ * invoked in the session, and that the audit script ran in full.
  *
  * The other gate in this plugin guards the moment of editing. This one guards the moment of
  * claiming done, because that is where both checks are actually skipped: the build is green,

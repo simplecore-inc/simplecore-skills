@@ -1,6 +1,6 @@
 # Routing blocks for `simplix` skills
 
-Two blocks. The **project block** names this repository's subprojects and belongs in the
+The **project block** names this repository's subprojects and belongs in the
 project's own instruction file. The **global block** is path-free and belongs in
 `~/.claude/CLAUDE.md`, where it covers every SimpliX project on the machine.
 
@@ -11,8 +11,8 @@ instruction file travels with the repository.
 A routing block states the gate; it does not enforce it. Enforcement is the other half:
 `<subproject>/.claude/simplix.json` arms the plugin's hooks, so an edit written without the
 handbook is refused, and a session that changed screens is stopped once at its end when they
-were never opened in a browser or the convention audit never ran. `/simplix:init` writes both halves; the project block below documents the
-second so a reader knows the gates exist and why.
+never went through `simplix:frontend-e2e` or the convention audit never ran. `/simplix:init` writes the routing block and the gate config; the project block below documents
+the gate config so a reader knows the gates exist and why.
 
 ---
 
@@ -60,7 +60,7 @@ Rules that follow from the gate:
 
 Each subproject's `.claude/simplix.json` arms the gates that enforce the rules above: a
 source edit is refused until the handbook is invoked, and a session that changed screens is
-stopped once, at its end, when it neither drove them in a browser nor ran the convention audit.
+stopped once, at its end, when `simplix:frontend-e2e` was never invoked or the convention audit never ran.
 `/simplix:init` writes it. Do not delete it to make a gate stop firing; answer the gate
 instead.
 
