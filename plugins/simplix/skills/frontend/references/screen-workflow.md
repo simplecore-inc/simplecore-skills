@@ -29,6 +29,11 @@ Read this before planning a screen or dispatching agents for screen work.
      figures the template does not draw, need the screen's own code, and a comment naming them
      does not count. A screen not yet customised is listed under the manifest's `acknowledged`
      with its reason, which the gate reports as stale once the page is customised.
+   - **The description's catalog key exists before the scaffold runs.** Add
+     `screen.<entity>.description` to the module's `widgets` catalog in every locale during step 0.
+     A check run through `generated.after` that judges a page reading the key passes only once the
+     key exists, so a key added after the scaffold makes the scaffold's first run exit 1 although
+     the page is written.
    - Misreading: "the board frame was generated from the same template, so 0 differences was read
      as done".
    - **Description, cards and notices are present by design, never by accident.** A description
@@ -112,10 +117,13 @@ Read this before planning a screen or dispatching agents for screen work.
      (`{ subject: "SUBJECTS.{{entityCamel}}", table: { file: "<subjects file>" } }`) makes that
      entry read the project's subjects table (invariant #52) and adds the key the table lacks with
      the list endpoint's group; without it the gate carries the group as an inline literal.
-   - `generated.after` (`[{ cwd, command }]`) runs once after `simplix scaffold`, `simplix add-page`
+   - `generated.after` (`[{ cwd, command, onFailure? }]`) runs once after `simplix scaffold`, `simplix add-page`
      and `simplix generated --all`, never for the report. A project sets it to refresh what the
      frames read from the generated files, such as the board's entity catalogs, so a new frame draws
-     words instead of raw keys. A failing step skips the later ones and fails the command.
+     words instead of raw keys. A failing step skips the later ones and fails the command, unless
+     the step states `onFailure: "continue"`: a gate no later step depends on (a design check
+     beside the typechecks) states it so the steps after it still run; the command still exits 1
+     when any step failed.
    - Regenerate a domain (`simplix meta`) only while the backend answers: the non-base locales
      take their words from the server's translations, and a run against a server that is down
      writes the base locale's words into every locale (the CLI warns `No server translations`).
@@ -141,7 +149,10 @@ Read this before planning a screen or dispatching agents for screen work.
    screen is generated from the page template, and the story's design decisions are brought into
    it. Compare the two by region signature (which regions and control kinds appear, in what order;
    no text, no counts, no pixels), on a sample of screens rather than on every one; a difference
-   is a gap in the template (fixed there) or a deliberate difference with its reason. Every
+   is a gap in the template (fixed there) or a deliberate difference with its reason. Beyond the
+   signature, compare the computed colours of a status badge that the screen and its frame both
+   draw under the same label: a screen with no tone map for its enum draws every badge neutral
+   (the record value falls back to `neutral`), and no structural check sees it. Every
    rendered value also belongs to the design's token set; a computed value outside it is a
    defect, found by a rendered check and kept out by a source check on arbitrary values. An item
    customised on a second screen is the signal to lift it.
@@ -270,6 +281,16 @@ Read this before planning a screen or dispatching agents for screen work.
 31. **A command that confirms uses the kit's confirm, one per direction.** Panels in an app use the
     kit's `useActionConfirm` (the board refuses framework imports, so a framework dialog has no
     frame); its label is fixed per confirm, so a grant/revoke pair takes two.
+    **An entity verb listed under `actions` in `simplix meta-info <Entity>` is written once, as the
+    widget file `actions.tsx`.** It exports `use<Entity>Actions(canAct)` returning
+    `{ rowActions, verbs, dialogs }`. A verb whose request carries a required reason opens the
+    kit's `ActionDialog` (with the reason as a required field); every other verb confirms through
+    `useActionConfirm`. `canAct` is false where the screen only reads (a peek dialog) and the three
+    members then come back empty. The detail passes `actions={verbs(record)}` and renders
+    `{actions.dialogs}`; the list page spreads `rowActions` into its row actions and renders the
+    same `dialogs`. Each verb is disabled with its reason where the record's status or the
+    reader's permission refuses it, never hidden. The project's own precedent file is named in its
+    new-screen reference.
 32. **A whole-project regeneration touches every agent's screens.** `simplix generated --all`
     re-renders every recorded screen in the tree, other agents' uncommitted ones included, and
     `--write-conflicts` writes markers into all of them. In a shared tree run it only when the
@@ -303,6 +324,11 @@ Read this before planning a screen or dispatching agents for screen work.
     first render, so a blocks file that returns tabs only after the record loads opens on an empty
     pane with no tab active, which `openPaneDrawsNothing` cannot see because no pane is active.
     Return the tab list unconditionally and let each tab draw its own loading state.
+38. **A create body field that is a list of records or a nested record has no generated control.**
+    The scaffold prints a warning naming it, and `simplix check-screen` fails a form file that never
+    names the field. Build it in the form's submit. A list row key (`...Id`) that the create body
+    requires and that Meta declares no reference for gets a `check-screen` warning when the list
+    file has no column for it (`screen-playbook.md` § Moving a screen from the template).
 
 ## Cases
 

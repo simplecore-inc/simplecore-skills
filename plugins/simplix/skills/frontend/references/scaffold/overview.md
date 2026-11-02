@@ -101,10 +101,13 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   long text follows the contract's length, and a reference is edited through `scaffold.referencePickers`
   (`{ <peekKind>: { hook, from, facet? } }`): `hook` searches the entity for a form picker, `facet` filters a list
   over a key of that entity by the record's name. Both come from the framework's `createEntitySearch` and
-  `createEntityFacet`.
+  `createEntityFacet`. A required field that is a list of records or a nested record has no generated control: the
+  scaffold prints a warning naming it, and the form builds it in its submit.
 - **`simplix check-screen [entity...]`** reads the written files against the committed Meta and exits 1 on an error
-  (a missing or unmarked required field, long text on one line, a reference form field with no picker, a name path
-  other than the settled one, a flat key in a frame's sample rows); it warns on a guessed name. It runs after
+  (a missing or unmarked required field, a required list of records or nested record that the form never names, long
+  text on one line, a reference form field with no picker, a name path other than the settled one, a flat key in a
+  frame's sample rows); it warns on a guessed name and on a list that draws no column for a key (`...Id`) the create
+  body requires and Meta declares no reference for. It runs after
   `scaffold` and `generated --all`, so a gap that compiled and rendered is found before a browser.
 - **`simplix generated [path...]`** narrows the report to those files or directories. A screen whose content is the
   intended one against a template change that conflicts with it is kept with

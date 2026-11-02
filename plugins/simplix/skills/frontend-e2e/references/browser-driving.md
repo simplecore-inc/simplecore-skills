@@ -49,7 +49,7 @@ audit, and reuse an existing one only if the user asks.
 
 Practical rules that save an entire session:
 
-1. **Batch where the driver can.** Predictable sequences (navigate → wait → click → wait → screenshot) go in one batched call or one script. Coordinates in a batch refer to the screenshot taken *before* the call.
+1. **Batch where the driver can.** Predictable sequences (navigate → wait → click → wait → screenshot) go in one batched call or one script. Coordinates in a batch refer to the screenshot taken *before* the call. A scenario of several steps (sign in, create, act, read back) is one invocation that signs in and then works, so the session it works in is the one it signed in; separate invocations each assume a session that another sign-in on the same profile may have replaced.
 2. **Locate elements by what they are, not where they were.** Use the driver's locator or snapshot to get a reference, then act on the reference. Coordinates and refs go stale after any navigation, HMR reload, or panel switch - re-locate rather than reusing.
 
    **A stale reference does not announce itself as one - it arrives wearing the costume of whatever
@@ -411,6 +411,11 @@ The audit runs against a live development database, and every flow you complete 
    machine works the same queue table, so an older build claims and fails a queued job seeded for
    the pass within minutes. When the pass only needs a queued row, seed it with a future `run_at` or
    a type no worker handles.
+7. **Reference rows are never inserted by hand SQL into the shared development database.** A row a
+   scenario needs (a record another record points at) is created through the entity's own write path
+   or a backend seed. When neither exists, the report says the create path was not driven and names
+   the entity, instead of standing in for it with an insert that no screen, validation or audit
+   trail has seen.
 
 ---
 
