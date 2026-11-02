@@ -917,6 +917,161 @@ function baseControllerEntity(clean) {
   return clean.match(/\bclass\s+(\w+)\s+extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/) ?? null;
 }
 
+// --- Duplicate DTO simple names ------------------------------------------------
+
+// SimpliX Meta keys every DTO it reaches from a controller by the Java SIMPLE name of the class
+// (`MetaTypeRegistry.typeName` is `getSimpleName`, and `register` throws on a second class with
+// the same name), so two DTOs named alike in different packages, or as inner classes of two DTO
+// containers, make `GET /api/v1/dev/meta/dto` answer 409 and stop the frontend codegen.
+const DTO_NAME = /D(?:TO|to)$/;
+const DTO_CONTAINER_FILE = /D(?:TO|to)s\.java$/;
+const BODY_NAME = /(?:Request|Response|Body|Payload)$/;
+
+/**
+ * Every class, record and interface a source declares, with its extent and nesting depth.
+ *
+ * @param clean the source with comments and strings blanked
+ * @returns one entry per declaration: simple name, 1-based line, offsets, and how many other
+ *          declarations of this file contain it
+ */
+function declaredTypes(clean) {
+  const out = [];
+  for (const m of clean.matchAll(/\b(?:class|interface|record)\s+([A-Z]\w*)/g)) {
+    if (m.index > 0 && clean[m.index - 1] === ".") continue; // `Thing.class`
+    const open = clean.indexOf("{", m.index);
+    if (open < 0) continue;
+    let depth = 0;
+    let end = clean.length;
+    for (let j = open; j < clean.length; j += 1) {
+      if (clean[j] === "{") depth += 1;
+      else if (clean[j] === "}") { depth -= 1; if (depth === 0) { end = j + 1; break; } }
+    }
+    out.push({ name: m[1], start: m.index, end, line: clean.slice(0, m.index).split("\n").length });
+  }
+  for (const d of out) d.depth = out.filter((o) => o !== d && o.start < d.start && o.end >= d.end).length;
+  return out;
+}
+
+/**
+ * Whether a declaration is a type SimpliX Meta can register: a name ending in `DTO`, or a direct
+ * member of a `*DTOs` container; or, as a weaker signal, a request or response body name.
+ *
+ * @param rel the declaring file's path
+ * @param type an entry of `declaredTypes`
+ * @returns "dto", "body", or null for a type this rule leaves alone
+ */
+function dtoKind(rel, type) {
+  if (DTO_NAME.test(type.name)) return "dto";
+  if (DTO_CONTAINER_FILE.test(rel) && type.depth === 1) return "dto";
+  if (BODY_NAME.test(type.name)) return "body";
+  return null;
+}
+
+/**
+ * The DTO-shaped declarations of the backend by simple name, and which of those names a controller
+ * reaches.
+ *
+ * <p>Reachability is read from identifiers, not resolved: a name is reached when a controller
+ * mentions it, or when a DTO-shaped type that is reached mentions it. A name that two classes
+ * share counts as reached when either is. The spread is toward reaching more, which is why a
+ * duplicate that nothing reaches is reported as a review candidate and not as an error.
+ *
+ * @param sources `{ rel, src }` for every main-source Java file
+ * @returns `decls` (name to `{ rel, line, kind }` entries) and `reachable` (a set of names)
+ */
+function buildDtoNameIndex(sources) {
+  const decls = new Map();
+  const mentions = new Map();
+  const controllerWords = new Set();
+  for (const { rel, src } of sources) {
+    const clean = stripCommentsAndStrings(src);
+    const types = declaredTypes(clean);
+    for (const t of types) {
+      const kind = dtoKind(rel, t);
+      if (!kind) continue;
+      // Words in the type's own text, without the types nested inside it: a container that holds
+      // twenty DTOs mentions none of them by being mentioned.
+      let own = "";
+      let at = t.start;
+      for (const c of types.filter((o) => o !== t && o.start > t.start && o.end <= t.end).sort((a, b) => a.start - b.start)) {
+        if (c.start < at) continue;
+        own += clean.slice(at, c.start);
+        at = c.end;
+      }
+      own += clean.slice(at, t.end);
+      const list = decls.get(t.name) ?? [];
+      list.push({ rel, line: t.line, kind });
+      decls.set(t.name, list);
+      const words = mentions.get(t.name) ?? new Set();
+      for (const w of own.matchAll(/[A-Za-z_$][\w$]*/g)) words.add(w[0]);
+      mentions.set(t.name, words);
+    }
+    if (isController(rel) || /@(?:Rest)?Controller\b/.test(clean)) {
+      for (const w of clean.matchAll(/[A-Za-z_$][\w$]*/g)) controllerWords.add(w[0]);
+    }
+  }
+  const reachable = new Set([...controllerWords].filter((w) => decls.has(w)));
+  const queue = [...reachable];
+  while (queue.length) {
+    for (const w of mentions.get(queue.pop()) ?? []) {
+      if (decls.has(w) && !reachable.has(w)) { reachable.add(w); queue.push(w); }
+    }
+  }
+  return { decls, reachable };
+}
+
+/** The index over the repository's main sources, with paths relative to the audited root. */
+function dtoNameIndex(files, root = ROOT) {
+  const sources = [];
+  for (const abs of files) {
+    try { sources.push({ rel: path.relative(root, abs), src: fs.readFileSync(abs, "utf8") }); } catch { /* unreadable: skipped like every other index */ }
+  }
+  return buildDtoNameIndex(sources);
+}
+
+/**
+ * The DTO declarations of one file whose simple name another declaration already holds.
+ *
+ * <p>Only the later declaration of a pair is reported, naming the first, so one collision is one
+ * hit. A DTO-shaped name that a controller reaches is an error; one nothing reaches, and a
+ * request or response body name that a controller reaches, are review candidates, because
+ * neither is known to be registered by Meta.
+ *
+ * @param content the file's source
+ * @param rel the file's path relative to the audited root
+ * @param ctx carries `dtoNames`
+ * @param level the level of the rule asking
+ * @returns the hits of that level
+ */
+function duplicateDtoNameHits(content, rel, ctx, level) {
+  const index = ctx?.dtoNames;
+  if (!index) return [];
+  const out = [];
+  for (const t of declaredTypes(stripCommentsAndStrings(content))) {
+    const kind = dtoKind(rel, t);
+    if (!kind) continue;
+    const others = (index.decls.get(t.name) ?? []).filter((e) => e.kind === kind && !(e.rel === rel && e.line === t.line));
+    if (!others.length) continue;
+    const all = [...others, { rel, line: t.line }].sort((a, b) => a.rel.localeCompare(b.rel) || a.line - b.line);
+    const first = all[0];
+    if (first.rel === rel && first.line === t.line) continue;
+    const reached = index.reachable.has(t.name);
+    const asked = kind === "dto" ? (reached ? "error" : "review") : (reached ? "review" : null);
+    if (asked !== level) continue;
+    out.push({ line: t.line, excerpt: `${t.name} is also declared at ${first.rel}:${first.line}` });
+  }
+  return out;
+}
+
+/** The two files of the incident shape, as sources for `buildDtoNameIndex`. */
+function twinDtoSources(secondName) {
+  return [
+    { rel: "modules/admin/thing/src/main/java/app/web/thing/dto/AdminThingDTOs.java", src: `public class AdminThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n` },
+    { rel: "modules/portal/thing/src/main/java/app/web/thing/dto/PortalThingDTOs.java", src: `public class PortalThingDTOs {\n    public static class ${secondName} { private String name; }\n}\n` },
+    { rel: "modules/admin/thing/src/main/java/app/web/thing/AdminThingController.java", src: `public class AdminThingController { ThingListDTO list() { return null; } }\n` },
+  ];
+}
+
 function resetIndexes() { _createMappingIndex = null; _entityIdIndex = null; _i18nIndex = null; _generatorInputIndex = null; _entityBundleIndex = null; }
 
 // ---------------------------------------------------------------------------
@@ -3342,6 +3497,65 @@ public class LedgerProperties {
       ],
     },
   },
+  {
+    id: "duplicate-dto-simple-name",
+    invariant: "dto/simple-name",
+    level: "error",
+    desc: "Two DTO classes that a controller exposes share one Java simple name (`<Entity>ListDTO` in two packages, or the same inner class name in two `*DTOs` containers). SimpliX Meta keys every type by the simple name of the Java class, inner classes included (`Outer.Inner` is registered as `Inner`), and refuses the second one: `GET /api/v1/dev/meta/dto` answers 409 \"Duplicate DTO simple name\" at the next restart, which stops the frontend codegen, while the build, the tests and the API itself stay green. A DTO simple name is unique across the whole backend: rename one (`Portal<Entity>ListDTO`). Declarations in test sources are not read. A name no controller is seen to reach is reported as review by duplicate-dto-simple-name-unreached",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c, rel, ctx) => duplicateDtoNameHits(c, rel, ctx, "error"),
+    samples: {
+      file: "modules/portal/thing/src/main/java/app/web/thing/dto/PortalThingDTOs.java",
+      ctx: { dtoNames: buildDtoNameIndex(twinDtoSources("ThingListDTO")) },
+      broken: `public class PortalThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n`,
+      fixed: `public class PortalThingDTOs {\n    public static class PortalThingListDTO { private String name; }\n}\n`,
+      hit: [
+        {
+          note: "two top-level DTO files in different packages",
+          file: "modules/portal/thing/src/main/java/app/web/thing/ThingListDTO.java",
+          source: `public class ThingListDTO { private String name; }\n`,
+        },
+      ],
+      miss: [
+        {
+          note: "the first of the two declarations (the later one is the one reported)",
+          file: "modules/admin/thing/src/main/java/app/web/thing/dto/AdminThingDTOs.java",
+          source: `public class AdminThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n`,
+        },
+        {
+          note: "a plain helper class nested in a DTO container's DTO, which Meta does not register by being a member of the container",
+          source: `public class PortalThingDTOs {\n    public static class PortalThingListDTO {\n        public static class Builder { }\n    }\n}\n`,
+          ctx: { dtoNames: buildDtoNameIndex([{ rel: "modules/admin/thing/src/main/java/app/web/thing/dto/AdminThingDTOs.java", src: `public class AdminThingDTOs {\n    public static class ThingListDTO {\n        public static class Builder { }\n    }\n}\n` }, { rel: "modules/admin/thing/src/main/java/app/web/thing/AdminThingController.java", src: `class C { Builder b; ThingListDTO d; }` }]) },
+        },
+        {
+          note: "a duplicate that no controller reaches belongs to the review rule",
+          ctx: { dtoNames: buildDtoNameIndex(twinDtoSources("ThingListDTO").slice(0, 2).map((s) => ({ ...s }))) },
+          source: `public class PortalThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n`,
+        },
+      ],
+    },
+  },
+  {
+    id: "duplicate-dto-simple-name-unreached",
+    invariant: "dto/simple-name",
+    level: "review",
+    desc: "A DTO-shaped simple name is declared twice, but no controller is seen to reach it, or two request or response body classes (`*Request`, `*Response`, `*Body`, `*Payload`) share a name that a controller does reach. SimpliX Meta refuses a duplicate simple name only for a class it registers, which follows controller signatures and the fields of the DTOs they carry. This audit reads identifiers rather than resolving types, so it cannot tell whether the second class is registered: rename one if it can ever be exposed, and leave the name when it is an internal type that no endpoint carries",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c, rel, ctx) => duplicateDtoNameHits(c, rel, ctx, "review"),
+    samples: {
+      file: "modules/portal/thing/src/main/java/app/web/thing/dto/PortalThingDTOs.java",
+      ctx: { dtoNames: buildDtoNameIndex(twinDtoSources("ThingListDTO").slice(0, 2)) },
+      broken: `public class PortalThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n`,
+      fixed: `public class PortalThingDTOs {\n    public static class PortalThingListDTO { private String name; }\n}\n`,
+      miss: [
+        {
+          note: "a duplicate that a controller reaches is an error, not a review candidate",
+          ctx: { dtoNames: buildDtoNameIndex(twinDtoSources("ThingListDTO")) },
+          source: `public class PortalThingDTOs {\n    public static class ThingListDTO { private String name; }\n}\n`,
+        },
+      ],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -3415,6 +3629,71 @@ function selftestMechanisms() {
       pass: () => withTree({ "README.md": "not a backend" }, (dir) => collectSources(dir).length === 0),
     },
     {
+      name: "duplicate DTO names: a whole tree reports the incident shape once, from the files on disk",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/admin/thing/src/main/java/app/AdminThingDTOs.java": `public class AdminThingDTOs {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/portal/thing/src/main/java/app/PortalThingDTOs.java": `public class PortalThingDTOs {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/admin/thing/src/main/java/app/AdminThingController.java": `class AdminThingController { ThingListDTO list() { return null; } }\n`,
+        });
+        return hits.error.length === 1 && hits.error[0].includes("PortalThingDTOs.java") && hits.error[0].includes("AdminThingDTOs.java:2") && hits.review.length === 0;
+      },
+    },
+    {
+      name: "duplicate DTO names: distinct names are silent",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/admin/thing/src/main/java/app/AdminThingDTOs.java": `public class AdminThingDTOs {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/portal/thing/src/main/java/app/PortalThingDTOs.java": `public class PortalThingDTOs {\n    public static class PortalThingListDTO { }\n}\n`,
+          "modules/admin/thing/src/main/java/app/AdminThingController.java": `class AdminThingController { ThingListDTO list() { return null; } }\n`,
+        });
+        return hits.error.length === 0 && hits.review.length === 0;
+      },
+    },
+    {
+      name: "duplicate DTO names: a copy in test sources is never read",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/admin/thing/src/main/java/app/AdminThingDTOs.java": `public class AdminThingDTOs {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/admin/thing/src/test/java/app/ThingFixtures.java": `public class ThingFixtures {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/admin/thing/src/main/java/app/AdminThingController.java": `class AdminThingController { ThingListDTO list() { return null; } }\n`,
+        });
+        return hits.error.length === 0 && hits.review.length === 0;
+      },
+    },
+    {
+      name: "duplicate DTO names: a DTO reached only through another DTO's field still counts as reached",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/a/src/main/java/app/ADTOs.java": `public class ADTOs {\n    public static class OuterDTO { private InnerDTO inner; }\n    public static class InnerDTO { }\n}\n`,
+          "modules/b/src/main/java/app/BDTOs.java": `public class BDTOs {\n    public static class InnerDTO { }\n}\n`,
+          "modules/a/src/main/java/app/AController.java": `class AController { OuterDTO get() { return null; } }\n`,
+        });
+        return hits.error.length === 1;
+      },
+    },
+    {
+      name: "duplicate DTO names: a duplicate no controller mentions is a review candidate, never an error",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/a/src/main/java/app/ADTOs.java": `public class ADTOs {\n    public static class ThingListDTO { }\n}\n`,
+          "modules/b/src/main/java/app/BDTOs.java": `public class BDTOs {\n    public static class ThingListDTO { }\n}\n`,
+        });
+        return hits.error.length === 0 && hits.review.length === 1;
+      },
+    },
+    {
+      name: "duplicate DTO names: two plain inner classes that share a name in two DTOs are not DTO-shaped",
+      pass: () => {
+        const hits = dtoTreeHits({
+          "modules/a/src/main/java/app/ADTOs.java": `public class ADTOs {\n    public static class AListDTO { public static class Builder { } }\n}\n`,
+          "modules/b/src/main/java/app/BDTOs.java": `public class BDTOs {\n    public static class BListDTO { public static class Builder { } }\n}\n`,
+          "modules/a/src/main/java/app/AController.java": `class AController { AListDTO a; BListDTO b; Builder c; }\n`,
+        });
+        return hits.error.length === 0 && hits.review.length === 0;
+      },
+    },
+    {
       name: "settings: the audit section of .claude/simplix.json is read, and a missing file is the empty policy",
       pass: () =>
         withTree({ ".claude/simplix.json": `{ "audit": { "scopeForcingCalls": ["requireVisible"] } }` },
@@ -3451,6 +3730,29 @@ function withTree(files, fn) {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Run both duplicate-DTO rules over a scratch tree, the way the runner does: collect the main
+ * sources, index them, check every file.
+ *
+ * @param files relative path to contents
+ * @returns the `file:line excerpt` lines each rule reported
+ */
+function dtoTreeHits(files) {
+  return withTree(files, (dir) => {
+    const sources = collectSources(dir);
+    const ctx = { dtoNames: dtoNameIndex(sources, dir) };
+    const out = { error: [], review: [] };
+    for (const [level, id] of [["error", "duplicate-dto-simple-name"], ["review", "duplicate-dto-simple-name-unreached"]]) {
+      const rule = RULES.find((r) => r.id === id);
+      for (const abs of sources) {
+        const rel = path.relative(dir, abs);
+        for (const h of rule.check(fs.readFileSync(abs, "utf8"), rel, ctx)) out[level].push(`${rel}:${h.line} ${h.excerpt}`);
+      }
+    }
+    return out;
+  });
 }
 
 function selftest() {
@@ -3560,7 +3862,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();

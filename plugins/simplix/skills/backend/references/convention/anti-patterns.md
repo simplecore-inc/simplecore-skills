@@ -1137,3 +1137,30 @@ an existing row untouched, and give the labels in every locale the product ships
 
 Enforcement: review - an entity with a read-only API and no seed looks complete; the missing rows show
 only when a screen is driven.
+
+---
+
+## AP-46: A DTO Simple Name Declared Twice
+
+A DTO simple name is unique across the whole backend: SimpliX Meta keys types by the Java simple name
+(an inner class `Outer.Inner` is registered as `Inner`) and refuses duplicates at `/dev/meta/dto`.
+
+```java
+// WRONG - two modules, one simple name
+// modules/admin/<module>/.../AdminEntityNameDTOs.java
+public static class EntityNameListDTO { ... }
+// modules/portal/<module>/.../PortalEntityNameDTOs.java
+public static class EntityNameListDTO { ... }   // GET /api/v1/dev/meta/dto answers 409
+
+// CORRECT - the audience is part of the name
+public static class PortalEntityNameListDTO { ... }
+```
+
+The build, the unit tests and the endpoints themselves stay green, because the collision exists only
+when the Meta endpoint is fetched, which is what the frontend codegen does at its next run. The first
+sign is a failed `simplix meta`, often after an unrelated restart.
+
+Enforcement: audit - `duplicate-dto-simple-name` (a duplicated DTO-shaped name that a controller
+reaches, error) and `duplicate-dto-simple-name-unreached` (review). The audit reads identifiers rather
+than resolving types, so a duplicate it cannot tie to a controller is a review candidate to rename or
+justify.

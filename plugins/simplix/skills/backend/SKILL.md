@@ -221,6 +221,8 @@ For full annotated code with every endpoint, existence-check patterns, `@Validat
 
 All DTOs are **static inner classes** of `{EntityName}DTOs`. For the DTO roles (SearchDTO, CreateDTO, UpdateDTO, UpdateFormDTO, BatchUpdateDTO, DetailDTO, ListDTO, OrderUpdateDTO) with their exact Lombok annotations, extends relationships, and per-field annotation rules → see `references/review/dto-type-reference.md`.
 
+A DTO simple name is unique across the whole backend: SimpliX Meta keys types by Java simple name and refuses duplicates at `/dev/meta/dto` (AP-46 in `references/convention/anti-patterns.md`; the audit's `duplicate-dto-simple-name`).
+
 ---
 
 ## Annotation Ordering (summary)
