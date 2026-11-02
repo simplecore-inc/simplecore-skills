@@ -74,7 +74,7 @@ the declared type and a `List<T>` looks to it like a relation, while the i18n te
 ```java
 @Type(JsonType.class)
 @Column(name = "steps")
-private List<StepSpec> steps;   // a value object, not an entity
+private List<StepSpec> steps;   // StepSpec stands for any value object, not an entity
 ```
 
 **① The generator emits a service and a test for a repository that does not exist.** It reads

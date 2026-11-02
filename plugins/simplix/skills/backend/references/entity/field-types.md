@@ -208,6 +208,8 @@ The owning module, the layout and the bundle location: `base-entity-patterns.md`
 src/main/resources/messages/enums/[{module}/]enums-{module}-messages.properties
 ```
 
+**LabeledEnum message keys are `enums.{SimpleName}.{CONSTANT}` and are merged globally across the classpath, so every LabeledEnum simple class name MUST be globally unique** - two enums sharing a simple name (even in different packages/modules) collide on the merged key and silently mistranslate. Resolve any collision by renaming one enum (and migrating its keys in every locale) or, if both model the same concept, merging into a single enum.
+
 **Message Format** (the `enums.{SimpleName}.{CONSTANT}` key is invariant #16's, merged across the classpath):
 ```properties
 # Enum type label

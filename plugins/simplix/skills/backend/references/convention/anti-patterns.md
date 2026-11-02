@@ -742,7 +742,7 @@ private void rejectIfInUse(String id) {
 }
 ```
 
-**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, so resolved at throw time as invariant #3 allows (clone the project's established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
+**Why**: the rules below converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, so resolved at throw time as invariant #3 allows (clone the project's established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
 
 ## AP-33: Orphaned i18n Keys on Entity/Enum Removal; Unsafe Homonym Deletion
 
@@ -876,7 +876,7 @@ that write no check constraint at all** (SQLite under Hibernate).
 
 **Closed or open, decided per enum.** A closed enum (`@Enumerated(EnumType.STRING)`, the value set
 is the contract) carries a check constraint listing exactly its constants. An open enum, mapped
-through an `OpenEnumConverter` subclass so that an unknown stored value still reads, carries **no**
+through a project-written `AttributeConverter` base (called `OpenEnumConverter` in the examples; SimpliX ships none) so that an unknown stored value still reads, carries **no**
 value list: a list on it reintroduces exactly the migration this mapping exists to avoid. Either
 way the column is wide enough for the longest constant, and an Envers `_aud` table gets the same
 rule as its entity table.

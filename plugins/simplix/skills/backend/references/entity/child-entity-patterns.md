@@ -270,7 +270,7 @@ public interface ChildRepository extends SimpliXBaseRepository<Child, String> {
 
 ## Cleanup Checklist
 
-When internalizing a previously independent child entity:
+When internalizing a child entity that has its own CRUD stack:
 
 | Item | Action |
 |------|--------|

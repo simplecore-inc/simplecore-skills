@@ -437,8 +437,7 @@ yo simplix:generate CmsContent
 # Force overwrite
 yo simplix:generate CmsContent --force
 
-# Without tests, or past the version gate
-yo simplix:generate CmsContent --no-test
+# Past the version gate
 yo simplix:generate CmsContent --skip-version-check
 ```
 

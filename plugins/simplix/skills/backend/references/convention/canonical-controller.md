@@ -183,3 +183,9 @@ SimpliX Meta refuses to build (it throws `IllegalStateException` naming the enti
 Two controllers over one entity (an operators' list and a person's own) each publish their own figures and default sort on their operations, so declare them on the controller whose list they describe.
 
 **The annotation publishes; it serves nothing.** The framework declares no `status-counts`, `aggregates` or `counts` endpoint. Those endpoints, and the service code behind them, come from the project's controller and service templates (`../entity/yml-configuration.md` § Project template keys), which read the figures from the yml and emit the annotation and the endpoints together. A figure the annotation names with no endpoint behind it, or an endpoint without the annotation, is a contract the client cannot discover.
+
+---
+
+## Paged Searchable Lists
+
+**List-serving endpoints must be paged searchable.** Any endpoint that feeds a frontend list whose row count can grow (accumulating records, per-user histories, request queues - when in doubt, assume it grows) MUST expose the standard searchable surface from the controller template: `@SearchableParams(SearchDTO.class) Map<String, String>` → `service.search(params)` → `Page<ListDTO>`. Self-scoped or aggregated surfaces keep the same shape and force their scope conditions server-side on top of the client params (overwrite the scoped keys; client filters may only narrow). Returning an unpaged `List<T>` for such data is a defect - the frontend pairs every list screen with CLI-scaffolded `CrudList` pagination/filtering, which requires this contract. This backend-first, template-based path is ALWAYS the first implementation method considered for list screens.

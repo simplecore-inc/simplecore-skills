@@ -4,6 +4,8 @@
 
 > **Scope (canonical):** `BaseEntity<String>`, audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`), soft delete (`SoftDeletable`: `@SQLDelete` + `@Filter`, fields `deleted` / `deletedTimestamp`), domain events (`@EntityEventConfig`), lifecycle callbacks, FK string normalization. For field-level type rules see **field-types.md**; for relationships see **relationship-patterns.md**; for security/PII see **entity-security-patterns.md**.
 
+**Where these types live.** `BaseEntity<String>`, and the `SoftDeletable` constants used below (`SQL_SOFT_DELETE_SET`, `SQL_VERSION_CHECK`, `FILTER_NAME`), belong to the project's domain core module; SimpliX's framework jar ships no `BaseEntity`, and its `SoftDeletable` (`dev.simplecore.simplix.core.entity`) is the marker interface with `isDeleted()` that `EntityEventPublishingListener` reads. Read the project's domain core types before using either, and never import them from the framework package.
+
 ---
 
 ## Where to Create the Entity File
@@ -218,15 +220,15 @@ public final class MyModuleEventTypes {
 
 ### Custom Event Payload
 
-Implement `DomainEventPayloadProvider` for custom payloads:
+Implement `EntityEventPayloadProvider` (`dev.simplecore.simplix.core.entity`) for custom payloads. The map it returns is merged into the event payload, and the default fields (`id`, `className`) are always present:
 
 ```java
 @Entity
 public class MyEntity extends BaseEntity<String>
-    implements DomainEventPayloadProvider {
+    implements EntityEventPayloadProvider {
 
     @Override
-    public Map<String, Object> getEventPayload() {
+    public Map<String, Object> getEventPayloadData() {
         Map<String, Object> payload = new HashMap<>();
         payload.put("entityId", this.entityId);
         payload.put("name", this.name);
@@ -363,7 +365,7 @@ This causes issues with:
 
 ### Solution: FkNormalizer Utility
 
-Use `FkNormalizer` utility class to normalize empty strings to null:
+SimpliX ships no such helper. Keep one static utility in the project's domain core module (the examples call it `FkNormalizer`; write it once, `normalize` returns `null` for a null, empty or blank value) and normalize empty strings to null with it:
 
 ```java
 import {basePackage}.domain.core.util.FkNormalizer;

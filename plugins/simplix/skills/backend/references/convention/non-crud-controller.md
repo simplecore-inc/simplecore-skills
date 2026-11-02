@@ -8,7 +8,7 @@ Controllers that do NOT extend `SimpliXBaseController`. Cover action triggers, a
 
 ## When to Use Non-CRUD Controllers
 
-| Reason | Example |
+| Reason | Example (illustrative names) |
 |--------|---------|
 | Action/trigger endpoint | `SyncExecutionController`, `FullDownloadController` |
 | Multi-entity aggregation | `EventStatisticsRestController`, `DashboardBootstrapController` |

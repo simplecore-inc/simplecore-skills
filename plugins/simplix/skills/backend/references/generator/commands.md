@@ -13,7 +13,7 @@ What `yo simplix`, `yo simplix:init`, `yo simplix:version` and `yo simplix:gener
 
 ## `yo simplix` (the `app` generator)
 
-The default generator, run without a sub-command. It prints the generator version, then:
+The default generator, run as `yo simplix` or `yo simplix:app`. It prints the generator version, then:
 
 - With no `.simplix/` folder in the working directory: a note pointing to `yo simplix:init`, and nothing else.
 - With one: the order of work (`config` → edit the yml → `generate`/`entity`) and the command list.

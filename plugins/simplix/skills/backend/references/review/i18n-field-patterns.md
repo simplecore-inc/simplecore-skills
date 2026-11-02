@@ -241,13 +241,13 @@ asking **who reads this, and when**:
 
 | The output | Which value | Why |
 | --- | --- | --- |
-| A screen, or a DTO a screen renders | **Resolved** to the request locale | It has a reader, present at the moment it is produced. Two screens showing one record under different names are read as two records. |
+| A screen, or a DTO a screen renders | **Resolved** to the request locale | It has a reader, present at the moment it is produced. Screens showing one record under different names are read as different records. |
 | A file the user downloads (CSV/XLSX export, generated report) | **Base column** | It has no reader. It leaves the person who made it, gets shared, compared, and set beside other exports of the same list - and two exports that name one record differently cannot be read against each other. |
 | A stored record (an order line, a ledger row, an audit entry) | **Base column** | It outlives the session that wrote it. Resolved, the receipt, the invoice and the ledger row each keep whichever language happened to be asking. |
 | A signed or hashed payload | **Base column**, always | The bytes are the identity. A payload that reads differently per reader is not the same payload, and a signature over it verifies for one reader and not another. |
 
 The same axis governs timezone (display in the reader's zone, day-boundary arithmetic in the
-deployment's) - it is one rule about who a value is for, applied to two kinds of value.
+deployment's) - it is one rule about who a value is for, applied to language and timezone alike.
 
 **Aggregation services are the trap.** A hand-built DTO looks like the list DTO beside it and
 is populated with `entity.getName()`, so the screen it feeds silently prints base values while

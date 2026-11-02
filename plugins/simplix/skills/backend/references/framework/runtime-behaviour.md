@@ -72,9 +72,11 @@ row, recording a device - has nowhere to listen.
   belongs to by reading the token. Whatever records the session has to store the refresh
   token's identifier itself - and a revocation check built without that link **silently blocks
   nothing**: a signed-out session refreshes back to life and its expiry moves out a month.
-- **Record renewal in the provider, never from the lifecycle event.** `TokenLifecycleEvent`'s
-  `REFRESHED` arrives **before** the provider has written the new identifier, and it carries
-  only the new one - the previous identifier is not populated. So a listener looking the
+- **Record renewal in the provider, never from the refresh-success event.** The event the
+  framework publishes on a refresh (`TokenAuditEventPublisher.publishTokenRefreshSuccess`, which
+  a project may republish as a lifecycle event of its own) arrives **before** the provider has
+  written the new identifier, and it carries the new one as `jti` - the previous identifier is
+  only inside `additionalDetails` (`oldJti`), not a field of its own. So a listener looking the
   session up by what the event carries never finds it, and a listener that opens a new row when
   it finds nothing **adds one row per refresh**. Those extra rows carry no refresh-token
   identifier, so signing one of them out of a device list does nothing to the real session:
