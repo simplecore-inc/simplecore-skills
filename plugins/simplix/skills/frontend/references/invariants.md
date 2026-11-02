@@ -6,6 +6,12 @@ invariant's full form here before arguing an exception to it, debugging a violat
 or implementing the pattern it names for the first time. Paths are relative to this
 `references/` directory.
 
+## #1 Contract-first
+
+SKILL.md item 1 states this invariant in full; it has no longer form here.
+
+Enforcement: review - a hand-written hook looks like any other hook in a TSX file; whether a generated one already covers the call is a fact about the domain package's contract, not about the file's text.
+
 ## #2 Boot mutator
 
 API calls go through each domain's `src/mutator.ts`, which uses `getMutator("boot")` (the
@@ -29,6 +35,18 @@ string assembly. Paged list reads send `page` and `size` TOGETHER - some searcha
 parsers reject a lone `{ size }`; confirm the pagination contract from the spec rather than
 assuming `size` is independently optional.
 
+## #6 Snapshot before regenerate
+
+SKILL.md item 6 states this invariant in full; it has no longer form here.
+
+Enforcement: review - it is a step carried out before a command runs, and no file records that it happened.
+
+## #7 Live API over local JSON
+
+SKILL.md item 7 states this invariant in full; it has no longer form here.
+
+Enforcement: review - which URL `simplix.config.ts` points at and whether a local JSON stands in for it is a fact about the environment the codegen ran in, not about any source line.
+
 ## #11 SelectField async options
 
 Gate rendering on both value AND options loading state. Never render with incomplete
@@ -38,6 +56,8 @@ stays empty even once options load. Gate the whole select on EVERY contributing 
 (`aQuery.isLoading || bQuery.isLoading ? <Loading /> : …`), and derive a fallback selection
 from the row's own data rather than an effect-populated map (effect state is empty on the
 first render).
+
+Enforcement: review - whether a select's options arrive after the first render depends on the queries behind them, which a line scan cannot follow through the hooks that build the options.
 
 ## #15 Chip filters - the sanctioned cases
 
@@ -85,12 +105,56 @@ read this filter's committed value? A page that passes it into a census hook, in
 `useCrudList`, or into a `narrowed` flag that withholds the tab counts has answered yes.
 Where the answer is no, it is a plain axis and it becomes a facet.
 
+## #17 Backend DTO verification
+
+SKILL.md item 17 states this invariant in full; it has no longer form here.
+
+Enforcement: review - it joins the filter fields a screen declares with the fields the backend DTO exposes, two codebases; `simplix meta-info <Entity>` prints the backend side for the reader.
+
 ## #18 Column order - the one domain exception
 
 A narrow domain exception to the mandatory column order is allowed only when a category the
 list otherwise leaves out IS the entity's primary data - e.g. an audit-log entity whose
 actor/timestamp/field-change columns are the whole point of the list; surface those rather
 than removing them (#54). The default ordering still applies to every other entity.
+
+Enforcement: review - the order is judged by each column's category, and a column's category (an identifier, a relation, a metric) is a property of the field's meaning, not of its source text.
+
+## #19 User confirmation before restyling
+
+SKILL.md item 19 states this invariant in full; it has no longer form here.
+
+Enforcement: review - it is a step in the conversation with the user, and nothing in the source records that it happened.
+
+## #24 Diataxis single-type
+
+SKILL.md item 24 states this invariant in full; it has no longer form here.
+
+Enforcement: review - a document being exactly one of the four types is a judgment about what its reader is doing with it.
+
+## #25 Language policy
+
+SKILL.md item 25 states this invariant in full; it has no longer form here.
+
+Enforcement: review - which notes are public-facing and which are internal is the project's own call, and a Hangul scan cannot tell a README from an internal note.
+
+## #26 Official terminology
+
+SKILL.md item 26 states this invariant in full; it has no longer form here.
+
+Enforcement: review - a synonym for `contract`, `entity`, `operation`, `derive`, `hook` or `mock handler` cannot be told by a pattern from the same word used correctly in another sense.
+
+## #28 Result-first writing
+
+SKILL.md item 28 states this invariant in full; it has no longer form here.
+
+Enforcement: review - whether a sentence opens with what a thing does or with how it works is a judgment of meaning.
+
+## #29 Backend-change gate
+
+SKILL.md item 29 states this invariant in full; it has no longer form here.
+
+Enforcement: review - the gate compares the backend's current contract with the last codegen; the check is the Detect command in the item (codegen, then `git status` on the generated directory), a command run by the author, not a rule over source text.
 
 ## #31 Standard page chrome
 
@@ -187,6 +251,12 @@ project names for its entity (`scaffold.referencePickers.<peekKind>.hook`). A re
 record is not nested beside it still stays in the form: left out, every create the form sends is
 refused. A form edited by hand after the scaffold is judged by the same check, so a dropped field or
 a lost mark fails before a browser shows it.
+
+## #35 Edit is a state, not a button
+
+SKILL.md item 35 states this invariant in full; it has no longer form here.
+
+Enforcement: review - which condition the server enforces and whether the UI gates on the same one is a join between the backend lifecycle and the screen; the visible half, a row action that hides itself with `when`, is reported by `row-action-that-only-some-rows-draw`.
 
 ## #36 Server values are rendered, never echoed
 
@@ -321,6 +391,8 @@ leaks internal verdicts (watchlist hits, identity failures) to the subject, inve
 multiplies SPI/screening cost per candidate. The backend splits the two reads; each screen
 wires its own.
 
+Enforcement: review - which reads are widened operator reads and which surfaces are subject-facing is the product's trust model, and no source line states it.
+
 ## #48 Red badges mean "act now"
 
 A red notification badge (`Badge variant="destructive"`, round) counts ONLY a set the
@@ -330,6 +402,8 @@ query figure and the same red treatment, and demote to muted at 0 (no red zero).
 a badge leads to opens BY DEFAULT on exactly the set the badge counts - a badge of N
 landing on a default view showing 0 rows is a wiring defect. Tab/nav counts read
 `totalElements` from a `size: 1` list query (cache-shared with the list).
+
+Enforcement: review - whether a count is a set the viewer must act on, and whether the screen it leads to opens on exactly that set, needs the meaning of the count and the default filter of its destination.
 
 ## #49 Always-open master-detail boards
 
@@ -341,6 +415,8 @@ affordance renders. Select the first item on entry; when the selected item leave
 selection and swap to a full-width `EmptyState`. Judge selection survival by item id, never
 by index - index survival silently selects a different record on refetch.
 
+Enforcement: review - a constant `activePanel="detail"` is a valid shape elsewhere, and whether a board's detail must never close is a product decision; selection survival under a refetch is behavior, not text.
+
 ## #50 Reference cards vs workstation cards
 
 A read-only reference card on a detail panel (screening verdicts, declared items, vehicles -
@@ -351,6 +427,12 @@ currently unavailable. Custom row-action buttons outside the framework action co
 the row-action size (`size="xs"`) and join into ONE segmented group (`gap="none"`, `-ml-px`
 neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) - a run of individual
 `size="sm"` buttons inflates row height and wraps.
+
+## #51 Precedent-first screens
+
+SKILL.md item 51 states this invariant in full; it has no longer form here.
+
+Enforcement: review - whether two precedent screens were read and their structure cloned is a step in the work; the completion report names them.
 
 ## #52 Every action affordance is permission-gated
 
@@ -415,13 +497,17 @@ empty state goes through the shared fallback; both render it when `value` is nul
 or an empty string. A row whose enum is always present may keep the
 wrapper-plus-badge shape.
 
+Enforcement: review - `DetailBadgeField` takes any string, so whether `value` holds a boot-enum object or a plain string depends on the DTO field's type, which no line of the call shows.
+
 ## #54 The scaffold emits fields that say nothing
 
-A SimpliX-backed entity carries `deleted` and `deletedTimestamp`, and the scaffold turns
-both into a list column, a `cardContent` row, and a detail field. They carry no
+A SimpliX-backed entity carries `deleted` and `deletedTimestamp`. They carry no
 information: a soft-deleted row is filtered out of the list, so the flag always reads false
-and the stamp always reads `-1`. Strip them from the column set, the `cardContent` block,
-the detail section, the form, and the filter set, then clean up the imports left unused.
+and the stamp always reads `-1`. The CLI marks them (`isAuditField`) together with the system
+fields (`isSystemField`), and the console kit's list and detail templates skip every marked
+field, so a screen that draws one was edited by hand or came from a template that still emits
+it. Strip them from the column set, the `cardContent` block, the detail section, the form, and
+the filter set, then clean up the imports left unused.
 Same treatment for the entity PK and the audit quartet (`createdAt` / `createdBy` /
 `updatedAt` / `updatedBy`) - `CrudDetail`'s `auditData` slot already carries those. The
 framework has no declarative "hidden by default": `hiddenColumns` is a runtime toggle the
@@ -566,6 +652,8 @@ this and the list written under those conditions does not name them.
   element holds anyway, and it is the half of `Ref` that is assignable across the two
   copies. Widening it back to `Ref<T>` to "be more permissive" is what re-breaks it.
 
+Enforcement: review - `check-duplicate-contexts.mjs` decides it from the resolved package copies in the lockfile and `node_modules`, which no source line shows; run it after any change to dependency resolution.
+
 ## #61 Hiding a surface is not the same as not asking for it
 
 A hook runs wherever it is written. Gating only what a component *renders* leaves the
@@ -618,6 +706,24 @@ makes it a defect is that the endpoint is gated, which no static rule can see wi
 the project's own gate vocabulary. A rule that fires on the correct cases teaches the
 reader to ignore it. Find these by driving the screens as an account that lacks the
 thing, and watch for a refusal dialog with nothing behind it.
+
+## #62 A screen with no list beside it still lays out in columns
+
+SKILL.md item 62 states this invariant in full; it has no longer form here.
+
+Enforcement: review - whether a stack of short fields is drawn a thousand pixels wide is a property of the painted page at a viewport width.
+
+## #64 Every chip carries a mark, and the mark says whether this chip is on
+
+SKILL.md item 64 states this invariant in full; it has no longer form here.
+
+Enforcement: review - whether a chip carries its mark and flows at its label's width is a property of the painted page.
+
+## #65 Actions belong to the panel footer, in two rows when one will not hold them
+
+SKILL.md item 65 states this invariant in full; it has no longer form here.
+
+Enforcement: review - which buttons are the panel's actions, and whether they sit in the body or the footer, is the screen's composition, not a pattern.
 
 ## #66 A field that names another record peeks at it, never travels to it
 
@@ -712,6 +818,8 @@ that live in the project's own UI package and are absent from a project that has
 them. `audit-frontend.mjs` runs against projects with no peek machinery at all, where the
 finding would name a component that does not exist. Put the rule in the project's own gate
 script, and prove it on the broken form and the fixed form there.
+
+Enforcement: review - the finding names project components (`PeekTriggerButton`, `usePeekHost`) that a project without peek machinery lacks, so the detector belongs to the project's own gate script, as the section above says.
 
 ## #70 A sentence holding a value that can be absent is judged by the value, not by the record
 
@@ -839,12 +947,14 @@ would leave the reader a blank pane, which #76 forbids. A banner drawn once per 
 collection is a data row wearing a banner, and a per-row dismissal key is a key that moves. Both
 stay banners; neither is an excuse for a message that genuinely stands beside content.
 
-**Every message passes `icon`, card or banner.** `AlertBanner` draws no glyph unless the caller
-gives it one, and half the banners in a console reach only the readers who can separate the two
-tints - the rule about a glyph AND a tint is about every message, not only about cards. A card
-takes its glyph from `kind`, so converting a banner to a card fixes it by construction; a banner
-that stays needs the glyph passed by hand, mapped from its tone (danger · warning → the triangle,
-info · neutral → the info circle, success → the check).
+**Every message carries a glyph, card or banner.** The rule about a glyph AND a tint is about every
+message, not only about cards, because a message carried by tint alone does not reach a reader who
+cannot separate the two tints. A card takes its glyph from `kind`. `AlertBanner` takes the glyph
+its tone carries (danger and warning the triangle, success the check, info the info circle,
+pending the clock, processing the spinner; `neutral` carries no tint and no glyph), so `icon` is
+passed only to name the subject of the banner instead of its severity. A framework release that
+predates that default draws no glyph unless the caller passes `icon`: read the installed
+`AlertBanner` before relying on it.
 
 **The rule is read in one direction far more often than the other, and the direction that gets
 skipped is the standing message's.** A transient failure wearing a card is visible - somebody
@@ -897,6 +1007,8 @@ and a transient failure have the same shape, so such a gate holds the unconditio
 conditional half is read by whoever writes the screen. Say so where the gate is declared rather
 than leaving the silence to read as coverage.
 
+Enforcement: review - the standing half is decided from the painted page by `standingMessageDrawsNoClose` in `audit-rendered.mjs`; whether a message stands or answers a press is not in the source.
+
 ## #74 One value's state is changed in one place, on every screen that shows it
 
 A record's active / suspended / closed state is moved by an **action** - a row action on the list,
@@ -908,6 +1020,8 @@ the one that skips the reason.
 So a create/update form does not carry the state field, and the DTO's value for it comes from the
 record being edited. Where the state genuinely has to be set at creation time, the create form may
 carry it and the edit form still may not.
+
+Enforcement: review - which field is a record's state, and whether an action also moves it, is a fact about the entity.
 
 ## #75 A field the DTO accepts as absent can be returned to absent
 
@@ -1066,3 +1180,9 @@ the thing it gates: a filter list whose options come from a read the filter narr
 count is fetched by a query enabled only when that tab is open, a permission check reading a field
 the refused call would have returned. Ask of every gated read: **does anything the gate demands
 depend on this read's answer?**
+
+Enforcement: review - a builder returning `undefined` for two callers is the ordinary shape of every preview-then-submit screen, and what separates the defect is a fact about what the server decides downstream.
+
+## #79 Every screen is generated from kit templates, then customised
+
+SKILL.md item 79 carries the steps. The cases behind each rule, the lint fence and the gaps are in `screen-workflow.md`; the preflight a change reaching several screens runs is `screen-preflight.md`, and the traps a screen move meets are in `screen-playbook.md`.
