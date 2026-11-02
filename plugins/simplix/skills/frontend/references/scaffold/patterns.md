@@ -36,7 +36,7 @@ Key rules:
 - `createFileRoute` path must match the file system path with trailing slash
 - `validateCrudSearch` handles `?view=`, `?id=` search params
 - The `onNavigate` callback uses the **same route path** (without trailing slash) as `to:`
-- Route component name = Section + "Route" (e.g., `ProductsRoute`, `<Section>Route`)
+- Route component name = Section + "Route" (`<Section>Route`, as the example above names its products route)
 - Import page from the module package's `/pages` subpath
 
 ## Sidebar Config Pattern
@@ -182,9 +182,7 @@ Note: there is no `contract.ts` and no flat `hooks.ts` on the OpenAPI/Orval path
 
 ## CLI Command Reference
 
-> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** -
-> no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
-> detector rather than assuming; the handbook's Scaffolding table carries both rows.
+On a project whose `codegen` is `meta`, step 2 is `npx simplix meta -d <domain>` (`overview.md` Step 2).
 
 ```bash
 # 1. Create domain package skeleton

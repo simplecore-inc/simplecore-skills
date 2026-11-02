@@ -109,7 +109,82 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
 - **`simplix generated [path...]`** narrows the report to those files or directories. A screen whose content is the
   intended one against a template change that conflicts with it is kept with
   `simplix generated --rebase -y --adopt <path...>` (the options go before `--adopt`): it prints each diff, then
-  records the current render as the file's base.
+  records the current render as the file's base. `-y` / `--yes` records without asking once the diffs are printed;
+  a run with no terminal (an agent, CI) needs it, and an adoption is only as good as the diff someone read before it.
+
+## The commands beside the numbered steps
+
+Screen work uses more of the CLI than the four generators of the steps below. Each entry says what the command does
+and when an author runs it; `pnpm exec simplix <command> --help` lists the flags.
+
+**`simplix scaffold <entity>`** takes these flags besides `--module`:
+
+- `--blocks` lays down a `page.blocks.tsx` beside the page (and a blocks file beside each widget whose kit template
+  has a `.blocks` sibling), once. The page template draws the whole screen and imports no blocks, so the flag is for a
+  departure the author wants named apart because it is shared or long. A departure file the generic template
+  writes is never rendered again; the page does not read it until the author wires it in.
+- `--output <dir>` writes the widgets into a directory relative to the working directory instead of a module. The
+  recorded origin carries the directory, so `generated --all` reproduces it. A screen has a module in the standard
+  flow; use this only for a directory no module owns.
+- `--menu-group` and `--menu-icon` place the screen's menu entry (see "Which steps this project runs").
+- `--native` and `--app` write the mobile screen set; this document does not cover mobile.
+
+**`simplix add-page <kind> <name>`** writes a page that is not an entity list. The kind is `record-page`, `dashboard-page`,
+`static-page`, `error-page`, `auth-page` or `app-shell`; the `-page` suffix may be left off (`record` is
+`record-page`).
+
+- Name exactly one owner: `--module <name>` (a grouped module is `<group>/<name>`) writes
+  `modules/<name>/src/pages/<page>/page.tsx` and its barrel exports; `--app <name>` writes the page under
+  `apps/<name>/src/pages/<page>/`. An `app-shell` is written as `root-layout.tsx` under the owner's `src/app/layouts/`.
+- The template comes from the project's `.simplix/templates`, then the UI kit named by `templates.from`, then the
+  bundled one. `record-page`, `dashboard-page`, `static-page` and `error-page` have a bundled shape; `auth-page` and
+  `app-shell` exist only where the kit or the project supplies them, and the command refuses otherwise.
+- `--variant <name>` draws another shape of the same kind from `<kind>.<variant>.hbs` (a shell with a top bar
+  instead of a menu column is `app-shell --variant top-bar`). A variant is never bundled; the kit or project must ship
+  it. The variant is part of the recorded origin.
+- `--blocks` lays down a `page.blocks.tsx` departure file beside the page, once, as for `scaffold`.
+- The page is a tracked render, as a scaffolded screen is: rewritten while untouched, merged into once edited
+  against the render last written (`simplix generated` reports it). Where `templates.storiesDir` is set and the kit ships a `.stories` template for the
+  kind, the board frame is written too. The project's `generated.after` commands run when the page is written.
+
+**`simplix generated`** reports every generated file as untouched, edited or stale. `--all` regenerates, `--check` turns
+stale, conflict and no-base states into a non-zero exit, `--json` prints the report as data, `--share` reports what
+screens repeat, `--adopt <path...>` records a base, and `--yes` / `--rebase` qualify `--adopt`. The states and the
+shared-checkout cautions are in `../screen-workflow.md` rule 2 and rule 32.
+
+**`simplix meta -d <domain>`** (long form `--domain <domain>`) generates a domain package from SimpliX Meta alone (the `meta` path). Besides `--offline`
+(read the committed `meta.snapshot` instead of the server) and `--force` (rewrite `crud.config.ts` where one exists),
+`--strict` makes a tag that no domain claims fail the run before anything is written. Without it the command warns
+and generates the rest, so a new controller whose tag is listed under no domain stays invisible to the frontend. A
+tag left out on purpose is listed under `meta.ignoreTags`. Run it with `--strict` in a script or a gate; read the
+warnings when running by hand.
+
+**`simplix meta-removals [roots...]`** compares the committed Meta snapshot at a git revision (`--base`, default `HEAD`)
+with the snapshot in the working tree and fails when a type, field, operation or enum value that left the snapshot is
+still named by source under the roots. The roots default to `checks.metaRemovals.roots`, the snapshot to
+`checks.metaRemovals.snapshot` (else the one `openapi[].meta.snapshot` the config declares). A removal that is
+intended is listed in the JSON file `checks.metaRemovals.acknowledged` as `{ "acknowledged": ["field Owner.name"] }`;
+a key reads `field <Type>.<name>`, `type <Type>`, `operation <id>` or `enum <Name>`, exactly as the failure prints
+it. A removed field counts only in a file that also names its owner type or entity. Run it after any Meta refresh and
+in the project lint.
+
+**`simplix meta-diff <domain>`** compares a domain's Orval output with its DTO meta output and lists where the two disagree.
+It serves a project that is moving a domain from the `orval` path to the `meta` path, and it needs both trees
+(`src/generated/` and `src/generated-meta/`) to come from one `openapi` run against one server; a diff across two runs
+reports the backend's changes. `--expect <file>` names a JSON file of known renames, required-ness grounds and
+one-sided names (the facts the trees cannot state); `--package <dir>` points at a domain package outside `packages/`;
+`--json` prints the findings as data. A project on a single path does not run it.
+
+**`simplix cycles [roots...]`** reports every import cycle among the source files under the roots (default
+`checks.cycles.roots`), with the edges the bundler keeps. A cycle makes the dev server reload the whole page on a
+hot update, and a path the resolver cannot follow is reported as unresolved and also fails the run. Run it in the
+project lint, and after moving a file between a module and a package.
+
+**`simplix kit-fence`** (with `--lint <file>` and `--write`) is described in `../screen-workflow.md` rule 7.
+
+Commands that set a project up (`simplix init`, `simplix init-ui`, `simplix add-app`, `simplix i18n-codegen`) and the
+flags of `simplix openapi` beyond Step 2 are outside this document's subject; `add-domain` and `add-module` are
+Steps 1 and 4.
 
 ## Prerequisites
 
@@ -165,7 +240,8 @@ openapi: [
 npx simplix add-domain <domain-name> -y
 ```
 
-Creates `packages/domain-<domain-name>/` with the full package skeleton.
+Creates `packages/domain-<domain-name>/` with the full package skeleton. `--no-i18n` skips the locale setup, for a
+domain whose words come from nowhere else; `-y` takes every default so no prompt waits.
 
 **Verify**: Directory exists with `package.json`, `tsconfig.json`, `tsup.config.ts`, `src/`.
 
@@ -193,6 +269,9 @@ On the `orval` path this generates into `packages/domain-<domain-name>/src/` (on
 - `hooks/` - Re-exported hooks for consumer use
 - `mock/` - MSW mock handlers + seed data (entity stores)
 - `locales/` - i18n translation files
+
+`-d, --domain <name>` limits the run to one domain (the default is every domain of the spec), `-e, --entities <names>`
+to a comma-separated list of entities, and `--no-http` skips the `.http` request files.
 
 **Critical**: Never use a local JSON file if the config points to a live API URL. The tag names in the live API may differ from a local snapshot.
 
@@ -252,7 +331,7 @@ If either differs, run `simplix validate --fix`.
 npx simplix add-module <domain-name> -y
 ```
 
-Creates `modules/<domain-name>/` with FSD layer structure:
+Creates `modules/<domain-name>/` with FSD layer structure (`--no-i18n` skips the locale setup, `-y` takes every default):
 - `src/features/` - feature logic
 - `src/widgets/` - reusable UI components
 - `src/pages/` - page-level components (added by scaffold)
@@ -293,20 +372,21 @@ This generates per entity:
 
 Also updates: `widgets/index.ts`, `pages/index.ts`, `src/index.ts`, `locales/`, `tsup.config.ts`, `package.json`.
 
-#### The entity name is the hook file's name, and a wrong one produces a widget instead of an error
+#### The entity name must match an entity, and a name that matches none produces a widget instead of an error
 
-`scaffold <entity>` looks the entity up by the file name in the domain package's
-`src/hooks/` - `packages/domain-<name>/src/hooks/userAccount.ts` means
-`simplix scaffold userAccount`. On the `meta` path the hook files live in
-`src/generated-meta/hooks/` (SKILL.md invariant #1); read the name from there. A name that matches nothing (`user-account`, `UserAccount`,
-a table name) **does not fail**: the CLI falls back to a generic skeleton, emits widgets
-carrying mock data, and prints `Fields detected: id, name` with **no `Domain package:` line
-above it**. Those widgets do not compile, and the compile errors point at the widget rather
-than at the command that wrote it.
+`scaffold <entity>` normalises the argument's spelling (`UserAccount`, `user-account` and `userAccount` are one
+entity), then looks the entity up in SimpliX Meta on the `meta` path, and by the file name in the domain package's
+`src/hooks/` on the `orval` path (`packages/domain-<name>/src/hooks/userAccount.ts` means
+`simplix scaffold userAccount`). On `meta`, the entity is the name Meta states for a tag of a domain exported from
+meta; `simplix meta-info <Entity>` answers whether it is one. A name that matches nothing (a table name, a plural,
+a tag nothing exports from meta) **does not fail**: the CLI falls back to a generic skeleton, emits widgets carrying
+mock data, and prints `Fields detected: id, name` with **no `Domain package:` line above it**. Those widgets do not
+compile, and the compile errors point at the widget rather than at the command that wrote it. An entity Meta does
+name but states no scalar field for stops with an error instead.
 
 **Read the two lines the CLI prints before opening any file it wrote.** `Domain package:`
 present and a field list longer than `id, name` is the generated-from-the-contract path;
-either one missing is the fallback, and the answer is to re-run with the hook file's name,
+either one missing is the fallback, and the answer is to re-run with the entity's real name,
 not to fix the widget.
 
 The **folder** names come from the same string: `roleScopeGrant` writes
@@ -316,27 +396,29 @@ the CLI has no way to be told where they belong.
 
 ### Scaffolding into a module that already has widgets
 
-`scaffold` is written for an empty module. Run against one that already holds the entity's
-widgets it does two surprising things, and neither is announced.
+`scaffold` is written for an empty module. What it does to a file that is already there depends on whether the
+template stamps its output (a `@simplix-generated` line with a render fingerprint; the kit's widget and page
+templates do, a bare project template may not):
 
-**Existing widget files are not overwritten.** `list.tsx` / `form.tsx` / `detail.tsx` /
-`index.ts` are printed under `Generated files` and then skipped where a file is already
-there - the widgets do not change by one character, and nothing on screen says so. **To
-start from the generated shape, delete those four first, then run.** For a hierarchical
-entity (`parentId` / `path` / `depth` present) the list file is `tree.tsx`, so that is the
-name to delete instead of `list.tsx`.
+- **A stamped file** is rewritten while nobody has touched it, merged into once it is edited (against the render
+  last written, kept under `.simplix/generated/`), and left alone on a conflict. The command prints the
+  outcome per file (`written`, `merged`, `current`, `conflict`, `no-base`); a screen that was edited with no recorded base
+  reports `no-base` until `simplix generated --adopt` records one.
+- **An unstamped file** is kept as it is. The command prints `Skipping <file> - file already exists` and the widget
+  does not change by one character. To start from the generated shape, delete the file first, then run. For a
+  hierarchical entity (`parentId` / `path` / `depth` present) the list file is `tree.tsx`, so that is the name to
+  delete instead of `list.tsx`.
 
-**Six things it writes are wrong in a module that already exists**, and each is reverted
-after the run:
+**The module-level files it touches follow what the screen's files hold after the run**, and a run against a module that
+already exists still adds to them:
 
-| What | Why it is reverted |
-| --- | --- |
-| the `widgets` namespace in `locales/index.ts` | it points at `locales/widgets/{<locales>}.json`, which the CLI does not create, so the import fails |
-| an empty `SUBJECTS = {}` in `shared/auth/subjects.ts`, where the module's screens import `SUBJECTS` from the project UI package | it shadows the real `SUBJECTS`, and every `useCan` gate then resolves against nothing. Where the screens import it from `shared/auth/subjects.ts` itself, the file is the one invariant #52 fills - keep it and add the real group (a sibling screen's import says which) |
-| `@simplix-react/ui` / `@simplix-react/i18n` in `package.json` | sibling modules take them through the `simplix-react` meta-package; one module depending directly is exactly the peer-set split that makes a second context copy (invariant #60) |
-| `pages/<entity>/crud-page.tsx` and its `index.ts` | a second page beside the one already routed |
-| the new line in `pages/index.ts` | it exports that second page |
-| the new line in `widgets/index.ts` | it names the CLI's folder, which is the wrong one whenever the module keeps that screen elsewhere |
+| What | When the run writes it | What to check afterwards |
+| --- | --- | --- |
+| the `widgets` namespace in `locales/index.ts`, and `locales/widgets/<locale>.json` | only when a file of the screen reads the module's widgets catalogue, and not when `locales/index.ts` already registers `widgets` | the registration points at files that exist, in every locale of `i18n.locales` |
+| `shared/auth/subjects.ts` with an empty `SUBJECTS = {}` | only when a file of the screen imports `shared/auth/subjects` and no candidate (`subjects.ts`, `subjects.tsx`, `subjects/index.ts(x)`) exists | the entity's group is added to the map a sibling screen's import points at (invariant #52); a second empty map would shadow the real one |
+| `@simplix-react/ui`, `@simplix-react/i18n` and the kit in the module's `package.json` | only for a package a file of the screen imports and the module does not already resolve | a sibling module takes them through the `simplix-react` meta-package; one module depending directly is the peer-set split that makes a second context copy (invariant #60) |
+| `pages/<entity>/` (the page and its barrel) and the line in `pages/index.ts` | whenever the page is written | a second page beside the one already routed, whenever the module keeps that screen under another folder |
+| the line in `widgets/index.ts` | unless a line naming the folder exists | it names the CLI's folder, which is the wrong one whenever the module keeps that screen elsewhere |
 
 **A single-record settings entity gets nothing usable from the scaffold.** An entity the
 product exposes as one form over one row (a security policy, a feature toggle set) has no
@@ -490,9 +572,7 @@ pnpm --filter <domain-package> run codegen
 
 Or specify it directly:
 
-> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** -
-> no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
-> detector rather than assuming; the handbook's Scaffolding table carries both rows.
+On a `meta` project the command is `npx simplix meta -d <domain>` (Step 2 above).
 
 ```bash
 npx simplix openapi <spec-url-from-config> -d <domain-name> -y
@@ -730,7 +810,7 @@ If the output is degenerate, STOP - do not commit it. The usual root cause is a 
 
 Server enum translations flow into the domain package's `locales/*.json` via codegen's "Applied server i18n translations" overlay - they are NOT hand-authored on the frontend. A manual edit to a frontend enum locale is overwritten by the next codegen.
 
-**Fix**: set the label in the BACKEND `messages/enums/*.properties` (every locale; `EnumMessageTranslationTest` gates this), then regenerate - the label lands in the frontend locale automatically. Symmetrically, after any regeneration spot-check that the enum count in `locales/en.json` did not shrink (an overlay failure can pass typecheck while dropping enums - see Notes & Gotchas).
+**Fix**: set the label in the BACKEND `messages/enums/*.properties` (every locale; the backend's enum message test, which fails on an enum value with no message, gates this), then regenerate - the label lands in the frontend locale automatically. Symmetrically, after any regeneration spot-check that the enum count in `locales/en.json` did not shrink (an overlay failure can pass typecheck while dropping enums - see Notes & Gotchas).
 
 ## File Map
 

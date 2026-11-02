@@ -15,7 +15,7 @@ Conventions for widget/editor callback props and page header patterns used acros
 
 ## 2. Editor Props Pattern
 
-Editors (e.g., `ProductEditor`, `CategoryEditor`) follow:
+Editors (`<Entity>Editor`, such as the `inventory` example's product and category editors) follow:
 
 ```tsx
 interface EditorProps {
