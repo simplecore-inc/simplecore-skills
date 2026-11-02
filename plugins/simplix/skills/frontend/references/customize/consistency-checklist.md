@@ -18,7 +18,7 @@ Placeholders: `<Entity>` / `<entity>` (the PascalCase / camelCase entity name), 
 
 ### Cell rendering & alignment
 
-- **`CrudList.Column` has no `align` prop** → apply alignment inside the cell render (invariant #20): fixed-length codes, booleans, and bounded numerics center via `<Flex justify="center">`; long text stays left; unbounded numbers go right.
+- **`CrudList.Column` takes `align="end"` and has no `center` value** → a figure compared down the column uses `align="end"`; a centred code, boolean or bounded numeric is aligned inside the cell render via `<Flex justify="center">`; long text stays left (invariant #20).
 
 ```tsx
 <CrudList.Column<Entity> field="checkedInAt" header={fieldLabel("checkedInAt")} width={180} sortable>

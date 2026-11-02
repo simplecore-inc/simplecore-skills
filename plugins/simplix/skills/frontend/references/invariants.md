@@ -798,12 +798,12 @@ that value.
 host pushes rather than replaces and its close pops one level. Without that, walking two
 steps down a tree and pressing 「close」 drops the reader to the bottom of the pile.
 
-**The failure mode this invariant exists for is disuse, not misuse.** On one product the
-peek host, the trigger button and the dialog were built, reviewed and wired into the app
-root - and then exactly ONE label used them. Every screen written in the months after
-reached for a router link instead, because a link is what a reference looks like
-everywhere else on the web, and nothing failed when they did. By the time anybody counted,
-the wireframe board drew 225 reference fields and the code held one. **A convention that
+**The failure mode this invariant exists for is disuse, not misuse.** The peek host, the
+trigger button and the dialog get built, reviewed and wired into the app root - and then
+one label uses them. Every screen written afterwards reaches for a router link instead,
+because a link is what a reference looks like everywhere else on the web, and nothing
+fails when it does. By the time anybody counts, the board draws hundreds of reference
+fields and the code holds one. **A convention that
 has to be remembered at each field is kept the day it is written and broken every day
 after** - so the moment the machinery exists, the rule that every reference goes through
 it needs a detector, not a paragraph.
