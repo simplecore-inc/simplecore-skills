@@ -1,0 +1,57 @@
+# Screen playbook: the traps a screen move meets, and the step that avoids each
+
+Read before moving or building a screen, or running a multi-agent screen job. Each line is a trial
+and error that cost a round once; the step beside it is the whole fix. The method (preflight,
+simulate one screen at a time) is `screen-preflight.md`; the rules a screen follows are
+`screen-workflow.md`. Project-specific values (ports, account names, environment variables) belong
+in the project's `CLAUDE.md`, never here.
+
+## Moving a screen from the template
+
+| Trap | Step |
+| --- | --- |
+| `simplix add-page` / `scaffold` run the design check and a typecheck as an after-step; they exit non-zero while the tree is half renamed, although the page is written | take the page as written, finish the rename, then run the checks; do not read the exit code of the scaffold as "nothing happened" |
+| The design check refuses a moved screen whose entry still names its removed `page.blocks.tsx` | repoint the screen's design entry before scaffolding, then scaffold |
+| A deleted blocks file leaves its base under `.simplix/generated/`, which the report then lists | delete the base by absolute path with the file |
+| A story merge that fails midway leaves the generated base overwritten with the fresh render; the next merge compares fresh against fresh and keeps the old frame silently | take the base from `git show HEAD:<path>` and merge again; never rerun a failed merge |
+| A blocks file equal to its base was read as a stub and deleted although its base had been recorded after the customisation | a stub is a blocks file whose every hook returns `{}`; test the rule on a real stub and on a customised file |
+| A page template change makes every moved screen stale at once | stale is the normal state of an edited page; `simplix generated` fails only on a page that did not start from its template; re-scaffold one screen when its own change needs it |
+| A probe that finds nothing reports a clean 0 | prove every counting check on a known hit before trusting a 0; a command whose failure is swallowed reports 0 for the wrong reason |
+
+## Regions, figures and filters
+
+- A figure tile that counts rows presses a filter; the list must carry a filter for that field (the
+  template adds a faceted one) so the press shows as an active badge and clears from the bar. A
+  value a tab forces beats a filter-bar value over the same field: link such a tile to the tab.
+- Status counts are the census over every row; sum cards follow the list's committed filters, its
+  search text and its forced scope. Both are computed under the parameters the caller sends, so
+  "today", "last 24 hours", "granted only" and "held above zero" are parameters the screen adds,
+  never new backend figures.
+- Act-now tiles state their tone per status value (`status.tones`); a tile takes it only above zero.
+- The time range is a slot on the list-detail page, switched on with data (`field`, presets); the
+  per-slice counts come from the generated bucket read published in Meta, and the heatmap is drawn
+  in theme tokens (a ramp from the muted to the primary colour), never a named fixed palette.
+- A list keeps the leading column, the column its default sort names and the row-action column
+  drawn at any width; the columns menu offers every declared column.
+- A label in the backend bundle never names a unit the kind draws itself (cents, ms): the kind
+  owns the unit, the label names the quantity.
+- A verb the backend has and no type names takes its own kind and glyph in the kit; a borrowed
+  type or a labelled-button flag per screen is a second way to draw one region.
+
+## Several agents in one checkout
+
+- Commit by pathspec through a private index, and build the commit from the HEAD read at the start
+  with a compare-and-swap on the branch; a commit landed meanwhile is otherwise reverted file by
+  file (`~/.claude/references/shared-checkout-git.md`). After parallel work read `git show --stat`
+  of each commit: only that agent's paths.
+- A shared test-account sign-in helper that resets the password on expiry signs other agents out:
+  every agent creates and deletes its own account. A deleted identity's username cannot be reused,
+  so pick a fresh name.
+- A dev server restarted by an agent without the environment the project's tunnel needs breaks the
+  user's address; whoever restarts a server starts it the way the project documents.
+- A session restart ends the servers and agents it started; after a restart check the API, the
+  database containers and the dev servers before judging a screen (an empty menu is usually the
+  permissions read failing, not a missing role).
+- A volume that fills stops shell calls, containers and builds together; check free space before a
+  multi-agent job, keep scratch copies out of the scratch folder and delete what an agent made once
+  it is finished.
