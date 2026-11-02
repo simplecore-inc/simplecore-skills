@@ -85,8 +85,8 @@ in the project's `CLAUDE.md`, never here.
   (`list.viewToggle` in the entry, `--view-toggle` in the scaffold; the kit stores the last view
   under the list's `viewKey`). The columns follow the list's own width and the one
   `--card-min-width` layout token, so every card of every card list has the same column width, a
-  detail panel opening beside the list reflows the cards, and cards stand side by side from the
-  left with no gap between them. A screen sets no card width, maximum width or column count of its
+  detail panel opening beside the list reflows the cards, and the cards stand side by side from the
+  left with only the grid's gap between them and no empty track. A screen sets no card width, maximum width or column count of its
   own; a different width is a change to the token or the grid (`customize/framework-components.md`).
 - A card's labelled lines are read in both languages at the narrow and the wide width. A label that
   wraps (the label column is as wide as the longest label up to the `--console-card-label-max`
@@ -97,15 +97,15 @@ in the project's `CLAUDE.md`, never here.
 
 ## Rendered checks
 
-- Write one product runner that signs a test account in, opens a route, runs the kit's region probe for the page
+- Write one product runner that signs a test account in, resolves the board frame's story id from the board's
+  story index (printing the stories that exist on a miss), opens a route (a route behind a tab at the tab's URL),
+  asserts the screen's root slot or the document title before a capture is read (a sign-in page or an overlay
+  measures like a screen), runs the kit's region probe for the page
   type and every rendered audit check (`audit-rendered.mjs --print-all` prints them as JSON for a driver that holds
   a signed-in page), and prints a short result; an agent that writes its own loop per screen re-derives the
   sign-in, the root selector and the board frame's story id each time. The region signature is compared without
-  the row count, and a list that draws no rows is reported as not judged. The runner resolves the frame's story
-  id from the board's story index and, on a miss, prints the stories that exist (a story id comes from the
-  file's id and export name, not from the entity); it opens a route behind a tab at the tab's URL; and it asserts
-  the screen's root slot or the document title before a capture is read, because a sign-in page or an overlay
-  measures like a screen.
+  the row count, and a list that draws no rows is reported as not judged. A frame's story id comes from the
+  story file's id and export name, not from the entity's name.
 - The board frame and the live page differ in content (a row count sets a list's height, a record sets a badge's
   variant): control metrics between them are read, the region signature and the audit checks gate.
 - A region-signature difference that follows the data (a notice or figure the live data does not

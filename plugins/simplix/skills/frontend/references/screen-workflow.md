@@ -75,14 +75,15 @@ Read this before planning a screen or dispatching agents for screen work.
      the entity's own name, adds nothing and is merged into a neighbour or renamed. A head figure
      takes its label from the field it draws (`screen-playbook.md` § Regions, figures and filters).
      Notices stand between the head and the body whether the detail has tabs or not, because a notice
-     explains the fields beneath it. The rendered outline compare (head figure labels, section titles
-     and field labels, on the screen and on its frame) reports a repeated value as a difference.
+     explains the fields beneath it. The rendered outline compare reads head figure labels, section
+     titles and field labels on the screen and on its frame, so a repeat shows in it only as a
+     difference from the frame; read the outline for a value drawn twice.
    - **A reason in the entry is a checked fact.** A presentation reason that names a framework limit
      ("the list cannot sort by two keys") is verified against the framework source before it is
      written, and a sentence that states product behaviour ("the oldest credits are used first")
      names the code that does it; a claim with neither is rewritten as what the screen shows. A
      default sort over a column that is null for some rows is tried on the live data: the database
-     orders nulls first on a descending sort, so the rows with no value sit above the ones the
+     (PostgreSQL) orders nulls first on a descending sort, so the rows with no value sit above the ones the
      persona came for. Where no sort option places nulls last, the sort names the state column the
      question asks about. A triage list opens on the state its question names (a list of jobs opens
      on the failed ones, not on the routine runs that outnumber them); where the kit has no option
