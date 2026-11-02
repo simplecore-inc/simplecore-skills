@@ -10,9 +10,9 @@ in the project's `CLAUDE.md`, never here.
 
 | Trap | Step |
 | --- | --- |
-| `simplix add-page` / `scaffold` run the design check and a typecheck as an after-step; they exit non-zero while the tree is half renamed, although the page is written | take the page as written, finish the rename, then run the checks; do not read the exit code of the scaffold as "nothing happened" |
-| The design check refuses a moved screen whose entry still names its removed `page.blocks.tsx` | repoint the screen's design entry before scaffolding, then scaffold |
-| A deleted blocks file leaves its base under `.simplix/generated/`, which the report then lists | delete the base by absolute path with the file |
+| `simplix add-page` / `scaffold` run the project's `generated.after` commands (a project puts its design check and typechecks there); they exit non-zero while the tree is half renamed, although the page is written | take the page as written, finish the rename, then run the checks; do not read the exit code of the scaffold as "nothing happened"; a step that fails ends the later steps, so read which one failed |
+| A design check that reads a screen's `page.blocks.tsx` refuses a moved screen whose entry still names the removed file | repoint the screen's design entry before scaffolding, then scaffold |
+| A deleted generated file leaves its base under `.simplix/generated/`, and `generated --all` keeps a deleted file deleted while it keeps the base | delete the base by absolute path with the file (screen-workflow rule 22) |
 | A story merge that fails midway leaves the generated base overwritten with the fresh render; the next merge compares fresh against fresh and keeps the old frame silently | take the base from `git show HEAD:<path>` and merge again; never rerun a failed merge |
 | A blocks file equal to its base was read as a stub and deleted although its base had been recorded after the customisation | a stub is a blocks file whose every hook returns `{}`; test the rule on a real stub and on a customised file |
 | A page template change makes every moved screen stale at once | stale is the normal state of an edited page; `simplix generated` fails only on a page that did not start from its template; re-scaffold one screen when its own change needs it |

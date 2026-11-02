@@ -17,15 +17,15 @@ them is fixed by repeating the rule; each is fixed by the mechanism named beside
 
 | Cause | Mechanism that removes it |
 | --- | --- |
-| The generator writes a file once (an empty `return {}` blocks stub) and disowns it, so every author fills it from nothing and a template change never reaches it | every generated file, blocks included, keeps a render fingerprint and a base and is merged three ways on regeneration; a file without a fingerprint fails the generated-state check |
-| The template offers two ways to fill one region (two figure parts, two notice parts) | one slot per region; the second way is removed from the template, not documented beside it |
+| A template lays down an empty stub (a file of `return {}` hooks) for the author to fill, so every author builds from nothing, and a file the generator never touches again never receives a template change | the template lays down the whole page of its type; every generated page keeps a render fingerprint and a base under `.simplix/generated/` and is merged into on regeneration; a page without the marker fails the generated-state check; the one file outside the tracking is the departure file written on request with `--blocks` |
+| The template offers more than one way to fill a region (a second figure part, a second notice part) | one slot per region; the extra way is removed from the template, not documented beside it |
 | A kit part is planned or briefed without searching the kit, so a part that already does the job is rebuilt beside it | the part search below runs before any part is named in a plan or a brief; the brief names the existing part, never a behaviour to build |
 | A brief describes the result ("give the strip a collapse control") instead of the mechanism to reuse | a brief names the file and the export to use, and states that a second mechanism needs a written reason |
 | A correction reaches a running agent only when its turn ends, after it has committed | a change of direction stops the agent first, then sends the new brief; nothing is relayed to an agent mid-commit |
 | Several agents change the same template or shell in parallel | one owner per template and per shell file for the duration of the change; others wait for its hash |
 | Every screen is regenerated at once, so a defect in the template lands on all of them before one is seen | the pilot sequence below |
 | A kit part takes a per-screen presentation flag (draw these row actions as labelled buttons), so one screen opts out of the look every other screen has, often with a borrowed action type for a verb no type names | a part presents one way; a verb no type names gets its own icon or a new type in the kit, and a boolean prop that changes look rather than content is removed or carries a written reason |
-| A value renderer adds its own controls (copy, show whole) inside a list cell, so a row carries two kinds of buttons and one list looks unlike the others | a row's actions live only in its action strip; a cell shows a value, and copy or the whole text belongs to the detail |
+| A value renderer adds its own controls (copy, show whole) inside a list cell, so a row carries buttons of a second kind and one list looks unlike the others | a row's actions live only in its action strip; a cell shows a value, and copy or the whole text belongs to the detail |
 | A screen design records a decision (a description shown, a figure row) and nothing checks the built screen against it, so the design file says one thing and every screen renders another | each recorded decision has a rendered check: what the design says is shown renders in every locale, what it says is absent renders nothing |
 | A rule lives in prose only | each rule gets a machine check with a hit and a miss case before the widening starts |
 
@@ -34,11 +34,24 @@ generator, the template and the checks are.
 
 ## The kit's region contract is the authority
 
-What a page type draws in each region (the part, the `page.blocks` slot, the controls a region may
-hold) is not restated here: the kit ships it as metadata (`regions.json` in the design kit, for
-console-clarity `packages/console-clarity/regions.json`) and enforces it with a source check and a
-rendered check beside it. Read it before naming a part or a slot in a plan; a region it lacks is
-added there, with both checks proving it on a hit and a miss.
+What a page type draws, region by region, is data in the UI kit and is not restated here
+(`regions.json` in the design kit; for console-clarity, `packages/console-clarity/regions.json`).
+Per page type (list-detail, dashboard, tabbed, record, system) it lists the regions in drawing
+order. Per region it names the part that fills it, the `page.blocks` slot that feeds it, the DOM
+marks (`data-slot` or `data-part`) that place a control in it, and the control kinds it may hold.
+It also lists the boolean props of the slot interfaces that change content rather than look: an
+unlisted boolean prop is a per-screen presentation flag and fails.
+
+Two checks sit beside it. `scripts/check-regions.mjs` reads the kit source (a value part draws no
+control; every boolean slot prop is listed with its reason). `scripts/regions-rendered.mjs` takes
+the page's region signature (which control kinds appear in which region) and judges it against the
+page type's contract, so a second way of drawing a region fails the moment it is rendered, on any
+screen, without anyone comparing screens by eye. A product's runner signs in and opens each
+screen (`screen-playbook.md` § Rendered checks).
+
+Read the contract before naming a part or a slot in a plan or designing a screen. A region it lacks
+is added there, with both checks proving it on a hit and a miss; where a kit has no contract,
+writing it is the first step of the preflight.
 
 ## The preflight, in order
 
@@ -65,12 +78,12 @@ Before the change is applied to the screens, the skill, the templates and the ki
 against the preflight, and screens are rebuilt one at a time as a simulation of the workflow:
 
 1. **Re-check first.** Read the skill sections, the templates and the kit parts the screen will
-   use, and fix any that still teach a second path or disown a generated file. The census of
+   use, and fix any that still teach a second path or treat a generated file as outside the template's reach. The census of
    step 1 above is current before the first screen.
 2. **Rebuild one screen from nothing** through the documented steps only: design, scaffold or
    add-page from the type template, the board frame drawn from the design, the screen customised
-   inside slots to the frame, checks, browser in every locale. Rebuild means regenerate from the template and port the
-   screen's customisation into the slots, never edit the old file toward the new shape.
+   to the frame's design direction, checks, browser in every locale. Rebuild means regenerate from the template and
+   port the screen's customisation onto the regenerated page, never edit the old file toward the new shape.
 3. **Log every trial and error**: a step the documentation did not cover, a command that failed,
    a slot that was missing, a check that did not catch something, a choice the agent had to make
    alone. Each one is fixed at its cause (the skill, the template, the kit, the generator or the
@@ -87,17 +100,6 @@ against the preflight, and screens are rebuilt one at a time as a simulation of 
 
 Misreading: one screen rebuilt cleanly, so every screen is done. A clean rebuild settles its type,
 not the others, and only when the rebuild before it found nothing new.
-
-## The kit holds the region contract
-
-What a page type holds, region by region, is data in the UI kit, not prose in this skill: the
-kit ships a machine-readable region contract (for each page type, its ordered regions, the one
-part filling each, the control kinds a region may hold, and the blocks slot that feeds it), and
-every kit part declares the region it belongs to. Read the kit's contract before designing or
-customising a screen; where the kit has none, writing it is the first step of the preflight.
-The rendered check compares each screen's region signature (which controls appear in which
-region) with its type's contract, so a second way of drawing a region fails the moment it is
-rendered, on any screen, without anyone comparing screens by eye.
 
 ## The re-audit is a script, run until it prints clean
 

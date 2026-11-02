@@ -20,8 +20,9 @@ Read this before planning a screen or dispatching agents for screen work.
    menu.
    **A frame mirrored from the screen's own template is not a design, and agreement against such a
    frame proves nothing**: both sides come from one render, so zero differences says the template
-   matches itself. A screen whose blocks are still the empty stub, or whose list still sorts by its
-   primary key, has not been customised.
+   matches itself. A screen whose page holds only what the template drew while its design asks for
+   more (a notice, a figure the template does not draw), or whose list still sorts by its primary
+   key, has not been customised.
    - **The gate judges what the page draws, not whether it was edited.** A page laid down whole
      from the template draws the description its catalog states and, where the entity's Meta
      counts, the figure row; a design asking for only those passes before any edit. Notices, and
@@ -46,11 +47,13 @@ Read this before planning a screen or dispatching agents for screen work.
      behaviour is added to it. The screen that already uses the part well is the reference the
      others are made identical to. Each screen type has one template that lays down a complete page of
      that type (header and its description from the screen catalog, figures, notices, tabs, the
-     list or the type's body, panels), reused by every screen of that type. A screen is generated
-     once from it and then edited directly; a blocks file holds a departure worth naming, never the
-     whole screen, and departures many screens repeat are counted and lifted into the template.
-     The cause of screens that diverge is an empty start: a template that lays down a stub and
-     leaves the author to build the screen from nothing, from a sibling or from memory. Misreading:
+     list or the type's body, panels), reused by every screen of that type. A screen starts from
+     it and is then edited directly, and a later template change is merged into the edited file
+     (rule 2); a blocks file holds a departure worth naming, never the whole screen, and departures
+     many screens repeat are counted and lifted into the template.
+     The cause of screens that diverge is an empty start: a template that lays down a stub (a file
+     of `return {}` hooks) and leaves the author to build the screen from nothing, from a sibling
+     or from memory. Misreading:
      forbidding hand edits after generation, or building merge machinery so that every screen can
      be regenerated; the aim is a common start, and a generated file edited by hand is the
      intended life of a screen. A census
@@ -61,7 +64,7 @@ Read this before planning a screen or dispatching agents for screen work.
      and token-only, with its Storybook template and tests, so the next screen can reuse it.
    - Misreading: "most screens are a list and a detail, so the screens are finished" while the
      description, cards and notices were never decided.
-1. **Four steps, in order, after step 0.** Template on the kit, then scaffold (which lays down
+1. **The steps run in order after step 0.** Template on the kit, then scaffold (which lays down
    the screen and the board frame as starting points), then draw the board frame as the design
    from the step-0 entry, then customise the screen to the frame's design direction. The board is
    the plan and the work runs from the board to the screen. A gap at any step is closed at that
@@ -69,7 +72,10 @@ Read this before planning a screen or dispatching agents for screen work.
 2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
    edited. The CLI rewrites an untouched file, and merges a template change into an edited one
    three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is
-   reported, never written. Block files hold the decisions that belong to one screen only.
+   reported, never written unless `--write-conflicts` asks for markers. A page is laid down whole by
+   its type's template and imports no blocks file. A departure file (`page.blocks.tsx`, written once
+   when `scaffold` or `add-page` is given `--blocks`) holds the decisions that belong to one screen
+   only, and is not rendered again.
    - `simplix generated` lists every generated file and story as `untouched`, `edited` or `stale`
      (untouched, but the current templates render something else). It fails only for a page file
      (page, crud-page or list-page under `src/pages/<page>/`, or the root layout) that lacks the
@@ -79,10 +85,18 @@ Read this before planning a screen or dispatching agents for screen work.
      `@simplix-render` fingerprint, which is what lets the report re-render it; a file stamped
      without one is `unchecked`.
    - `simplix generated --all` regenerates every recorded screen and page; an edited file is
-     `merged`, `current`, `conflict` (left alone unless `--write-conflicts`) or `no base`.
+     `merged`, `current`, `conflict` (left alone unless `--write-conflicts`) or `no base`, and a
+     file deleted on purpose stays deleted (its base is kept). `--check` adds an exit code for
+     stale, conflict and no-base files and for an edited file a clean merge would still move;
+     `--json` prints the report as data; a path argument narrows any of them to those files or
+     directories.
    - An edited file with no base is adopted after a reviewed diff: `simplix generated --adopt
      <path...>` prints the diff between the file and its current render, and records that render as
-     the base once a person confirms every difference is a deliberate customisation.
+     the base once a person confirms every difference is a deliberate customisation. `--yes`
+     records without asking once the diffs are printed (a run with no terminal needs it); `--rebase`
+     also takes a file that already has a base, keeping its content as the intended one and
+     declining a template change that conflicts with it. A file with no recorded origin gets one
+     where it can be inferred.
    - `simplix generated --share` reports per screen the lines in blocks and edited files against
      the generated lines, and lists each customisation a second screen repeats (rule 6).
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
@@ -141,8 +155,16 @@ Read this before planning a screen or dispatching agents for screen work.
      page's language; pass `--options '{"expectLang":"ko"}'` when the locale is known.
 7. **The fence is mechanical.** The kit lists the framework parts that screens must not import
    directly (`simplix.fence` in its package.json), and the project lint refuses them.
-   `simplix kit-fence` fails when the lint config's `no-restricted-imports` override differs from
-   the kit's list; `simplix kit-fence --write` copies the list in.
+   `simplix kit-fence` fails when an override of the lint config that holds `no-restricted-imports`
+   differs from the kit's list, naming each override by its files; `simplix kit-fence --write`
+   copies the list into every such override and keeps the `patterns` each one restricts. The lint
+   file is `.oxlintrc.json` unless `--lint <file>` names another. The command needs
+   `templates.from` in `simplix.config.ts` and an override that already holds the rule; a config
+   that narrows imports per module group carries the fence in each group's override.
+   Two more checks belong in the project lint beside it: `simplix cycles` (an import cycle makes
+   a hot update reload the whole page) and `simplix meta-removals` (a Meta surface that left the
+   snapshot while code still names it); their roots and files are the `checks` keys of
+   `simplix.config.ts` (`framework/configuration.md`).
 8. **A gap is closed in the generator.** A screen with no page kind or no overridable template
    gets a generic one in the CLI, with tests and no product names. A hand-built screen is the last
    resort, and a comment states why no generator change could serve it.
@@ -220,11 +242,12 @@ Read this before planning a screen or dispatching agents for screen work.
     the min-content width, so a long token in a flex child runs past the edge (and is clipped by a
     dialog). A fit check that passed before such a fix is re-run after it.
     Example: a 40-character id in a detail section body overflowed with `break-words` and wrapped with `wrap-anywhere`.
-26. **A configured directory the CLI cannot find is skipped, not reported.** After any move or
-    rename, check that every path in `simplix.config.ts` (`templates.storiesDir`, the template
-    roots) resolves, and that the recorded bases under `.simplix/generated/` sit under paths that
-    still exist; `simplix generated` stays green over a stories directory that is gone.
-    Example: `storiesDir` pointing at a pre-move path kept every board story out of the report until it was fixed, which surfaced one `no base`.
+26. **A moved directory leaves its recorded state behind.** The commands refuse a
+    `templates.storiesDir` or a `generated.after[].cwd` that is not an existing directory, naming the
+    option and the path it resolved to. The paths they do not read stay silent: after any move or
+    rename, check that the template roots resolve and that the recorded bases under
+    `.simplix/generated/` sit under paths that still exist (a base whose file moved is the record
+    rule 22 deletes).
 27. **A generator run is followed by a package and locale check.** After `add-module`, `scaffold` or
     `add-page`, compare the module's `package.json` with a sibling's: dependency versions use the
     workspace `catalog:`, and the module declares the kit and the domain its generated widgets
@@ -309,12 +332,12 @@ Read this before planning a screen or dispatching agents for screen work.
 - **Prevention.** Every app declares the same kit package the design reference names (the board's
   `uiKit`), and a check compares them.
 
-## Only page templates could be overridden, found after the plan assumed all could
-- **What happened.** The plan put the kit wiring into project templates, then discovered the CLI
-  let a project take over page templates only. List, detail and form widgets always came from the
-  bundled set.
-- **Prevention.** Step 0.4 runs a feasibility review first: for every screen, the command that
-  generates it and the templates it reads. A gap found there is closed in the CLI before any
+## A plan assumed every file a screen needs could be drawn from a template
+- **What happened.** The plan put the kit wiring into project templates, then found a file kind
+  with no overridable template: it came from the bundled set and carried none of the kit's parts.
+- **Prevention.** A feasibility review runs before the plan commits: for every screen, the command
+  that generates it and the templates it reads (`.simplix/templates`, then the kit named by
+  `templates.from`, then the bundled one). A gap found there is closed in the CLI before any
   screen work starts.
 
 ## A rule was invented that the user never set
@@ -341,7 +364,7 @@ Read this before planning a screen or dispatching agents for screen work.
   lockfile. A scratch module is created outside the workspace globs, or removed together with its
   lockfile entries before the agent reports.
 
-## Two screens composed the framework's parts by hand instead of the kit's
+## Screens composed the framework's parts by hand instead of the kit's
 - **What happened.** Lists and details were assembled directly from the framework's
   `CrudList` and `ListDetail`, so they lacked the kit's list frame and its detail presentations
   and switch.
