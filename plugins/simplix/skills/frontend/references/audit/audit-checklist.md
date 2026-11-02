@@ -513,7 +513,7 @@ grep -rnE "StatCard" --include="*.tsx" modules/ -A6 | grep -E "className=\{.*\?.
 ```
 Expected: 0 - use `tone=... highlighted={cond}`.
 
-## Project Layout Composition Violations (SectionHeaderBar / PanelList / SelectableListItem / IndentedSubsection)
+## Project Layout Composition Violations (section header strip / side-panel list / selectable row / indented subsection)
 
 ```bash
 # Raw section header strip
@@ -522,10 +522,10 @@ grep -rnE '(border-b|className=)[^>]*bg-muted/(30|40|50|60)[^>]*px-' --include="
 grep -rnE 'bg-primary/10 (text-primary|font-medium)' --include="*.tsx" modules/
 # Raw indented sub-section
 grep -rnE 'border-l-2 border-border/50 pl-4' --include="*.tsx" modules/
-# Hand-rolled side-panel state machine (inline <Skeleton> loading list under a panel header) -> PanelList
+# Hand-rolled side-panel state machine (inline <Skeleton> loading list under a panel header) -> the project's side-panel list
 grep -rnE '(Array\.from\([^)]*\)|\.map\([^)]*\))[^;]*<Skeleton' --include="*.tsx" modules/
 ```
-Expected: 0 - adopt the project-local layout primitives (e.g. `SectionHeaderBar` / `PanelList` / `SelectableListItem` / `IndentedSubsection`) from the project UI package's `layout` entry (`@<scope>/<ui-package>/layout`). Exception: documented raw-layout exemptions (e.g. a `PanelList` whose loading/empty branches are not a header + list state machine).
+Expected: 0 - adopt the project-local layout primitives (a section header bar, a side-panel list, a selectable list item, an indented subsection) from the project UI package's `layout` entry (`@<scope>/<ui-package>/layout`). Exception: documented raw-layout exemptions (e.g. a side-panel list whose loading/empty branches are not a header + list state machine).
 
 ## LabeledField Violations (re-inlined label + control settings row)
 

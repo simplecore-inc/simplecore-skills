@@ -165,7 +165,7 @@ import { createTestQueryClient, createTestWrapper, createMockClient, waitForQuer
 
 ### Form API Gotchas
 
-- **`setFieldMeta` updater**: Don't annotate the param type - let TanStack Form infer `AnyFieldMetaBase`. Writing `(meta: Record<string, unknown>)` causes TS2345.
+- **`setFieldMeta` updater**: Don't annotate the param type - let TanStack Form infer its own field-meta type (`AnyFieldMetaBase` in `@tanstack/react-form`). Writing `(meta: Record<string, unknown>)` causes TS2345.
 - **`mapServerErrorsToForm`**: Duck-types error objects, exploring `error.errorDetail` → `error.data.errorDetail` → `error.data.errors` → `JSON.parse(error.body)` in order. Works with all error classes (`ApiError`, `HttpError`, `ApiResponseError`). No `@simplix-react/contract` import needed.
 
 ## One physical copy per framework package - a second copy fails silently

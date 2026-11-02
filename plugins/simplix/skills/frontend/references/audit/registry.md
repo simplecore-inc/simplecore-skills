@@ -53,7 +53,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 ## Layout primitives, chrome & structural composition → `registry/layout-and-chrome.md`
 
 - **ListDetail Dialog Height Control** - `ListDetail` dialog variant (`variant="dialog"`) supports a `dialogHeight` prop to control the dialog's height
-- **SectionHeaderBar / PanelList / SelectableListItem / IndentedSubsection (project layout)** - These are project-specific composition patterns (domain-agnostic but not generic enough for the framework - se
+- **Project layout primitives (section header strip, side-panel list, selectable row, indented sub-section)** - Project-specific composition patterns that live in the project's UI package `layout` entry, not in `@simplix-react/ui`; the names are the project's own
 - **Layout primitive variants (Stack / Grid)** - Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 overflow-y-auto">`); fixed cells
 - **AssignmentChip trailing slot** - `AssignmentChip` accepts a `trailing?: ReactNode` slot rendered between the label and the remove button. Use i
 - **Section variant convention (detail=flat / form=card)** - Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudForm.Section` uses `variant="card
@@ -62,15 +62,86 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 ## List toolbars, filters & counts → `registry/lists-and-filters.md`
 
 - **ListTotalBadge (the "Total N" badge the FilterBar draws)** - A list's total badge is drawn by the FilterBar's `count` prop, which renders `ListTotalBadge` internally - never passed through `leading`
-- **User-select filter (useUserOptions + faceted dropdown)** - Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `fac
+- **Reference filter and picker (user-account references as the example)** - A filter over a reference field is a `faceted` dropdown fed by the entity's options or facet loader (`createEntityOptions`, `createEntityFacet`), never a raw-id text filter; a form picks the reference through a server-searched `createEntitySearch` hook drawn by `EntitySearchCombobox`
 - **useFilterBarState (FilterBar on non-CrudList surfaces)** - A surface whose query is NOT a `useCrudList` list (an aggregation report, a dashboard section, a custom endpoi
 - **FilterBar count prop (the one total badge)** - The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internall
-- **StatusCard placement (page-level status strip only)** - On a page with an always-visible status strip (summary `StatusCard`s under the page header), tab bodies must N
+- **Figure strip placement (page-level strip only)** - On a page with an always-visible figure strip, tab bodies must NOT render their own tiles or stat cards; tab-level aggregates live in the FilterBar toolbar line
 
 ## Domain-shared widgets (calendar chrome and per-domain widgets) → `registry/domain-widgets.md`
 
 - **CalendarShell / CalendarApiBridge / CalendarColorLegend (calendar package)** - Every calendar screen composes its chrome from the calendar package, inside a `CalendarProvider`:
 - **A widget several boards of one domain draw (@<scope>/<ui-package>/<domain>)** - Placeholder: one component per domain in the UI package, and one lifecycle predicate table in the module's `features/`; the project's registry names them
+
+## Machine-checked rules
+
+Every rule of `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` is listed here, either under the registry entry whose pattern it guards or under the invariant it enforces. `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --list` prints each rule's id, level (`error` must be 0, `review` is judged), provenance and description; a rule added to the script is added to this section in the same change.
+
+### Rules that guard a registry entry
+
+| Registry entry | Rule ids |
+| --- | --- |
+| Shared search popover (SearchPopover) | `command-primitives` |
+| SelectField compact mode | `raw-select-import` |
+| Loading indicator (Button `loading` prop) | `loader-spinner`, `spinner-beside-mark` |
+| Status tone system, domain tone maps, status badge | `status-map-resurrect`, `inline-dark-tone-map`, `per-screen-enum-badge`, `status-badge-enlarged` |
+| A domain's editor primitives (edge handle and shared constants) | `cursor-col-resize`, `drag-threshold-copy` |
+| System field exclusion | `system-field-exposure`, `soft-delete-field-drawn` |
+| ID/UUID exposure prevention | `header-id-title`, `delete-confirm-id`, `hand-typed-id` |
+| Empty state | `empty-slot-returns-nothing`, `scope-filter-empty-state` |
+| DetailListRow / LabeledField (fixed-height label and value rows) | `wrapping-value-in-fixed-row`, `long-value-in-a-label-row` |
+| FilterBar count prop (the one total badge) | `filterbar-total-badge-in-leading` |
+| Peek label and peek host | `peek-label-takes-onpeek` |
+| Row action standardization | `row-action-that-reads-as-text`, `row-action-type-fixed-under-a-varying-label`, `row-action-that-only-some-rows-draw`, `row-actions-as-nameless-column` |
+| Layout primitive variants (Stack / Grid) | `raw-layout-div`, `wrap-string-prop`, `split-row-without-a-width` |
+
+### Rules owned by an invariant
+
+These rules guard a convention that has no shared component to register; the invariant (SKILL.md, full form in `invariants.md`) holds the reason, and the rule's description holds the defect.
+
+| Invariant (the first one the rule cites) | Rule ids |
+| --- | --- |
+| #2 | `mutator-does-not-unwrap-the-boot-envelope` |
+| #3 | `list-adapter-spreads-a-filters-property-that-is-not-there`, `unfrozen-now-in-a-request`, `comma-in-sort-token` |
+| #4 | `schemas-file-exports-a-type` |
+| #5 | `package-export-without-source`, `package-types-not-source` |
+| #8 | `dead-dialog-width` |
+| #10 | `unknown-enum-name`, `unresolved-boot-enum-label`, `boot-enum-read-through-a-cast`, `boot-enum-stringified-with-a-nullish-default`, `lowercase-enum-label`, `enum-default-unresolved` |
+| #12 | `callback-prop-names`, `callback-done-name` |
+| #13 | `filterbar-maxbadges` |
+| #14 | `boolean-faceted` |
+| #15 | `chip-filter-equality-field` |
+| #16 | `filter-category-order` |
+| #21 | `card-drops-status` |
+| #27 | `markdown-code-fence-without-language` |
+| #30 | `hand-written-endpoint-url`, `mock-seed-missing` |
+| #31 | `hand-rolled-detail-footer`, `list-detail-page-root-hands-down-no-height` |
+| #31a | `local-page-heading` |
+| #31c | `page-root-padding` |
+| #32 | `unpaged-table-without-reason`, `list-search-mapped-by-hand`, `paged-list-in-a-page-not-generated-as-a-list`, `forced-list-keeps-a-stale-page`, `capped-embedded-list`, `forced-narrowing-in-transform-filters` |
+| #33 | `read-failure-reads-as-loading`, `read-failure-falls-through-loading-guard`, `read-failure-reads-as-empty`, `form-seeded-from-read-without-error-branch`, `link-acts-before-it-reads`, `silent-mutation-outcome` |
+| #34 | `batch-update-built-from-a-list-read`, `optional-select-cannot-be-emptied`, `write-only-form-field`, `create-and-update-share-one-body`, `update-body-enumerated` |
+| #36 | `instant-formatted-by-hand`, `enum-label-empty-fallback`, `stringified-boot-enum`, `unitless-rate-field`, `panel-record-from-list-page` |
+| #37 | `native-time-input`, `local-time-helper-copy` |
+| #38 | `full-enum-options`, `two-state-branching` |
+| #39 | `deleted-toggle-filter`, `uuid-audit-filters` |
+| #40 | `a-form-reports-a-refusal-as-a-toast`, `silent-clipboard-copy`, `refusal-told-twice` |
+| #42 | `browser-zone-offset-math` |
+| #44 | `translator-options-arg` |
+| #46 | `outward-action-without-confirmation` |
+| #52 | `ungated-create-button`, `inline-permission-group`, `unsubscribed-access-policy-read`, `ungated-entity-action`, `gated-callback-wrapped-in-an-always-truthy-arrow` |
+| #55 | `one-message-for-several-states` |
+| #58 | `unbounded-overlay-panel`, `second-viewport-ceiling-inside-a-dialog` |
+| #61 | `permission-blanked-tab` |
+| #63 | `tab-panel-repeats-its-tab-name` |
+| #67 | `screen-picks-action-variant` |
+| #69 | `screen-picks-detail-presentation` |
+| #70 | `translation-frozen-at-mount` |
+| #71 | `paged-panel-collection-is-not-a-list`, `bounded-table-without-its-border` |
+| #72 | `audit-strip-outside-the-first-tab` |
+| #77 | `session-token-read-from-the-query-string` |
+| #79 | `blocks-file-imports-a-value-from-its-generated-widget`, `important-outline-removal` |
+| Scaffold and catalogue wording (locale rules) | `missing-translation-key`, `dropped-interpolation`, `counted-string-without-number-format`, `number-format-on-a-value-that-is-not-a-number`, `translation-key-prefix-table-has-a-dead-entry`, `empty-locale-value`, `locale-missing-sections`, `locale-untranslated`, `ko-particle-after-placeholder`, `scaffold-header-placeholder` |
+| Other defects named by the rule itself | `unguarded-route`, `internal-address-as-a-bare-anchor`, `phantom-projection-read`, `unnamed-icon-button`, `jsx-child-line-comment`, `size-shorthand`, `description-as-filter`, `visible-native-file-input`, `single-line-free-text` |
 
 ## Adding a new pattern
 
@@ -80,4 +151,4 @@ Either way, the shape of an entry is the same:
 
 1. The full section (usage, props, migration recipe, detection greps) in the matching detail file - a new detail file only for a genuinely new category.
 2. Its one-line entry in the index under that category.
-3. If the pattern is regex-detectable, a rule in the audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`) and a recipe section in `audit-checklist.md`.
+3. If the pattern is regex-detectable, a rule in the audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`), a recipe section in `audit-checklist.md`, and the rule's id in the Machine-checked rules section above.

@@ -42,8 +42,8 @@ marks (`data-slot` or `data-part`) that place a control in it, and the control k
 It also lists the boolean props of the slot interfaces that change content rather than look: an
 unlisted boolean prop is a per-screen presentation flag and fails.
 
-Two checks sit beside it. `scripts/check-regions.mjs` reads the kit source (a value part draws no
-control; every boolean slot prop is listed with its reason). `scripts/regions-rendered.mjs` takes
+Checks sit beside it in the kit's `scripts` directory. `check-regions` reads the kit source (a value part
+draws no control; every boolean slot prop is listed with its reason). `regions-rendered` takes
 the page's region signature (which control kinds appear in which region) and judges it against the
 page type's contract, so a second way of drawing a region fails the moment it is rendered, on any
 screen, without anyone comparing screens by eye. A product's runner signs in and opens each

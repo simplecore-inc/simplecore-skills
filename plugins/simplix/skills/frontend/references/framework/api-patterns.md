@@ -700,7 +700,7 @@ envelope into the four keys the guard reads (`permissions`, `roles`, `isSuperAdm
 
 **Without it every request is 200, the console is clean, and the shell renders with nothing
 inside it.** The permission map did arrive, so `useCan` answers correctly and the side nav
-filters correctly - the two layers anybody would check are the two that work. Only opening
+filters correctly - the layers anybody would check (`useCan` and the side nav) are the ones that work. Only opening
 the application in a browser shows the empty frame; a route that answers 200 on every probe
 and paints the shell is what this looks like from below.
 

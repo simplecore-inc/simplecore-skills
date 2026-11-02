@@ -2,7 +2,7 @@
 
 `simplix.config.ts` is the central configuration file for simplix-react projects. It is loaded at project root by the CLI and controls code generation, HTTP environments, and OpenAPI integration. For the framework-level type signatures behind each option, see the simplix-react framework documentation - this reference documents how a project configures the CLI.
 
-Valid top-level keys are: `plugins`, `api`, `queryBuilder`, `packages`, `http`, `codegen`, `i18n`, and `openapi`. There is no top-level `mock` key.
+Valid top-level keys are: `plugins`, `api`, `queryBuilder`, `packages`, `http`, `codegen`, `i18n`, `openapi`, and the screen-generation keys `templates`, `modules`, `routes`, `scaffold`, `references`, `generated` and `checks` (§ Screen generation keys). There is no top-level `mock` key.
 
 ## File Location
 
@@ -121,8 +121,8 @@ Each environment defines a `baseUrl` used in generated `.http` test files.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `locales` | `string[]` | - | Locales for which message catalogs are generated/maintained |
-| `defaultLocale` | `string` | first locale | Fallback locale |
+| `locales` | `string[]` | `["en", "ko", "ja"]` | Locales for which message catalogs are generated/maintained |
+| `defaultLocale` | `string` | `"en"` | Fallback locale |
 
 > **Note - no `mock` key.** `simplix.config.ts` has no top-level mock configuration. Mock list page sizing is a per-handler concern of `deriveMockHandlers` (its `MockEntityConfig` argument), not a global config option. On the codegen path the mock layer is built from `createMockEntityStore` + generated `create<Entity>Handlers` + `wrapEnvelope` rather than `deriveMockHandlers` - see `scaffold/overview.md`. Refer to the simplix-react framework documentation for the `MockEntityConfig` contract.
 
@@ -137,6 +137,29 @@ When `true`, generated files include a header like:
 ```ts
 // This file is auto-generated. Do not edit manually.
 ```
+
+### Screen generation keys
+
+These keys steer `scaffold`, `add-page`, `generated` and the project checks. Every directory they name is relative to
+the project root, and the commands refuse a `templates.storiesDir` or a `generated.after[].cwd` that is not an
+existing directory, naming the option and the path it resolved to.
+
+| Key | What it holds |
+| --- | --- |
+| `templates.from` | The UI kit package (or a template directory) whose templates draw pages and widgets; the project's own `.simplix/templates` overrides it file by file. Without it the CLI looks for one root dependency that declares `simplix.templates` in its `package.json`. |
+| `templates.storiesDir` | The design reference's screens directory. A kit template with a `.stories` sibling makes a scaffold or `add-page` write the screen's board frame there. Without it no frame is written. |
+| `templates.story` | `id` and `title` patterns over `{entity}` and `{Entity}` for the generated frame, and `files`: a map from a scaffold key (an entity's kebab name, or an `add-page` story's default file name without `.stories.tsx`) to the frame file a board already draws it in, so the scaffold writes that frame instead of a second one. |
+| `modules.groups` | Directory names under `modules/` that hold modules instead of being one (`["admin", "portal", "shared"]`), so `--module admin/user` addresses `modules/admin/user`. |
+| `modules.dependencies` | Packages `add-module` declares in every new module's `package.json` (name to version range). |
+| `routes.<group>` | Where a list screen of a module group is routed: `dir` (the app's file-route directory), `template` (the route template, `route.tanstack` in the console kit), `paths` (an override per entity kebab name where the plural is not the path), `except` (entities whose list is reached only inside another screen, so they get no route), and `menu` (`file`, `marker`, `icon`, `catalogs` per locale, `keyPath`, `gate`). Absent, no route and no menu entry is written. `menu.gate.subject` and `menu.gate.table` make the entry read the permission group from the project's subjects table (invariant #52). |
+| `scaffold.defaultSortFields` | Fields a generated list may open sorted by, in order of preference, newest first unless a direction is given. An entity whose Meta declares a default sort uses that; the row key is never used. |
+| `scaffold.maskedSuffix` | The suffix of a masked twin of a field (`"Masked"`): a record carrying both draws only the masked one. |
+| `scaffold.referencePickers` | Per referenced entity (camel case): `hook` searches it for a form picker, `from` is the module the hook comes from, `facet` is the hook that filters a list over a key of that entity by the record's name. A required reference to an entity not listed is reported by `simplix check-screen`. |
+| `references.peeks` | The peek kind a reference opens, keyed by the reference's stem, where the contract does not name the referenced entity. |
+| `generated.format` | A function over `(source, path)` that formats every render before it is written, recorded as a base or compared, so an untouched file stays untouched after the project's formatter. |
+| `generated.after` | `[{ cwd, command, onFailure? }]` run in order once after `scaffold`, `add-page` and `generated --all` have written files, never for a report-only `generated`. A step that exits non-zero ends the run and fails the command unless it states `onFailure: "continue"`. A project puts here what is derived from the generated files (a board's catalogs, a design check, a typecheck). |
+| `checks.cycles.roots` | Directories `simplix cycles` reads when it is given none. |
+| `checks.metaRemovals` | `roots`, `snapshot` and `acknowledged` for `simplix meta-removals` (`scaffold/overview.md` § The commands beside the numbered steps). |
 
 ### openapi
 

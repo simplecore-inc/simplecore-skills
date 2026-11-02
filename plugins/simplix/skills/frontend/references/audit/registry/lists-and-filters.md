@@ -22,19 +22,19 @@ A list's total badge is drawn by the FilterBar's `count` prop, which renders `Li
 <CrudList.FilterBar count={list.pagination.total} ... />
 ```
 
-## User-select filter (useUserOptions + faceted dropdown)
+## Reference filter and picker (user-account references as the example)
 
 | Field | Value |
 |-------|-------|
-| **Hook** | `useUserOptions()` |
-| **Package** | `@<scope>/<ui-package>` (subpath `./identity`) |
-| **Export** | `import { useUserOptions } from "@<scope>/<ui-package>/identity"` |
+| **Filter loader** | `createEntityFacet` (server-searched, a directory that outgrows one page) or `createEntityOptions` (the whole set once, a bounded catalogue), both from `@simplix-react/ui` |
+| **Form loader** | `createEntitySearch` from `@simplix-react/ui`, rendered by the kit's `EntitySearchCombobox` (console-core `entity`) |
+| **Wiring** | `scaffold.referencePickers` in `simplix.config.ts` (`{ hook, from, facet }` per referenced entity, `framework/configuration.md`); the project's identity package exports the user hooks it names |
 
 ### Rule
 
-Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `faceted` filter fed by `useUserOptions()` with `display: "dropdown"` - the same batch user list that `useUserNames()` resolves display names from, exposed as `{ label: displayName, value: userId }` options. NEVER a raw-id `text` filter, and NEVER a module-local re-implementation of the options mapping. The backend SearchDTO field allows `EQUALS, IN` (faceted serializes to `field.in`).
+Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `faceted` filter fed by the user options hook (`useUserOptions()` below stands for the project's hook built on `createEntityOptions` or `createEntityFacet`) with `display: "dropdown"`, the same loader that resolves display names, exposed as `{ label: displayName, value: userId }` options. NEVER a raw-id `text` filter, and NEVER a module-local re-implementation of the options mapping. The backend SearchDTO field allows `EQUALS, IN` (faceted serializes to `field.in`).
 
-**Form-side user selection is `UserCombobox` (server search + full-search dialog), never a client-filtered option dump.** `UserCombobox` debounce-searches the dedicated case-insensitive lookup endpoint (`useUserSearch`), always resolves the selected id's label, and its expand affordance opens `UserPickerDialog` - the standard paged searchable list with per-row select actions. NEVER feed a user list into a plain `EntityCombobox`/`ComboboxField`, and NEVER re-build a module-local user search dialog.
+**Form-side selection of a reference is a server-searched picker, never a client-filtered option dump.** A `createEntitySearch` hook debounce-searches the entity's lookup endpoint and always resolves the selected id's label, and `EntitySearchCombobox` draws it and says so when the server holds more matches than the page shows. NEVER feed a directory that outgrows one page into the eager `EntityCombobox`/`ComboboxField`, and NEVER re-build a module-local search dialog. A required reference whose entity has no `scaffold.referencePickers` entry is reported by `simplix check-screen`.
 
 ### Standard Usage
 
@@ -94,13 +94,13 @@ const companyId = String((filters.committedValues["companyId.in"] as string[] | 
 
 The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internally - one shape everywhere. Do not pass `<ListTotalBadge>` through `leading` (reserve `leading` for extra summary content: aggregate text, a pending-count `Badge`).
 
-## StatusCard placement (page-level status strip only)
+## Figure strip placement (page-level strip only)
 
 | Field | Value |
 |-------|-------|
-| **Component** | `StatusCard` (`@<scope>/<ui-package>/status`) |
+| **Part** | the page's figure row (`spec.tiles` on a console page; `StatCard` from `@simplix-react/ui` for a card drawn on a page the shell does not own) |
 | **Scope** | Tabbed report/dashboard pages |
 
 ### Rule
 
-On a page with an always-visible status strip (summary `StatusCard`s under the page header), tab bodies must NOT render their own `StatusCard`s - two rows of identical card shapes read as a broken layout, and a half-filled card row leaves dead space. Tab-level aggregates live in the FilterBar toolbar line instead: totals as `leading` text/badges next to the `count` badge. Strip cards may take `onClick` to drill into a tab with the matching filter committed.
+On a page with an always-visible figure strip (summary tiles under the page header), tab bodies must NOT render their own tiles or stat cards - two rows of identical card shapes read as a broken layout, and a half-filled card row leaves dead space. A screen on the console kit hands its figures to the page as data and never draws the strip or its fold itself (the kit's fence refuses `SettingsTiles`). Tab-level aggregates live in the FilterBar toolbar line instead: totals as `leading` text/badges next to the `count` badge. Strip tiles may take a press action to drill into a tab with the matching filter committed.

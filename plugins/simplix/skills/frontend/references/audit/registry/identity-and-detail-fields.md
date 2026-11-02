@@ -67,7 +67,7 @@ value={String(displayData.categoryId ?? "")}
 value={displayData.category?.name ?? String(displayData.categoryId ?? "")}
 ```
 
-When nested object is not available (e.g., form `RootValues` only has ID), pass name from parent component as a separate prop.
+When the nested object is not available (e.g., the form's root values hold only the ID), pass the name from the parent component as a separate prop.
 
 #### 4. Delete Confirmation Dialog
 
@@ -366,7 +366,7 @@ Where the product shows user avatars, every render of a user account's display n
 
 | Field | Value |
 |-------|-------|
-| **Component** | `PeekTriggerButton` (`@<scope>/<ui-package>/layout`) |
+| **Component** | `PeekTriggerButton` (the UI kit's `layout` entry, e.g. `@simplix-react-ui-kits/console-clarity/layout`) |
 | **Scope** | Any trigger that opens a `DetailPeekDialog` |
 
 ### Rule
@@ -382,7 +382,7 @@ A cross-detail reference opens the referenced record in a `DetailPeekDialog`; it
 
 | Field | Value |
 |-------|-------|
-| **Hook** | `usePeekTarget<T = true>()` (`@<scope>/<ui-package>/layout`) |
+| **Hook** | `usePeekTarget<T = true>()` (the UI kit's `layout` entry) |
 | **Scope** | A one-off `DetailPeekDialog` trigger that is not a reusable reference label |
 
 ### Rule
@@ -395,7 +395,7 @@ The open/close state a widget-root `DetailPeekDialog` needs comes from `usePeekT
 
 | Field | Value |
 |-------|-------|
-| **Hook / Component** | `usePeekHost()` · `PeekHost` (`@<scope>/<ui-package>/peek`) |
+| **Hook / Component** | `usePeekHost()` · `PeekHost` (the UI kit's `peek` entry) |
 | **Scope** | Every reusable `*PeekLabel`; the app provider stack |
 
 ### Rule

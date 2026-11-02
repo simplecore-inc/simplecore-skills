@@ -39,7 +39,7 @@ Placeholders: `<Entity>` / `<entity>` (the PascalCase / camelCase entity name), 
 
 ```tsx
 // in a cell - that is the whole wiring
-<UserPeekLabel userId={id} name={name} />
+<RecordPeekLabel id={id} name={name} kind="user" subject={SUBJECTS.user} label={t("peek.view")} />
 ```
 
 - **Adding a peek label for a new entity?** → export its dialog separately and dispatch from the trigger; the host takes any dialog, so nothing is registered per kind.
@@ -101,7 +101,7 @@ const peek = usePeekHost();
 ### Referenced records link out - every FK is navigable
 
 - **A field holds a reference to another record (an FK, or an id resolved to a name - user, site, org, policy, device, category)?** → it is NOT plain text. Render it as a peek link to that record, the same as a list cell does. Resolving the id to a name and printing it through `DetailTextField` is a defect: every reference the screen shows must be navigable to the referenced record. This holds on **every** surface - detail rows, card facts, embedded list rows - not just list columns.
-- Use the shared label for the entity where one exists (`UserPeekLabel` for a user account; a domain `*PeekLabel` for a domain entity). Where the label is missing but the entity's detail component exists, **build one shared component** (module `shared/ui` for a single-module entity; the project UI package for a cross-module one) - a per-screen inline `usePeekTarget` + `DetailPeekDialog` copy is the thing you extract, not the thing you ship (invariant #23). The first screen that needs a new entity's peek creates its `*PeekLabel`; the rest import it. Until the referenced entity's detail component exists, the field renders the name without a trigger (invariant #66).
+- Use the shared label for the entity where one exists (the kit's `RecordPeekLabel`, given the entity's registered `kind`, the permission `subject` that gates the trigger and the trigger's `label`; a domain `*PeekLabel` wrapping it for a domain entity). Where the label is missing but the entity's detail component exists, **build one shared component** (module `shared/ui` for a single-module entity; the project UI package for a cross-module one) - a per-screen inline `usePeekTarget` + `DetailPeekDialog` copy is the thing you extract, not the thing you ship (invariant #23). The first screen that needs a new entity's peek creates its `*PeekLabel`; the rest import it. Until the referenced entity's detail component exists, the field renders the name without a trigger (invariant #66).
 - Every surface uses the same label with the same wiring - the peek host mounts the dialog, so a detail row, a card fact, and a list cell are written identically (invariant #45).
 - **Sweep the panel before declaring done**: any `fieldLabel(...Id)` row whose value is a resolved name rendered as text (`nameOf(...)`, `*Name(...)`, `DetailTextField value={...Name}`) is an un-linked reference - convert it.
 

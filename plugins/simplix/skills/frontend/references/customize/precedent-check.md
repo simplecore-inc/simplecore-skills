@@ -2,7 +2,7 @@
 
 # Precedent Check - New Screens Are Cloned, Not Invented
 
-Every screen in the project is an instance of a small set of screen shapes. Two screens of the same shape must be structurally indistinguishable - chrome, filters, columns, mutations, delete wiring, empty states - so an operator (and a reviewer) experiences one product, not a collection of one-off pages. This procedure enforces that: **no screen is designed from memory. A new screen starts from two precedent screens read end to end, and ends with a row-by-row parity pass against them.**
+Every screen in the project is an instance of a small set of screen shapes. Screens of the same shape must be structurally indistinguishable - chrome, filters, columns, mutations, delete wiring, empty states - so an operator (and a reviewer) experiences one product, not a collection of one-off pages. This procedure enforces that: **no screen is designed from memory. A new screen starts from two precedent screens read end to end, and ends with a row-by-row parity pass against them.**
 
 ## When this procedure is MANDATORY
 
@@ -30,7 +30,7 @@ Assign the new screen to exactly one shape. "None of these" is almost never true
 | 10 | Calendar board | Calendar composition + legends + fixed header / inner scroll | `calendar` |
 | 11 | Wizard / dialog flow | Multi-step dialog driven from a header action or row action | `wizard` |
 
-The inventory id is what `screen-inventory.mjs --shape=<id>` takes. Shapes 1 and 2 share `crud-list`, because their widget files are the same; the crud-page's `variant` tells them apart. The inventory has one more group, `list-detail`: a `ListDetail` with no `CrudList`, which is not a shape of its own but a hand-built list beside a detail - classify it as the shape it should be (usually 1 or 2), and where its rows grow it is the list invariant #32 rules out.
+The inventory id is what `screen-inventory.mjs --shape=<id>` takes. The panel and page CRUD list shapes share `crud-list`, because their widget files are the same; the crud-page's `variant` tells them apart. The inventory has a further group, `list-detail`: a `ListDetail` with no `CrudList`, which is not a shape of its own but a hand-built list beside a detail - classify it as the shape it should be (usually a CRUD list shape), and where its rows grow it is the list invariant #32 rules out.
 
 ## Step 2 - Locate TWO precedents
 

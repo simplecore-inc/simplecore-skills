@@ -43,22 +43,22 @@
 <ListDetail variant="dialog" dialogHeight="500px">...</ListDetail>
 ```
 
-## SectionHeaderBar / PanelList / SelectableListItem / IndentedSubsection (project layout)
+## Project layout primitives (section header strip, side-panel list, selectable row, indented sub-section)
 
 | Field | Value |
 |-------|-------|
-| **Components** | `SectionHeaderBar`, `PanelList`, `SelectableListItem`, `IndentedSubsection` |
+| **Components** | the project UI package's own four: a section header bar, a side-panel list, a selectable list item, an indented subsection (names are the project's) |
 | **Package** | `@<scope>/<ui-package>` (subpath `./layout`) |
 | **Source** | `packages/<ui-package>/src/layout/*` |
 
 ### Rule
 
-These are project-specific composition patterns (domain-agnostic but not generic enough for the framework - the placement rule is SKILL.md invariant #23). They live in `@<scope>/<ui-package>/layout`, NOT `@simplix-react/ui`.
+These are project-specific composition patterns (domain-agnostic but not generic enough for the framework - the placement rule is SKILL.md invariant #23). They live in `@<scope>/<ui-package>/layout`, NOT `@simplix-react/ui`. The component names below are placeholders for whatever the project's UI package exports.
 
-- **SectionHeaderBar** - title + optional count Badge + optional action/trailing, `variant: "bar" | "card" | "plain"`. Replaces ad-hoc `Flex justify-between border-b bg-muted/50` header strips, dashboard card-title rows, and uppercase micro-labels.
-- **PanelList<T>** - header + loading(Skeleton)/empty(EmptyState)/list state machine for side panels.
-- **SelectableListItem** - selectable/draggable row, `tone: "tint" | "inverted" | "card"`. Replaces `<button className="... bg-primary/10 ...">` selectable rows.
-- **IndentedSubsection** - labeled, left-ruled indented group (`border-l-2 border-border/50 pl-4`). Replaces the raw indented `<div>` editor idiom.
+- **Section header bar** - title + optional count Badge + optional action/trailing, with a `bar`, `card` or `plain` look. Replaces ad-hoc `Flex justify-between border-b bg-muted/50` header strips, dashboard card-title rows, and uppercase micro-labels.
+- **Side-panel list** - header + loading(Skeleton)/empty(EmptyState)/list state machine for side panels. The console kit's `PanelList` is a different part (a growing collection in a detail tab, drawn as the list it is, invariant #71) and does not stand in for this one.
+- **Selectable list item** - selectable/draggable row with a tint, inverted or card tone. Replaces `<button className="... bg-primary/10 ...">` selectable rows.
+- **Indented subsection** - labeled, left-ruled indented group (`border-l-2 border-border/50 pl-4`). Replaces the raw indented `<div>` editor idiom.
 
 ## Layout primitive variants (Stack / Grid)
 
