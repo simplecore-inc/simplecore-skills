@@ -56,6 +56,24 @@ the merge with markers goes to `generated/conflicts/<path>.conflict` and promote
 Resolve it in the file, then promote again. A conflict is the expected outcome when the template and
 the customisation both append after the last method of a class.
 
+**Resolving in the file does not end the conflict**: the stored base is still the old render, so the
+next promote merges the same two changes and reports the same hunks. `promote` has no flag that
+records a resolution (`--adopt` skips a file that already has a base, `--force` discards the edits).
+After resolving by hand, record the fresh render as the base with the generator's own helpers, run
+from the project root against the `generated/` file `generate` just wrote:
+
+```js
+import fs from 'node:fs';
+import { carryStamp, recordBase, stampRender } from '<simplix-generator>/generators/utils/tracked-render.js';
+const stamped = stampRender(fs.readFileSync('<generated file>', 'utf8'), 'promote <Entity> --module <module>');
+fs.writeFileSync('<promoted file>', carryStamp(fs.readFileSync('<promoted file>', 'utf8'), stamped));
+recordBase(process.cwd(), '<promoted file>', stamped);
+```
+
+Then `yo simplix:promote` reports `current` for the file and `yo simplix:generated` counts it as
+edited. Do this only after the template's new parts are in the file by hand; recording the base
+over an unresolved file makes the template change look already merged.
+
 `--force` overwrites edits and removals and is never the regeneration path. `--adopt` stamps files
 promoted before tracked renders existed and stores the current render as their base, once per project.
 The collision check below still comes first: a hand-authored `XService` with no stamp reads as
