@@ -1446,6 +1446,56 @@ const IMPORTANT_OUTLINE_REMOVAL =
 
 const RULES = [
   {
+    id: "page-header-store-nothing-draws",
+    invariant: "#31",
+    level: "review",
+    desc: "A host that opens the page-header store (`<PageHeaderProvider>`) for its routed pages and draws nothing that reads it. Every page under it publishes its title, description and verbs through `usePageHeader`, and they reach the screen only through a reader of that store (the console kit's `ConsolePageHeader`, its `ConsoleContentColumn`, or a hand-drawn header over `usePageHeaderState`). Without one the pages render with no title and every verb they put in the header (a sign-out, a create action) is unreachable, while each page passes alone. The usual cause is a page from one shell opened inside another, such as console pages inside a site window",
+    appliesTo: (p) => (inApps(p) || inModules(p) || inPackages(p)) && isTsx(p),
+    check: (c) => {
+      const at = c.search(/<PageHeaderProvider\b/);
+      if (at < 0) return [];
+      if (/\bConsolePageHeader\b|\bConsoleContentColumn\b|\busePageHeaderState\b|<\w*PageHeader\s*\/?>/.test(c)) return [];
+      return [{ line: c.slice(0, at).split("\n").length, excerpt: "the page-header store is opened here and nothing in this file draws what the pages publish to it" }];
+    },
+    samples: {
+      file: "apps/<app>/src/app/layouts/root-layout.tsx",
+      broken: `export function Shell() {
+  return (
+    <SiteWindow bar={<SiteBar />}>
+      <PageHeaderProvider>
+        <SitePage><Outlet /></SitePage>
+      </PageHeaderProvider>
+    </SiteWindow>
+  );
+}`,
+      fixed: `export function Shell() {
+  return (
+    <SiteWindow bar={<SiteBar />}>
+      <PageHeaderProvider>
+        <SitePage>
+          <ConsolePageHeader />
+          <Outlet />
+        </SitePage>
+      </PageHeaderProvider>
+    </SiteWindow>
+  );
+}`,
+      miss: [
+        {
+          note: "the console's content column draws the header itself",
+          source: `export function Shell() {
+  return <ConsoleWindow><PageHeaderProvider><ConsoleContentColumn><Outlet /></ConsoleContentColumn></PageHeaderProvider></ConsoleWindow>;
+}`,
+        },
+        {
+          note: "a host drawing its own header from the store",
+          source: `function Header() { const { title } = usePageHeaderState(); return <h1>{title}</h1>; }
+export function Shell() { return <PageHeaderProvider><Header /><Outlet /></PageHeaderProvider>; }`,
+        },
+      ],
+    },
+  },
+  {
     id: "a-form-reports-a-refusal-as-a-toast",
     invariant: "#40 / #34",
     level: "review",
