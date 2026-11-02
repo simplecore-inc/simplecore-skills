@@ -63,7 +63,7 @@ A rule added to a skill is generic: a project's names, paths, entities, ports, a
 - Optional Python package, needed only by the steps that name it: Pillow (the svg-diagrams raster lint rule)
 - Chrome or Chromium, found on the usual install paths or named by `CHROME` - used by the svg-diagrams render, crop, hotspot and contrast steps
 - Optional: `npm install -g beautiful-mermaid` - used by svg-diagrams for Mermaid sequence, state, class and ER rendering and for ASCII output; a plugin install runs no package manager, so nothing installs it for you
-- A browser-automation MCP (Claude in Chrome or equivalent) - used by `simplix:frontend-e2e`
+- A local browser driver (ego-browser, agent-browser, Playwright or the Claude in Chrome MCP) - used by `simplix:frontend-e2e`
 
 ## Installation
 
@@ -266,6 +266,8 @@ node "<plugin-root>/scripts/screen-inventory.mjs"           # every screen class
 node "<plugin-root>/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
 node "<plugin-root>/scripts/check-interpolation-types.mjs"  # formatted catalogue placeholders handed a number
 node "<plugin-root>/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
+node "<plugin-root>/scripts/compare-rendered.mjs" --app <url> --board <url> --root-slot <slot>  # a screen against its board frame, by control role
+node "<plugin-root>/scripts/skill-audit.mjs"                # counting audit of the plugin's own instruction files
 ```
 
 `audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework - which route directories are open to anybody, for one, and the names that the rules guarding one product's own components read (`statusMapResurrect`, `dragThresholdCopy`, `cursorColResize`), which are off where a project declares none - so nothing about a particular repository's layout is baked into the script.
