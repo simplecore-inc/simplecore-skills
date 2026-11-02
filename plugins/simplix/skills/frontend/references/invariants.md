@@ -356,8 +356,9 @@ A `DetailPeekDialog` kept inside the subtree that triggered it (a list cell, a m
 a card in a refetching panel) is unmounted the moment that subtree re-renders, so it closes
 itself within seconds of opening; the surfaces that show references are exactly the ones an
 activity stream keeps invalidating. Every `*PeekLabel` dispatches through `usePeekHost()`
-from the project UI package's peek segment, and the `PeekHost` provider wraps the routed
-tree once in the app's provider stack. Labels take no `onPeek` prop and hold no open state.
+from the UI kit's `peek` entry (`@simplix-react-ui-kits/<kit>/peek`; the project UI package's
+own peek segment where the project draws with no kit), and the `PeekHost` provider wraps the
+routed tree once in the app's provider stack. Labels take no `onPeek` prop and hold no open state.
 
 - **A new peek label follows the same shape**: export the dialog as its own component and
   have the label's trigger call
@@ -713,9 +714,51 @@ SKILL.md item 62 states this invariant in full; it has no longer form here.
 
 Enforcement: review - whether a stack of short fields is drawn a thousand pixels wide is a property of the painted page at a viewport width.
 
-## #64 Every chip carries a mark, and the mark says whether this chip is on
+## #63 Tab strip, chip filter and rows sit together
 
-SKILL.md item 64 states this invariant in full; it has no longer form here.
+**Tab strip, chip filter and rows sit together, in that order, with nothing between them** -
+and **anything** means anything: a tile row, a banner, a help card, a rule, a heading, a
+caption, a view-mode button. Both controls narrow the same set, so read down the screen they
+are the two cuts in the order they apply - the tab picks the set, the chips pick inside it -
+and the rows follow immediately under the last thing that changed which rows they are. Chips
+drawn *above* the strip are a second strip with nothing saying which of the two the reader is
+inside.
+
+- **A number that counts one set directly above a table showing another reads as counting that
+  table**, and the caption written to explain the difference is the layout confessing: a
+  sentence saying why two figures on one screen disagree means the arrangement is wrong, and
+  the fix is to make the figures agree, to label what each counts, or to move the tiles out -
+  never to add the sentence.
+- **A message the chip selection needs goes to the right of the chips, on their row** -
+  `<Flex align="center" gap="sm"><ChipFilter …/><Text size="caption" tone="muted">…</Text></Flex>`,
+  never a line of its own under the chips and never a band over the table. The row is one flex
+  line, so whatever else belongs beside the chips (an unbuilt layer, a count) sits there too;
+  that is the one place the rule leaves open, and it is open because a note beside the control
+  it describes is read as belonging to that control.
+- **A notice true of one tab only goes under that tab's rows**, not over them - a footnote is
+  read after the thing it annotates. A notice true of every tab goes above the strip.
+- **A heading inside a tab panel repeating the tab's own name is deleted, not moved.** The tab
+  the reader just pressed already said it.
+- **Sibling tab panels and the list's own states are not "between".** `TabsContent` /
+  `PageTabPanel` siblings are alternatives, and the arms of the conditional that draws the rows
+  (`{isLoading ? <Skeleton/> : rows.length === 0 ? <EmptyState/> : <Table/>}`) replace the table
+  rather than stand over it.
+
+## #64 Every chip carries a mark
+
+**Every chip carries a mark, and the mark says whether this chip is on.** A chip row and a
+tab strip are the same shape at a glance and a reader cannot tell which one narrows, so the
+row has to say before it is pressed both that pressing narrows and which option is narrowing
+now. An empty ring when the chip is off and a check when it is on carries both in one mark;
+the pill shape (`rounded-full`, muted ground, solid when chosen) is what separates the row
+from the strip above it. **A chip supplying its own icon gives that up** - a colour dot or a
+count replaces the mark - so pass one only where the chip's own colour already says whether
+it is on.
+
+- **The chips flow from the left at their label's width and wrap**, never stretched to divide
+  the row evenly. Stretched, an option's width is decided by how many options happen to sit
+  beside it: the same filter is a segmented control on one screen and chips on the next, and a
+  two-option filter draws two half-page buttons.
 
 Enforcement: review - whether a chip carries its mark and flows at its label's width is a property of the painted page.
 
@@ -821,6 +864,118 @@ script, and prove it on the broken form and the fixed form there.
 
 Enforcement: review - the finding names project components (`PeekTriggerButton`, `usePeekHost`) that a project without peek machinery lacks, so the detector belongs to the project's own gate script, as the section above says.
 
+## #67 The shape the scaffold emits is the product's shape
+
+**The shape the scaffold emits is the product's shape, and a census of hand-written screens is
+not evidence of a convention** - every screen here starts from the CLI (`simplix scaffold` or `simplix add-page`), so what the
+generator draws IS the house style and a screen departing from it is the thing that needs a
+reason. Where a default is genuinely wrong for a product, it is changed once at the app root
+(`UIProvider`'s `defaults`) and never per screen.
+
+- **Counting the existing code is the trap.** 「fifteen of the sixteen literals say `ghost`, so
+  `ghost` is the convention」 is a valid count of an invalid corpus: all sixteen were hand-typed
+  onto screens that never went through the generator, so the census measured the drift and
+  called it the standard. **Before a survey settles anything, ask what produced the things being
+  counted** - if the answer is "somebody typed them", the count says how often a mistake was
+  made, not what is right.
+- **This is why a survey is the weakest kind of evidence here** and the generator's output is
+  the strongest: one of them is a decision, the other is a residue.
+- **A departure is written down where it departs, or it is a defect.** "The base form needs no
+  reason and a deviation does" is only enforceable if the reason is somewhere a reader lands -
+  so it goes in the code at the point of departure, as a comment saying what the generated
+  shape was and why this screen is not it. **Without that, a considered exception and a
+  forgotten line are the same bytes**, and the only way anyone finds out is a person opening
+  the product.
+  - **The count is what makes it obvious, and only afterwards.** One list missing the standard
+    filter bar reads as a screen with a reason; eight of eight missing it while every other
+    module's list has one is not a set of exceptions, it is the base form never having been
+    applied. **So compare against the siblings before writing the reason** - if you cannot say
+    what makes this screen different from the ones that kept it, there is no reason to write
+    and the answer is to restore the base form.
+  - **A missing standard component is invisible to every check that is not looking for it.**
+    It type-checks, it builds, it renders, and the screen looks deliberate. Where a component
+    is standard across a project, its absence is one grep and belongs in that project's gate
+    script - firing on the screens that lack it and silent on the ones that have it.
+- **A shape the generator does not emit is added to the project's template, never to one
+  screen.** The CLI reads `.simplix/templates/<name>.hbs` before its own bundled template and
+  falls through per name, so a project takes over the page shapes it cares about and leaves the
+  rest - `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names for
+  list screens, `list`, `form`, `detail` and `editor` the widget-side ones, and `record-page`,
+  `dashboard-page`, `static-page`, `error-page`, `auth-page` and `app-shell` the kinds
+  `simplix add-page` draws.
+  That directory is the seam between what the CLI knows (the entity's operations) and what only
+  the product knows (its chrome, its tiles, its notice cards, its tab strip), which is why
+  shipping the chrome in the CLI is not the alternative.
+  - **So "this screen needs a different shape" is a template task, not a hand-written page.**
+    Write the template, scaffold through it, and the next screen that needs the same shape gets
+    it for free. Hand-write it instead and the shape exists nowhere anybody can find: the next
+    author re-invents it, and the screens end up similar and not the same.
+  - **The tell is length.** A generated page runs to a stable size for a given project; a page
+    several times longer is either carrying content genuinely its own, or carrying structure
+    every screen needs. **For the second, the file to change is the template.** Compare against
+    a sibling the generator wrote before concluding either way.
+  - **Changing a template changes every screen it emitted, and that is the point.** Run
+    `simplix generated --all` after the edit: untouched files re-render, edited ones are merged
+    against the render they last came from, and a conflict is reported rather than written. Read the diff. The template is tracked, so the change is visible in the commit - a
+    per-screen fix is not.
+
+## #68 A row that means to sit as two groups has two children
+
+**A row that means to sit as two groups has two children.** A wrapping flex row with
+`justify="between"` or an auto margin says 「these belong at one end and those at the other」,
+and with three or more flat children the width decides where it breaks instead: one line wide,
+the last control alone on a second line narrower, all of them stacked narrower still, and a
+fourth arrangement when a detail panel opens beside it. Put each end in its own element
+(`<Flex wrap>{lead}<Flex className="ml-auto min-w-0">{rest}</Flex></Flex>`) so there is exactly
+one place the row can break; another utility class on the row cannot do it, because an auto
+margin moves children apart on whichever line they land on and says nothing about which line
+that is. **A row of badges or chips is not the subject** - many items of one kind with no ends
+to sit at, meant to reflow. **Judge it at three widths, with the detail panel open and shut**:
+this is invisible at the width it was written at, which is the width it will be checked at.
+
+## #69 How the detail appears is an installation's setting
+
+**How the detail appears is an installation's setting, not a screen's shape - and a board drawn
+as list-detail does not contradict a drawer** - `ListDetail` opens the record beside the list
+(`panel`) or slid in from the right edge (`drawer`), and which one is in force is one line at
+the app root (`UIProvider`'s `defaults.detailPresentation`). A screen passes `variant` only
+where the shape is genuinely its own, and `"dialog"` is the case that usually is: a centred
+modal claims the record is an interruption rather than the thing being worked on.
+
+- **A wireframe board goes on drawing list-detail whichever is in force.** The board's claim is
+  that the detail opens next to the list, holding that content, reachable from that row - not
+  that it is a column. **A screen rendering a drawer against a board drawn as list-detail is
+  not a divergence**, and an audit reporting it as one is reporting the setting.
+- **So a visual check asks three things and not a fourth**: does the detail open from the row,
+  is the content in it what the frame draws, does closing it come back to the list unchanged.
+  Panel-or-drawer is the fourth, and it is not the screen's to answer. **Nor is what the drawer
+  covers** - it sits over the list rather than narrowing it, so a row's right-hand columns are
+  under it while it is open. That is the shape, not a defect, and reporting it as one reports
+  the setting.
+- **Moving between records under a drawer is 「close, then choose」, and writing it as 「two
+  presses」 sends the next reader after a bug.** A press on a row's middle lands on the drawer
+  and does nothing; the reader presses the part of the list still showing, which the backdrop
+  takes as close, and then picks the row. One of those sentences describes an interaction and
+  the other describes a click that fails to register.
+- **Record which presentation the installation is on, as a fact.** 「이 설치는 서랍으로 서 있다」
+  belongs in the report; 「보드와 다르다」 does not. The difference matters: the first tells the
+  next reader what they are looking at, the second sends them to fix something that is not
+  broken.
+- **They give the detail the same room, and where they differ in behaviour that difference is
+  the framework's to own - as a decision, not as an accident.** Under a modal drawer the
+  backdrop takes the first press, so moving between records is 「close, then choose」 where a
+  panel takes one press; a product chooses the modal drawer to have the backdrop block and
+  close. That choice is written in the framework's comment beside the code, so the next reader
+  knows they are re-opening a decision rather than fixing an oversight. What is never a
+  screen's business either way: a screen must not work around the difference.
+- **Each presentation takes its width from its own tokens, and the user resizes all three.**
+  The panel shares the row with the list, so its default is the widest that leaves the list
+  its own minimum; the drawer and the dialog cover the list and default wider. Default, minimum
+  and maximum come from the design tokens (`detail-panel`, `detail-drawer`, `detail-dialog`),
+  never from a screen. The resize handle is centred on the presentation's edge, and the chosen
+  width is kept only when the operator asks the browser to remember it. An audit judges a
+  screen at each presentation's own default, never one presentation's width against another's.
+
 ## #70 A sentence holding a value that can be absent is judged by the value, not by the record
 
 `t("closure.confirmTitle", { site: site?.siteName ?? "" })` against `사업장 종료 - {{site}}`
@@ -923,8 +1078,10 @@ two tints, and a glyph alone does not reach one scanning the page without readin
 own button (「설명 보기」) is drawn inside that control too, so the explanation it opens stays one
 press away after the card has been put away.
 
-**The notice component is the product's, and the rule presumes it.** Neither the component
-catalogue nor the registry names it, so read it from the project. Where a product has no header
+**The notice card is the kit's, and the rule presumes it.** The console kit ships `NoticeCard`,
+the header control `NoticeMenu`, the per-message `noticeKey` and `NoticeDeclaration` (which
+lists a card that lives inside a dialog while the dialog is closed); a product on no kit reads
+its own component from the project. Where a product has no header
 control to bring a closed card back - a sign-in panel, a kiosk body, a product that never built
 one - a close would lose the message rather than move it, and the rule does not apply; the
 rendered check below makes the same exception.

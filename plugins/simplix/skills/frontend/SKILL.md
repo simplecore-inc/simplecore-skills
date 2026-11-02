@@ -13,12 +13,12 @@ Single source of truth for frontend work in a **simplix-react** project - a pack
 
 1. **Step 0 - Backend-sync check**: if the backend OpenAPI spec has changed since last codegen, jump to **invariant #29** first - it blocks every CUSTOMIZE task.
 2. **Step 0.4 - Generator path first**: before designing any screen, new or reshaped, confirm the CLI can generate it from the templates and generate it; a gap is closed in the CLI, not by hand. **Invariant #79.**
-2. **Step 0.5 - Precedent check for screens**: creating a NEW screen or reshaping one? Run **invariant #51** - classify the screen's shape, pick two same-shape precedent screens, read them end to end BEFORE designing anything → `customize/precedent-check.md`.
-3. Review the **Non-Negotiable Invariants** below - especially #29 (backend-sync gate), #51 (precedent-first screens), #9 (framework-first), #22 (registry-first).
-4. Use the **Task Router** → Read referenced files lazily. SCAFFOLD comes first when the backend changed. **The routed Read precedes the first edit of the task - an edit made before the routed reference is read is a violation, not a head start.**
-5. DOCUMENT is cross-cutting (any `*.md` / TSDoc output → also read `docs/*`). AUDIT is mandatory after CUSTOMIZE (`audit/*`).
-6. **A change that touches a screen is not finished until its screens have been driven in a browser** under `simplix:frontend-e2e` - states, empty and error paths, and the screens either side of it. Green typecheck and a correct-reading diff are not evidence a screen works. Plan for that pass when you plan the change, not after you have called it done. Anything past a single screen is delegated to one `simplix:screen-auditor` per cluster, so the browser turns never land in the session doing the implementation.
-7. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
+3. **Step 0.5 - Precedent check for screens**: creating a NEW screen or reshaping one? Run **invariant #51** - classify the screen's shape, pick two same-shape precedent screens, read them end to end BEFORE designing anything → `customize/precedent-check.md`.
+4. Review the **Non-Negotiable Invariants** below - especially #29 (backend-sync gate), #51 (precedent-first screens), #9 (framework-first), #22 (registry-first).
+5. Use the **Task Router** → Read referenced files lazily. SCAFFOLD comes first when the backend changed. **The routed Read precedes the first edit of the task - an edit made before the routed reference is read is a violation, not a head start.**
+6. DOCUMENT is cross-cutting (any `*.md` / TSDoc output → also read `docs/*`). AUDIT is mandatory after CUSTOMIZE (`audit/*`).
+7. **A change that touches a screen is not finished until its screens have been driven in a browser** under `simplix:frontend-e2e` - states, empty and error paths, and the screens either side of it. Green typecheck and a correct-reading diff are not evidence a screen works. Plan for that pass when you plan the change, not after you have called it done. Anything past a single screen is delegated to one `simplix:screen-auditor` per cluster, so the browser turns never land in the session doing the implementation.
+8. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
 
 ### Which generator this project runs - read it, never assume
 
@@ -196,7 +196,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 18. **Column order** - Drag > Select > Identifier > Relations > Type > Text > Description > Attributes > Metrics > Schedule > Audit > Actions. Mandatory, not a suggestion. Nothing in it is hidden by default, because the framework has no such state (#54): the PK, raw FK ids and the audit quartet are removed from source, so Identifier holds a human identifier (a code), Relations the referenced record's name, and Audit appears only under the one domain exception → `invariants.md` #18.
 19. **User confirmation before restyling** - present analysis and get approval before modifying existing column source.
-20. **Alignment rules** - fixed-length codes: center; long text: left; bounded numeric ranges: center; unbounded / large numbers: right. `CrudList.Column` has no `align` prop - apply alignment inside the cell render (the column's `children` render function) using framework primitives (`Flex`/`Stack` `align`/`justify`, or a text-align utility class), never a column-level prop.
+20. **Alignment rules** - fixed-length codes: center; long text: left; bounded numeric ranges: center; unbounded / large numbers: right. `CrudList.Column` takes `align="end"` for a figure whose digits a reader compares down the column (an amount, a balance, a count: end edge, tabular numerals) and has no `center` value, so a centred code or bounded range is aligned inside the cell render (the column's `children` render function) using framework primitives (`Flex`/`Stack` `align`/`justify`, or a text-align utility class).
 21. **Boolean columns** - preserve existing renderers as-is; NEW boolean columns render via `Badge`.
 
 ### Commonization Audit
@@ -288,45 +288,9 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 61. **Hiding a surface is not the same as not asking for it - the gate belongs beside the request** - a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it - a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the shapes it takes, and why this is not a script rule → `invariants.md` #61.
 
 62. **A screen with no list beside it still lays out in columns** - the two-column rule is written for a `CrudDetail` panel a few hundred pixels wide, and a settings page, a single-record editor, a preferences tab or a wizard step has no panel to be narrow. At 1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty characters. Give the content columns, cap the measure, and **judge by the rendered input rather than by the component name** - a screen that never imports `FormFields` is still a form when it draws `<Label>` + `<Input>` pairs or a bare `<select>`, and a survey counting framework component names walks straight past the one screen most likely to be laid out wrong. Full rule → `customize/consistency-checklist.md` § 2b.
-63. **Tab strip, chip filter and rows sit together, in that order, with nothing between them** -
-    and **anything** means anything: a tile row, a banner, a help card, a rule, a heading, a
-    caption, a view-mode button. Both controls narrow the same set, so read down the screen they
-    are the two cuts in the order they apply - the tab picks the set, the chips pick inside it -
-    and the rows follow immediately under the last thing that changed which rows they are. Chips
-    drawn *above* the strip are a second strip with nothing saying which of the two the reader is
-    inside.
-    - **A number that counts one set directly above a table showing another reads as counting that
-      table**, and the caption written to explain the difference is the layout confessing: a
-      sentence saying why two figures on one screen disagree means the arrangement is wrong, and
-      the fix is to make the figures agree, to label what each counts, or to move the tiles out -
-      never to add the sentence.
-    - **A message the chip selection needs goes to the right of the chips, on their row** -
-      `<Flex align="center" gap="sm"><ChipFilter …/><Text size="caption" tone="muted">…</Text></Flex>`,
-      never a line of its own under the chips and never a band over the table. The row is one flex
-      line, so whatever else belongs beside the chips (an unbuilt layer, a count) sits there too;
-      that is the one place the rule leaves open, and it is open because a note beside the control
-      it describes is read as belonging to that control.
-    - **A notice true of one tab only goes under that tab's rows**, not over them - a footnote is
-      read after the thing it annotates. A notice true of every tab goes above the strip.
-    - **A heading inside a tab panel repeating the tab's own name is deleted, not moved.** The tab
-      the reader just pressed already said it.
-    - **Sibling tab panels and the list's own states are not "between".** `TabsContent` /
-      `PageTabPanel` siblings are alternatives, and the arms of the conditional that draws the rows
-      (`{isLoading ? <Skeleton/> : rows.length === 0 ? <EmptyState/> : <Table/>}`) replace the table
-      rather than stand over it.
+63. **Tab strip, chip filter and rows sit together, in that order, with nothing between them** - and **anything** means anything: a tile row, a banner, a help card, a rule, a heading, a caption, a view-mode button. Both controls narrow the same set, so read down the screen they are the two cuts in the order they apply (the tab picks the set, the chips pick inside it), and the rows follow immediately under the last thing that changed which rows they are. A number that counts one set directly above a table showing another reads as counting that table, and a caption written to explain the difference is the layout confessing: make the figures agree, label what each counts, or move the tiles out. A message the chip selection needs goes to the right of the chips on their row, a notice true of one tab goes under that tab's rows, and a heading inside a tab panel repeating the tab's own name is deleted. Sibling tab panels and the list's own states are not "between". → `invariants.md` #63.
 
-64. **Every chip carries a mark, and the mark says whether this chip is on** - a chip row and a
-    tab strip are the same shape at a glance and a reader cannot tell which one narrows, so the
-    row has to say before it is pressed both that pressing narrows and which option is narrowing
-    now. An empty ring when the chip is off and a check when it is on carries both in one mark;
-    the pill shape (`rounded-full`, muted ground, solid when chosen) is what separates the row
-    from the strip above it. **A chip supplying its own icon gives that up** - a colour dot or a
-    count replaces the mark - so pass one only where the chip's own colour already says whether
-    it is on.
-    - **The chips flow from the left at their label's width and wrap**, never stretched to divide
-      the row evenly. Stretched, an option's width is decided by how many options happen to sit
-      beside it: the same filter is a segmented control on one screen and chips on the next, and a
-      two-option filter draws two half-page buttons.
+64. **Every chip carries a mark, and the mark says whether this chip is on** - a chip row and a tab strip are the same shape at a glance, so the row has to say before it is pressed both that pressing narrows and which option is narrowing now: an empty ring when the chip is off and a check when it is on, with the pill shape (`rounded-full`, muted ground, solid when chosen) separating the row from the strip. A chip supplying its own icon gives the mark up, so pass one only where the chip's own colour already says whether it is on. The chips flow from the left at their label's width and wrap, never stretched to divide the row. → `invariants.md` #64.
 
 65. **Actions belong to the panel footer, in two rows when one will not hold them** - a button row
     in the panel body is a region the reader has to find, and the footer is pinned where the eye
@@ -334,106 +298,11 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     the committing verb stays on the last.
 
 66. **A field that names another record peeks at it, never travels to it - the peek is the first choice, and navigation is what you fall back to** - a detail field, list cell or panel row whose value is another record's NAME renders that name plus the peek trigger, and the trigger opens that record in the host-mounted dialog (#45); the dialog's go-to is the only way out of the screen, because a reader who arrives elsewhere loses the tab, scroll position and filters of the record they were reading. **Which values qualify is decided by the DTO's foreign keys, not by the label** - a foreign key is a peek (including the same entity's parent), while an enum, a count, and a denormalized name snapshot are not. The dialog holds the referenced record's whole detail; until that detail component exists the field renders the name without a trigger. The trigger is `appearance="inline"` when it stands alone in its own region and the default `appearance="icon"` at the end of a value, and an icon-only trigger passes `target` so its accessible name is not the fourth bare 「보기」. A `<Link>` in a field, or a link-styled button wired to the panel's own `onSelect`, breaks the rule. The failure mode is disuse, so the rule needs a detector in the project's own gate script. → `invariants.md` #66.
-67. **The shape the scaffold emits is the product's shape, and a census of hand-written screens is
-    not evidence of a convention** - every screen here starts from `simplix scaffold`, so what the
-    generator draws IS the house style and a screen departing from it is the thing that needs a
-    reason. Where a default is genuinely wrong for a product, it is changed once at the app root
-    (`UIProvider`'s `defaults`) and never per screen.
-    - **Counting the existing code is the trap.** 「fifteen of the sixteen literals say `ghost`, so
-      `ghost` is the convention」 is a valid count of an invalid corpus: all sixteen were hand-typed
-      onto screens that never went through the generator, so the census measured the drift and
-      called it the standard. **Before a survey settles anything, ask what produced the things being
-      counted** - if the answer is "somebody typed them", the count says how often a mistake was
-      made, not what is right.
-    - **This is why a survey is the weakest kind of evidence here** and the generator's output is
-      the strongest: one of them is a decision, the other is a residue.
-    - **A departure is written down where it departs, or it is a defect.** "The base form needs no
-      reason and a deviation does" is only enforceable if the reason is somewhere a reader lands -
-      so it goes in the code at the point of departure, as a comment saying what the generated
-      shape was and why this screen is not it. **Without that, a considered exception and a
-      forgotten line are the same bytes**, and the only way anyone finds out is a person opening
-      the product.
-      - **The count is what makes it obvious, and only afterwards.** One list missing the standard
-        filter bar reads as a screen with a reason; eight of eight missing it while every other
-        module's list has one is not a set of exceptions, it is the base form never having been
-        applied. **So compare against the siblings before writing the reason** - if you cannot say
-        what makes this screen different from the ones that kept it, there is no reason to write
-        and the answer is to restore the base form.
-      - **A missing standard component is invisible to every check that is not looking for it.**
-        It type-checks, it builds, it renders, and the screen looks deliberate. Where a component
-        is standard across a project, its absence is one grep and belongs in that project's gate
-        script - firing on the screens that lack it and silent on the ones that have it.
-    - **A shape the generator does not emit is added to the project's template, never to one
-      screen.** The CLI reads `.simplix/templates/<name>.hbs` before its own bundled template and
-      falls through per name, so a project takes over the page shapes it cares about and leaves the
-      rest - `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names,
-      `list`, `form`, `detail` and `editor` the widget-side ones.
-      That directory is the seam between what the CLI knows (the entity's operations) and what only
-      the product knows (its chrome, its tiles, its notice cards, its tab strip), which is why
-      shipping the chrome in the CLI is not the alternative.
-      - **So "this screen needs a different shape" is a template task, not a hand-written page.**
-        Write the template, scaffold through it, and the next screen that needs the same shape gets
-        it for free. Hand-write it instead and the shape exists nowhere anybody can find: the next
-        author re-invents it, and the screens end up similar and not the same.
-      - **The tell is length.** A generated page runs to a stable size for a given project; a page
-        several times longer is either carrying content genuinely its own, or carrying structure
-        every screen needs. **For the second, the file to change is the template.** Compare against
-        a sibling the generator wrote before concluding either way.
-      - **Changing a template changes every screen it emitted, and that is the point.** Re-scaffold
-        those screens after the edit and read the diff. The template is tracked, so the change is
-        visible in the commit - a per-screen fix is not.
+67. **The shape the scaffold emits is the product's shape, and a census of hand-written screens is not evidence of a convention** - every screen here starts from the CLI (`simplix scaffold` or `simplix add-page`), so what the generator draws IS the house style and a screen departing from it is the thing that needs a reason. Where a default is genuinely wrong for a product, it is changed once at the app root (`UIProvider`'s `defaults`) and never per screen. A survey of existing code measures the drift when the code was hand-typed, so ask what produced the things being counted before a survey settles anything. A departure is written down where it departs, as a comment saying what the generated shape was and why this screen is not it; compare against the siblings first, because a standard component missing from every screen is the base form never applied, not a set of exceptions. A shape the generator does not emit is added to the project's template (`.simplix/templates/<name>.hbs`, read before the CLI's bundled template and falling through per name), never to one screen, and `simplix generated --all` carries a template change to every screen it emitted. → `invariants.md` #67.
 
-68. **A row that means to sit as two groups has two children** - a wrapping flex row with
-    `justify="between"` or an auto margin says 「these belong at one end and those at the other」,
-    and with three or more flat children the width decides where it breaks instead: one line wide,
-    the last control alone on a second line narrower, all of them stacked narrower still, and a
-    fourth arrangement when a detail panel opens beside it. Put each end in its own element
-    (`<Flex wrap>{lead}<Flex className="ml-auto min-w-0">{rest}</Flex></Flex>`) so there is exactly
-    one place the row can break; another utility class on the row cannot do it, because an auto
-    margin moves children apart on whichever line they land on and says nothing about which line
-    that is. **A row of badges or chips is not the subject** - many items of one kind with no ends
-    to sit at, meant to reflow. **Judge it at three widths, with the detail panel open and shut**:
-    this is invisible at the width it was written at, which is the width it will be checked at.
+68. **A row that means to sit as two groups has two children** - a wrapping flex row with `justify="between"` or an auto margin says 「these belong at one end and those at the other」, and with three or more flat children the width decides where it breaks instead. Put each end in its own element (`<Flex wrap>{lead}<Flex className="ml-auto min-w-0">{rest}</Flex></Flex>`) so there is exactly one place the row can break; another utility class on the row cannot do it. A row of badges or chips meant to reflow is not the subject. Judge it at three widths, with the detail panel open and shut. → `invariants.md` #68.
 
-69. **How the detail appears is an installation's setting, not a screen's shape - and a board drawn
-    as list-detail does not contradict a drawer** - `ListDetail` opens the record beside the list
-    (`panel`) or slid in from the right edge (`drawer`), and which one is in force is one line at
-    the app root (`UIProvider`'s `defaults.detailPresentation`). A screen passes `variant` only
-    where the shape is genuinely its own, and `"dialog"` is the case that usually is: a centred
-    modal claims the record is an interruption rather than the thing being worked on.
-    - **A wireframe board goes on drawing list-detail whichever is in force.** The board's claim is
-      that the detail opens next to the list, holding that content, reachable from that row - not
-      that it is a column. **A screen rendering a drawer against a board drawn as list-detail is
-      not a divergence**, and an audit reporting it as one is reporting the setting.
-    - **So a visual check asks three things and not a fourth**: does the detail open from the row,
-      is the content in it what the frame draws, does closing it come back to the list unchanged.
-      Panel-or-drawer is the fourth, and it is not the screen's to answer. **Nor is what the drawer
-      covers** - it sits over the list rather than narrowing it, so a row's right-hand columns are
-      under it while it is open. That is the shape, not a defect, and reporting it as one reports
-      the setting.
-    - **Moving between records under a drawer is 「close, then choose」, and writing it as 「two
-      presses」 sends the next reader after a bug.** A press on a row's middle lands on the drawer
-      and does nothing; the reader presses the part of the list still showing, which the backdrop
-      takes as close, and then picks the row. One of those sentences describes an interaction and
-      the other describes a click that fails to register.
-    - **Record which presentation the installation is on, as a fact.** 「이 설치는 서랍으로 서 있다」
-      belongs in the report; 「보드와 다르다」 does not. The difference matters: the first tells the
-      next reader what they are looking at, the second sends them to fix something that is not
-      broken.
-    - **They give the detail the same room, and where they differ in behaviour that difference is
-      the framework's to own - as a decision, not as an accident.** Under a modal drawer the
-      backdrop takes the first press, so moving between records is 「close, then choose」 where a
-      panel takes one press; a product chooses the modal drawer to have the backdrop block and
-      close. That choice is written in the framework's comment beside the code, so the next reader
-      knows they are re-opening a decision rather than fixing an oversight. What is never a
-      screen's business either way: a screen must not work around the difference.
-    - **Each presentation takes its width from its own tokens, and the user resizes all three.**
-      The panel shares the row with the list, so its default is the widest that leaves the list
-      its own minimum; the drawer and the dialog cover the list and default wider. Default, minimum
-      and maximum come from the design tokens (`detail-panel`, `detail-drawer`, `detail-dialog`),
-      never from a screen. The resize handle is centred on the presentation's edge, and the chosen
-      width is kept only when the operator asks the browser to remember it. An audit judges a
-      screen at each presentation's own default, never one presentation's width against another's.
+69. **How the detail appears is an installation's setting, not a screen's shape - and a board drawn as list-detail does not contradict a drawer** - `ListDetail` opens the record beside the list (`panel`) or slid in from the right edge (`drawer`), and which one is in force is one line at the app root (`UIProvider`'s `defaults.detailPresentation`). A screen passes `variant` only where the shape is genuinely its own, and `"dialog"` is the case that usually is. A wireframe board goes on drawing list-detail whichever is in force, so a visual check asks whether the detail opens from the row, whether its content is what the frame draws, and whether closing it returns to the list unchanged. Panel-or-drawer, and what a drawer covers, are not the screen's to answer: record the presentation as the installation's fact, never as a divergence. Moving between records under a drawer is 「close, then choose」. Each presentation takes its width from its own tokens (`detail-panel`, `detail-drawer`, `detail-dialog`), never from a screen. → `invariants.md` #69.
 70. **A sentence holding a value that can be absent is judged by that value, not by the record
     that carries it** - `t("k", { site: site?.siteName ?? "" })` typechecks, builds green, and
     renders a title ending in an em dash with nothing after it, and the first paint of every one of
@@ -448,7 +317,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 72. **The audit strip belongs to the record, so it sits in the FIRST tab and nowhere else** - on the `CrudDetail` root it renders under every tab, and the record's stamps read as the stamps of whatever rows that tab is listing. A detail with no tabs keeps it on the root. → `invariants.md` #72.
 
-73. **Every standing message is a card the reader can put away; only a transient failure stays a banner** - a message still on the screen a minute after the reader has done nothing is standing, whatever its kind (help · warning · info · danger), so it goes through the product's notice component: a card whose dismissal is remembered per operator on the server, with a header control per kind that is tinted and pulses while a card of its kind is hidden, so putting one away MOVES it rather than losing it. Read the component from the project; where a product has no such header control the rule does not apply. A live count in the title is not an exemption. What is not a card is the answer to something the reader just did (a failed read, a refused submit, a field rejecting the value being typed): it stays a bare `AlertBanner`. Every message carries a glyph either way: a card takes it from its kind and `AlertBanner` from its tone, and `icon` only names the subject instead of the severity. The half that gets skipped is the standing one, drawn as a muted caption. `standingMessageDrawsNoClose` in `audit-rendered.mjs` decides the standing half from the painted page. → `invariants.md` #73.
+73. **Every standing message is a card the reader can put away; only a transient failure stays a banner** - a message still on the screen a minute after the reader has done nothing is standing, whatever its kind (help · warning · info · danger), so it goes through the notice card (the console kit's `NoticeCard`, with `NoticeMenu` as its header control; a product on no kit has its own): a card whose dismissal is remembered per operator on the server, with a header control per kind that is tinted and pulses while a card of its kind is hidden, so putting one away MOVES it rather than losing it. Where a product has no such header control the rule does not apply. A live count in the title is not an exemption. What is not a card is the answer to something the reader just did (a failed read, a refused submit, a field rejecting the value being typed): it stays a bare `AlertBanner`. Every message carries a glyph either way: a card takes it from its kind and `AlertBanner` from its tone, and `icon` only names the subject instead of the severity. The half that gets skipped is the standing one, drawn as a muted caption. `standingMessageDrawsNoClose` in `audit-rendered.mjs` decides the standing half from the painted page. → `invariants.md` #73.
 
 74. **One value's state is changed in one place, on every screen that shows it** - a record's active / suspended / closed state moves through an action with its confirmation and its reason (a row action, a footer button), never also through a switch in the edit form. So the edit form does not carry the state field. → `invariants.md` #74.
 
@@ -486,6 +355,8 @@ Trigger: backend OpenAPI spec changed (new endpoints / renamed fields / new enum
 2. Route & widget scaffolding patterns → `scaffold/patterns.md`
 3. Props / callback conventions across scaffolded widgets → `scaffold/props-conventions.md`
 4. Post-scaffold customization of a new screen - precedent check (invariant #51) → `customize/precedent-check.md`
+5. The screen workflow (invariant #79): design entry, generate once from the type's template, edit the generated files directly, `page.blocks.tsx` for named departures, the board frame as the plan → `screen-workflow.md`; a change that reaches more than one screen → `screen-preflight.md`; the traps a screen move meets → `screen-playbook.md`
+6. Judging and maintaining what was generated: `simplix generated` (each generated file as untouched, edited or stale against the current templates; `--all` regenerates), `simplix check-screen [entity...]` (the screens' files against the committed Meta), `simplix cycles` (import cycles that make a hot update reload the whole page), `simplix meta-removals` (a Meta type, field, operation or enum value the code still names and the snapshot lost), `simplix kit-fence` (the lint config against the imports the UI kit fences), `simplix meta-diff <domain>` (a domain's Orval output against its DTO meta output) → `screen-workflow.md`, `scaffold/overview.md`
 
 ### 3. CUSTOMIZE - Widget modification & composition
 
