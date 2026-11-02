@@ -21,6 +21,7 @@ symptom.
 13. [A Gradle build stops at the first red module](#a-gradle-build-stops-at-the-first-red-module)
 14. [A framework snapshot is published by its owner only](#a-framework-snapshot-is-published-by-its-owner-only)
 15. [Overriding `configureMessageConverters(List)` drops Spring's defaults](#overriding-configuremessageconverterslist-drops-springs-defaults)
+16. [A refused search sort answers 200 with an error body](#a-refused-search-sort-answers-200-with-an-error-body)
 
 ---
 
@@ -245,3 +246,17 @@ test over the real auto-configuration (`@SpringBootTest` on a random port, or a
 `WebApplicationContextRunner` with `webAppContextSetup`), asking for a whole file and a `Range`.
 The audit's `message-converters-replaced` refuses the override.
 Example: `configureMessageConverters(c) { c.add(new StringHttpMessageConverter()); }` turns every file download into a 500.
+
+## A refused search sort answers 200 with an error body
+
+A search request that sorts by a field its SearchDTO does not declare `sortable = true` (or filters with
+an operator the field does not allow) is refused in the body: `type: ERROR` and a `SEARCH_INVALID_*` code.
+The starter's `handleSearchableException` builds that body from the error code and does not set the
+HTTP status, so the response is **200**, and a list that reads the status sees a page with no rows
+and says "nothing found". `determineSearchableErrorCode` also tests class names containing
+"Validation" before "Sort", so a refused sort can carry `SEARCH_INVALID_PARAMETER` instead of
+`SEARCH_INVALID_SORT_FIELD`. A sort the screen needs is declared `sortable = true` on the field
+(a boolean cannot be: AP-38), and each sort a list offers is probed with a request whose body is
+read, not only its status. The status, and the order of those class-name tests, are the framework owner's
+to change (`A framework snapshot is published by its owner only`).
+Example: `GET .../search?page=0&size=3&sort=noSuchField.desc` answers `200 {type: ERROR, errorCode: SEARCH_INVALID_PARAMETER}`.

@@ -199,6 +199,12 @@ private String name;
 - SearchDTO fields (after `@Schema`)
 - CreateDTO fields (after `@Schema`), which the UpdateDTO and UpdateFormDTO inherit
 
+A List or Detail DTO field that maps to no entity column (a count, an aggregate, a derived value) carries
+one too: without it Meta publishes the field with no label, and the screen humanises the field name
+(`memberCount` reads "Member count" in every language).
+Enforcement: review - the audit's `missing-field-label` reads Search and Create DTO fields only; a rule over
+List and Detail DTO fields with no matching entity column is the machine form of this line.
+
 ### Which message key to use
 
 `@FieldLabel` keys come from one of two namespaces:
@@ -1038,3 +1044,92 @@ the only place the second half can live.**
 **Detection**: there is no source pattern for it - an endpoint that checks the assignment and one
 that does not are the same shape minus one call. Write the condition as an assertion in the test
 that owns the role catalogue, so what has to be true is stated somewhere a person will read.
+
+---
+
+## AP-42: A Failure Stored as a Sentence
+
+```java
+// WRONG - the sentence is what is stored, so every reader sees it in the language it was written in:
+connection.setLastError("The provider answered HTTP 401");
+
+// CORRECT - a code is stored (with its arguments as data); the reader's language resolves it:
+connection.setLastError(ProviderFailure.UNAUTHORIZED.name());   // errorCode.<key> in every locale's bundle
+```
+
+**Why**: invariant 3 keeps English literals out of exceptions, and the same holds for failure text
+written to a column. A stored sentence has one language, so a Korean screen draws English in the list
+card, the detail and the notice that repeats it, and nothing on the backend can translate it after the
+fact. A code resolves through the catalog in the reader's language, can be counted and filtered, and the
+frontend words it the way it words every other error.
+
+Enforcement: review - a column fed by an exception message looks like any other string column; whether
+its readers need a language is a fact about the screens that draw it.
+
+---
+
+## AP-43: A Provider Failure Collapsed Into One Outage Code
+
+```java
+// WRONG - every failure of the provider is "service unavailable", and the cause is gone:
+} catch (RestClientException e) {
+    throw new SimpliXGeneralException(ErrorCode.EXT_SERVICE_UNAVAILABLE, "{error.<domain>.providerDown}", null);
+}
+
+// CORRECT - the status decides the code, the failing step is named, the cause is chained:
+} catch (HttpClientErrorException.NotFound e) {
+    throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, "{error.<domain>.identityMissing}", e, "step: update locale");
+}
+```
+
+**Why**: a provider's 404 (the record the call is about no longer exists there) reported as "service
+not responding" sends the reader to the provider's health instead of the record, and the log carries
+neither the status nor the step. A provider 404 is never reported as an outage. A method that makes
+several provider calls names the failing one in its exception, and a catch that converts an exception
+logs its status or chains it, never neither.
+Example: a deleted identity answered 404 on the language write; the service reported 503 for every
+account whose identity was gone, and the cause pointed to a healthy provider.
+
+Enforcement: review - a catch block that converts an exception is judged by what the provider's status
+means for the caller, which no pattern over the source can read.
+
+---
+
+## AP-44: A Server-Stamped Reference Accepted from the Request
+
+```yaml
+# WRONG - the author is a field of the create and update bodies:
+- name: authorId
+  views: [list, detail, edit]
+
+# CORRECT - the service writes it from the signed-in account; the bodies do not carry it:
+- name: authorId
+  views: [list, detail]
+```
+
+**Why**: a field the service sets from the signed-in account (the author or owner of a record) that is
+also a field of the create body is null whenever the form does not send it, and a caller who sends it
+stores someone else's id. The `edit` view puts a field into the create and update DTOs; a field that is
+stamped by the server leaves it out, and the service sets it on create from the current actor and keeps
+it on update. Declare the field as a reference (`@References`, `@NameFields` on the target) so Meta draws
+it by name.
+Example: a note form never sent `authorId`, so every note was stored without an author; after the field
+left the `edit` view the service wrote it on create, and a create that sent a forged `authorId` stored the
+actor's id.
+
+Enforcement: review - which fields the server stamps is a property of the domain, not of the field's type.
+
+---
+
+## AP-45: A Registry Entity Ported Without Its Seed
+
+An entity whose API is read-only because the product registers its rows (scope axes, plans, catalogues,
+roles) is seeded by the application's baseline-data initializer **in the same change that ports its
+reader**. A reader without registered rows answers an empty list, and every write that refers to a row
+(a grant on an axis, a subscription to a plan) is refused with "not registered", so the screens that
+draw it can be neither driven nor verified: the entity has no create endpoint to seed it through.
+Register only the rows a reader needs (an axis no list reads would be offered and narrow nothing), leave
+an existing row untouched, and give the labels in every locale the product ships.
+
+Enforcement: review - an entity with a read-only API and no seed looks complete; the missing rows show
+only when a screen is driven.
