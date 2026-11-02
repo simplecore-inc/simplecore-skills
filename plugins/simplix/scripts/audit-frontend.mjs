@@ -738,6 +738,32 @@ function translatorBindings(content) {
 }
 
 /**
+ * The translator bindings of a file with the text each one governs.
+ *
+ * <p>Two components of one file may bind the same alias to different catalogues (`t` from
+ * `site/pages` in a hook, `t` from `site/widgets` in the page). A map keyed by alias keeps one of
+ * them, and every key the other component reads is then judged against the wrong catalogue and
+ * reported missing. Each binding governs the text from its own declaration to the next binding of
+ * the same alias; the text keeps its line numbers, so a hit still points at the right line.
+ *
+ * @param content the file source
+ * @returns one entry per binding: its alias, its namespace, and the governed text
+ */
+function translatorBindingSegments(content) {
+  const found = [];
+  for (const m of content.matchAll(
+    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*\w*[Tt]ranslation\(\s*"([^"]+)"/g,
+  )) {
+    found.push({ alias: m[1] ?? "t", ns: m[2], at: m.index });
+  }
+  return found.map((one, i) => {
+    const next = found.slice(i + 1).find((other) => other.alias === one.alias)?.at ?? content.length;
+    const before = content.slice(0, one.at).replace(/[^\n]/g, "");
+    return { alias: one.alias, ns: one.ns, text: before + content.slice(one.at, next) };
+  });
+}
+
+/**
  * The top-level property names of the object literal whose `{` sits at `open`.
  *
  * <p><b>Why this cannot be a regex.</b> The obvious pattern - an identifier followed by a colon -
@@ -3452,11 +3478,11 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     // `empty-locale-value` then reports in turn.
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
     check: (c, file) => {
-      const binds = translatorBindings(c);
-      if (binds.size === 0) return [];
+      const segments = translatorBindingSegments(c);
+      if (segments.length === 0) return [];
       const hits = [];
       const guardsItsOwnKey = (key) => new RegExp(`[!=]==\\s*"${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`).test(c);
-      for (const [alias, ns] of binds) {
+      for (const { alias, ns, text } of segments) {
         const keys = localeKeys(ns, file);
         if (!keys) continue;
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.]+)"`, "g");
@@ -3471,7 +3497,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
         );
         for (const pattern of [call, viaHelper]) {
           hits.push(
-            ...lineHits(c, pattern, (line) => {
+            ...lineHits(text, pattern, (line) => {
               pattern.lastIndex = 0;
               return [...line.matchAll(pattern)].some((m) => !keys.has(m[1]) && !guardsItsOwnKey(m[1]));
             }),
@@ -3518,6 +3544,25 @@ return <ErrorPageLayout action={t("error.goHome")} />;`,
 return <EmptyState title={t("area.title")} />;`,
         },
         miss: [
+          {
+            note: "two components of one file bind the same alias to different catalogues, and each reads a key of its own",
+            files: {
+              ...widgets,
+              "modules/site/src/locales/pages/ko.json": `{
+  "budget": { "paused": "중지됨" }
+}
+`,
+            },
+            source: `function useTiles() {
+  const { t } = useTranslation("site/pages");
+  return t("budget.paused");
+}
+
+export function Page() {
+  const { t } = useTranslation("site/widgets");
+  return <EmptyState title={t("area.title")} />;
+}`,
+          },
           {
             note: "an optional line: the read compares its result with its own key, so a catalogue without the entry draws no line instead of printing the key",
             files: widgets,
