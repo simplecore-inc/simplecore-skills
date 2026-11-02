@@ -125,7 +125,17 @@ Read this before planning a screen or dispatching agents for screen work.
      `--card-title`, `--text-filter`) is recorded in the file's origin, and a regeneration renders
      from the origin alone. A decision made by hand without its flag is invisible to the CLI: an
      untouched file regenerated from the origin (the board story) is drawn without it, and a template
-     change over the same lines conflicts with the edited file. Scaffold with the flag.
+     change over the same lines conflicts with the edited file. Scaffold with the flag. A cards list
+     is the exception: its switch follows from `--list-presentation cards`, the origin records no
+     `--view-toggle` for it, and the flag is refused beside it.
+   - `simplix generated --origin '<command>' <paths>` rewrites the origin of generated files that
+     the command renders, for a decision made by hand or recorded before its flag existed. Only
+     the stamp line changes, so the files stay as edited and the next regeneration renders the new
+     origin and merges it into them. `<command>` is the arguments after `simplix` (for example
+     `scaffold <entity> --module <m> --list-presentation cards`); the paths are generated files or
+     directories holding them, resolved against the working directory. A path the command does not
+     render, or a file without a stamp line, is refused and nothing is written. The option stands
+     alone: it takes no `--all`, `--check`, `--share`, `--rebase` or `--yes`.
    - `simplix generated --share` reports per screen the lines in blocks and edited files against
      the generated lines, and lists each customisation a second screen repeats (rule 6).
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
@@ -226,11 +236,26 @@ Read this before planning a screen or dispatching agents for screen work.
     second rule. An important outline removal would outrank it, and `audit-frontend.mjs` rule
     `important-outline-removal` refuses one. A keyboard cursor that moves without moving focus (a
     combobox or command item) is matched by the attribute that carries it, in the same base rule.
+    The focus halo (`--focus-halo`, a box-shadow) is drawn outside the control, so a part that clips
+    either leaves `--focus-gutter` around its content or, when it groups controls against an edge,
+    draws the ring inset (`[--focus-halo:var(--focus-halo-inset)]` in its slot style); a control that
+    draws no ring takes `focus-visible:shadow-[var(--focus-halo)]` from its slot style. Both tokens
+    sit beside `--focus-halo`, and a theme a project generates carries them with it. The kit's
+    rendered focus probe (`packages/console-clarity/scripts/focus-clip-rendered.mjs`: `probe` after
+    one real Tab key press, `census` by clipping part) runs inside the project's rendered runner and
+    reports a ring side an ancestor clips, a ring a sibling paints over and a control that draws the
+    browser's default ring. The fix goes into the part the census names, never onto a screen.
+    Enforcement: the rendered probe; no source rule judges it, because most `overflow` classes hold
+    no focusable control and a source match would flag them all.
 13. **The kit typechecks against the framework's built `dist`, the browser runs its `src`.** A
     new framework prop works in the dev server and fails the kit's `tsc` with "Property does not
     exist" until the framework package is rebuilt; rebuild it before a kit typecheck. A framework
     worktree has no `dist`, and an app config that loads a framework plugin from `dist` fails to
     start there: copy `dist` from the main checkout.
+    A dev server that sets the `source` resolve condition reads a framework package from source;
+    a build is needed only for the tools that read `dist` (type checks, server-render tests). An
+    export that names only `dist` (the framework's theme stylesheet) has no `source` entry, so a
+    change to it reaches the apps once the framework's build has copied it.
     A kit render test resolves the same `dist`, so a test of a framework change that is not built
     proves nothing about it (a label function reached `aria-label` as a function and was dropped);
     the proof of that behaviour goes in the framework package's own tests.
@@ -448,6 +473,8 @@ Read this before planning a screen or dispatching agents for screen work.
   measured whatever page was on screen after a fixed wait.
 - **Prevention.** A measurement asserts the screen's root slot first. It signs in and retries once
   if the slot is missing, and otherwise writes nothing.
+  A shell that draws is not proof of whose session it shows: the run clears tokens that do not name
+  its own account before it signs in, and checks the token names that account afterwards.
 
 ## Board tokens lost to the kit's own defaults
 - **What happened.** The board wrote its design tokens on a bare `:root`. The kit sets the same

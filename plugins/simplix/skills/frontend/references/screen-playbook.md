@@ -41,7 +41,9 @@ in the project's `CLAUDE.md`, never here.
   leads to its list, or stays a figure) and never unfolds the row; the handle at the end of the
   strip is the one control for that. A card or chip that does nothing when pressed is drawn with a
   not-allowed cursor and no press reaction (the `pressable` variant of the kit's tile and chip
-  slots), so a figure that leads nowhere does not teach the reader to stop trying the others.
+  slots), so a figure that leads nowhere does not teach the reader to stop trying the others. The
+  half of the figure row that is folded away is `inert` while hidden, so Tab never lands on a
+  card or chip behind a folded strip.
 - Status counts are the census over every row; sum cards follow the list's committed filters, its
   search text and its forced scope. Both are computed under the parameters the caller sends, so
   "today", "last 24 hours", "granted only" and "held above zero" are parameters the screen adds,
@@ -81,19 +83,46 @@ in the project's `CLAUDE.md`, never here.
   set (a handful of cards, one row per month) carries no range filters. An axis the persona's
   question names ("per provider") gets its filter, a text filter where the field is text
   (`--text-filter <field,field>`, `scaffold/overview.md`).
-- A list designed as cards offers the switch to the table, and the reader's choice is remembered
-  (`list.viewToggle` in the entry, `--view-toggle` in the scaffold; the kit stores the last view
-  under the list's `viewKey`). The columns follow the list's own width and the one
+- A list drawn as cards always offers the switch to the table, and the reader's choice is remembered.
+  The kit derives the offer from the presentation (`offersViewSwitch`: a cards list is always
+  offered it, a table list when it asks) and stores the last view under the list's `viewKey`, or
+  under a key derived from the column keys when the screen names none. The design entry carries
+  `list.viewToggle: true` for a cards list; a table list sets it only with `list.toggleReason`, the
+  reason its rows are also read as units. The columns follow the list's own width and the one
   `--card-min-width` layout token, so every card of every card list has the same column width, a
   detail panel opening beside the list reflows the cards, and the cards stand side by side from the
-  left with only the grid's gap between them and no empty track. A screen sets no card width, maximum width or column count of its
-  own; a different width is a change to the token or the grid (`customize/framework-components.md`).
+  left with only the grid's gap between them and no empty track. A screen sets no card width,
+  maximum width or column count of its own; a different width is a change to the token or the grid
+  (`customize/framework-components.md`).
+  Enforcement: the mockup board's design check (`screen-design`) refuses a cards entry without
+  `viewToggle`, a table entry with `viewToggle` and no `toggleReason`, and a list file or board
+  frame whose `<RecordList>` declares another presentation, switch or card title than its entry;
+  the scaffold renders the switch for every cards list without a flag and refuses `--view-toggle`
+  beside `--list-presentation cards` (`--view-toggle` is for a table list); `compareCardGrid` in
+  the kit's `regions-rendered.mjs` measures the grid in the rendered run: the column count is
+  `max(1, floor((listWidth + gap) / (cardMin + gap)))`, every card is the column width and the
+  first card's width, the first card starts at the list's left padding, neighbours stand one gap
+  apart and rows one row gap apart.
 - A card's labelled lines are read in both languages at the narrow and the wide width. A label that
   wraps (the label column is as wide as the longest label up to the `--console-card-label-max`
   token), a line drawn as a dash on most cards (`cardKeep: false` draws it only on the cards that
   have a value) and a figure row that pushes the list below the fold are findings.
+- A person's name is drawn through one interface-language helper; a name field read directly, or a
+  server-composed display name, draws the same person in one language whatever the language menu
+  says. A name the server composes into a row is localized on the server (the entity declares its
+  per-language family, described in the backend skill's `entity/yml-configuration.md`), and the screen draws that
+  field as the contract gives it with no name code of its own. A list over a reference key that
+  draws the name sorts and searches through it, and a text search finds the person by every name
+  they carry (native, English and sign-in name).
+  Enforcement: review - which field of a record is a person's name is a fact of the product's
+  contract, so a source rule cannot tell it from any other text field; a project that has the
+  helper adds its own source check against a direct read.
 - A holder tab (a list inside a record's detail) draws the columns of the holder's own list, never
   every field of the DTO.
+- A history rail (the kit's `screen/history-rail`) draws each step as a dot with a line to the next.
+  The line is absolutely positioned, 2px wide, stands 4px under its own dot and stops 4px above the
+  next one at any row height, and is dashed where the next step was skipped. A screen draws no rail
+  of its own and sets no spacing on the kit's.
 
 ## Rendered checks
 
@@ -101,10 +130,15 @@ in the project's `CLAUDE.md`, never here.
   story index (printing the stories that exist on a miss), opens a route (a route behind a tab at the tab's URL),
   asserts the screen's root slot or the document title before a capture is read (a sign-in page or an overlay
   measures like a screen), runs the kit's region probe for the page
-  type and every rendered audit check (`audit-rendered.mjs --print-all` prints them as JSON for a driver that holds
-  a signed-in page), and prints a short result; an agent that writes its own loop per screen re-derives the
+  type, the kit's focus ring probe and every rendered audit check (`audit-rendered.mjs --print-all` prints them as
+  JSON for a driver that holds a signed-in page), and prints a short result; an agent that writes its own loop per screen re-derives the
   sign-in, the root selector and the board frame's story id each time. The region signature is compared without
-  the row count, and a list that draws no rows is reported as not judged. A frame's story id comes from the
+  the row count, and a list that draws no rows is reported as not judged. The run signs in whether or
+  not a shell is drawn, because the shell draws for any stored session: tokens a deleted account or
+  another agent left at the origin open it with no identity-provider session behind them, and a pass
+  that trusts the shell measures the wrong account. A rendered run clears the tokens that do not belong
+  to its own account before it measures (the app's stored tokens and the identity realm's cookies), and
+  fails unless the token it holds names its own account after the sign-in. A frame's story id comes from the
   story file's id and export name, not from the entity's name.
 - The board frame and the live page differ in content (a row count sets a list's height, a record sets a badge's
   variant): control metrics between them are read, the region signature and the audit checks gate.
@@ -127,8 +161,9 @@ in the project's `CLAUDE.md`, never here.
   origin in the same browser profile, and the identity provider returns a sign-in only to the origin
   its client registers; the project's reference names that origin and the account script.
 - A scripted run that moves state restores it in a `finally`. It re-reads the token before cleanup,
-  closes every page before it deletes its account (a page left open keeps saving to a deleted
-  identity, and the API answers an outage), names its browser space by its account (a name shared
+  closes every page before it deletes its account (a page left open keeps saving its language to a
+  deleted identity, and the identity provider answers 404; the product must report a missing
+  identity there, never an outage), names its browser space by its account (a name shared
   between runs ends the other run's task), deletes only names and prefixes it owns, and prints one
   real response of a create call before it builds on the response's shape. A language switched
   through the app's menu is followed by in-app navigation only, since a reload resets the language

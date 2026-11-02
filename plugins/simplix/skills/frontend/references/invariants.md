@@ -269,6 +269,9 @@ operator covers both - `||`, never `??`, on anything that comes out of `resolveB
 `DetailDateField` / `datePart` silently drops the time an approver needs. A raw id or ISO
 stamp shown to a user is a machine value leaking through. Resolve enums, format instants
 with `format="datetime"`, and title panels with an identifying value (a name), never an id.
+The audit rule `instant-formatted-by-hand` judges a file that imports from the framework; a page
+that imports nothing of it (an identity provider's theme page, drawn in the reader's own browser) has
+no component to defer to, and the reader's zone is its display zone, so the rule leaves it out.
 
 **The audit strip at the foot of a detail is the one place a raw identifier belongs, and it is not
 an exception somebody keeps finding.** `CrudDetail.AuditFooter` shortens a UUID, offers the whole

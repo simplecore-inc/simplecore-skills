@@ -144,9 +144,12 @@ and when an author runs it; `pnpm exec simplix <command> --help` lists the flags
 - `--menu-group` and `--menu-icon` place the screen's menu entry (see "Which steps this project runs").
 - `--list-presentation <table|cards>`, `--view-toggle` and `--card-title <column>` carry the list decisions of the
   screen's design entry: how the list draws its rows, whether the reader may switch between the table and the
-  cards, and the column that titles a card. `--text-filter <field,field>` gives each named text field a filter
+  cards, and the column that titles a card. A list drawn as cards always renders the switch, so
+  `--list-presentation cards` carries it and `--view-toggle` beside it is refused; `--view-toggle` is for a table
+  list whose design entry gives a `toggleReason`. `--text-filter <field,field>` gives each named text field a filter
   the reader types a part of (the generator otherwise leaves text fields to the keyword search). These flags
-  are recorded in the file's origin, so a regeneration renders the same list (`../screen-workflow.md` rule 2).
+  are recorded in the file's origin, so a regeneration renders the same list;
+  `simplix generated --origin` changes a recorded origin (`../screen-workflow.md` rule 2).
 - `--native` and `--app` write the mobile screen set; this document does not cover mobile.
 
 **`simplix add-page <kind> <name>`** writes a page that is not an entity list. The kind is `record-page`, `dashboard-page`,
