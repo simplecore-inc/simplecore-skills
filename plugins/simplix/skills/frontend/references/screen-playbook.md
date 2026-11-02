@@ -21,6 +21,12 @@ in the project's `CLAUDE.md`, never here.
 | Board files edited by hand fail the formatter only when it runs from the apps project | the board's check runs the formatter first; fix with the formatter's write mode from the apps project |
 | A route path is guessed (`/audit-events` against `/audit-log`) | the entity's plural in kebab case is the default; a path override in `routes.<group>.paths` is written before the scaffold, and only where the menu word differs from the entity's plural |
 | A generated list or detail draws a field with a masked twin, or a decrypted personal field | `scaffold.maskedSuffix` makes the generator leave the unmasked field out; a personal field with no masked twin is a backend gap, raised and not drawn |
+| A reference column draws the raw id as the name although typecheck, lint and the board agree | the nested record lists every property of its entity and the serializer writes fewer: the name path comes from the entity's declared `nameFields`, not from the field names; `simplix check-screen` fails any other path, and the board's sample rows nest the name |
+| The scaffolded form cannot create a record, or its first save is refused | the create body's required fields are all in the table and marked; a required reference needs `scaffold.referencePickers` for its entity; `check-screen` reports each |
+| A text field with a long contract is drawn on one line | the kind follows the contract's length (500 and up); where the live Meta states none, refresh the snapshot after the backend rebuilds before writing the kind by hand |
+| A list can only be filtered by a user's id | a reference key gets the entity-facet filter (`facet` in `scaffold.referencePickers`), leading the filters; without a configured facet the id filter is left out, not offered |
+| A conflict between a template change and a screen's own content | read the printed diff; where the screen is the intended one, `simplix generated --rebase -y --adopt <path>` records the base; where the template change is wanted, take the hunk by hand first |
+| The screen draws no description line | the scaffold writes no description key; add `screen.<entity>.description` to the module's `widgets` catalog in every language, and let the board's design check confirm it |
 | A probe that finds nothing reports a clean 0 | prove every counting check on a known hit before trusting a 0; a command whose failure is swallowed reports 0 for the wrong reason |
 
 ## Regions, figures and filters
@@ -44,6 +50,16 @@ in the project's `CLAUDE.md`, never here.
   owns the unit, the label names the quantity.
 - A verb the backend has and no type names takes its own kind and glyph in the kit; a borrowed
   type or a labelled-button flag per screen is a second way to draw one region.
+
+## Rendered checks
+
+- Write one product runner that signs a test account in, opens a route, runs the kit's region probe for the page
+  type and every rendered audit check (`audit-rendered.mjs --print-all` prints them as JSON for a driver that holds
+  a signed-in page), and prints a short result; an agent that writes its own loop per screen re-derives the
+  sign-in, the root selector and the board frame's story id each time. The region signature is compared without
+  the row count, and a list that draws no rows is reported as not judged.
+- The board frame and the live page differ in content (a row count sets a list's height, a record sets a badge's
+  variant): control metrics between them are read, the region signature and the audit checks gate.
 
 ## Several agents in one checkout
 

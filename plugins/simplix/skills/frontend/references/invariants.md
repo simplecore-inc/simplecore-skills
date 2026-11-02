@@ -179,6 +179,15 @@ or deliberately out of scope. Ids the user cannot know (an `attachmentFileId`, a
 reference) are never plain text inputs - they come from a picker or the framework file
 field.
 
+**The generator holds this, and `simplix check-screen` proves it on the written files.** The form's
+field table is built from the create body: every field the body requires is in the table and marked
+`required: true` (a boolean switch always holds a value and is not marked), a string whose contract
+allows 500 characters or more is `longText`, and a reference is edited through the picker the
+project names for its entity (`scaffold.referencePickers.<peekKind>.hook`). A required key whose
+record is not nested beside it still stays in the form: left out, every create the form sends is
+refused. A form edited by hand after the scaffold is judged by the same check, so a dropped field or
+a lost mark fails before a browser shows it.
+
 ## #36 Server values are rendered, never echoed
 
 A boot-enum object (`{type,value,label}`) fed into a `SelectField` renders blank and

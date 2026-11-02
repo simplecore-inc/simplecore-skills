@@ -13,6 +13,7 @@
  *   node audit-rendered.mjs --url <u> --check countedListDrawsNoRows
  *   node audit-rendered.mjs --list                  # the checks and what each catches
  *   node audit-rendered.mjs --print <id>            # the snippet, to paste into any driver
+ *   node audit-rendered.mjs --print-all [--options @<file>]   # every selected check as JSON [{ id, grade, snippet }]
  *   node audit-rendered.mjs --url <u> --options @<design>.audit.json  # options from a file
  *   node audit-rendered.mjs --selftest              # both directions, against generated fixtures
  *
@@ -4181,7 +4182,7 @@ function selfTest(session, options, selected = checks) {
 // Every option this script knows, so an unrecognised one can stop the run instead of falling
 // through to a normal one. The script reads no project tree, so it takes no `--root`.
 const OPTION_SPEC = {
-  flags: ["--list", "--selftest", "--keep-session"],
+  flags: ["--list", "--selftest", "--keep-session", "--print-all"],
   valued: ["url", "check", "print", "session", "options"],
 };
 const OPTIONS = parseOptions(process.argv.slice(2), OPTION_SPEC);
@@ -4216,6 +4217,18 @@ function main() {
 
   if (OPTIONS.flags.has("--list")) {
     for (const c of checks) console.log(`${c.id} [${c.grade}] — ${c.title}`);
+    return 0;
+  }
+  if (OPTIONS.flags.has("--print-all")) {
+    // One entry per selected check, so a driver that holds a signed-in page evaluates all of them
+    // in one loop instead of printing the snippets one by one.
+    try {
+      // Written synchronously: the output is large and the process exits right after this returns.
+      fs.writeSync(1, `${JSON.stringify(selected.map((c) => ({ id: c.id, grade: c.grade, snippet: snippet(c, options) })))}\n`);
+    } catch (e) {
+      console.error(e.message);
+      return 2;
+    }
     return 0;
   }
   if (arg("print")) {

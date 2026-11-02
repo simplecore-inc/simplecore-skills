@@ -131,6 +131,9 @@ Read this before planning a screen or dispatching agents for screen work.
    rendered value also belongs to the design's token set; a computed value outside it is a
    defect, found by a rendered check and kept out by a source check on arbitrary values. An item
    customised on a second screen is the signal to lift it.
+   - The project keeps one runner for this (sign in, open the route, region probe, every rendered
+     audit check, signature against the frame); `screen-playbook.md` § Rendered checks. An agent
+     does not write its own loop.
    - `node <plugin>/scripts/compare-rendered.mjs --app <url> --board <url> --root-slot <slot>`
      measures both pages and lists every role property that differs. It refuses (exit 2) when the
      root slot is missing on either side or the two roots carry different `data-design`.

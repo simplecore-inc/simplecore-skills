@@ -89,6 +89,28 @@ The **Update path** reads the same way: its snapshot recipe greps `src/generated
 the changed surface is `git diff` of `src/generated-meta/` and of the committed Meta snapshot, and
 `simplix meta-info <Entity>` states what an entity offers after the change.
 
+## What the CLI judges and settles on a meta project
+
+- **A reference is drawn by the name its entity declares.** A record that arrives nested beside its key lists
+  every property of its entity, including ones the serializer may leave out, so a name path guessed from the field
+  names can resolve against the model and still draw the key. The scaffold takes the key's
+  `reference.nameField`, else the referenced entity's first `nameFields`; only a path it had to guess is marked and
+  printed as a warning. A reference whose entity declares no `nameFields` is a backend gap to raise, not a path to
+  keep. The board's sample rows nest the name (`user: { username }`), never one flat key spelled with a dot.
+- **The form is built from the create body.** Every field it requires is in the table, marked `required: true`,
+  long text follows the contract's length, and a reference is edited through `scaffold.referencePickers`
+  (`{ <peekKind>: { hook, from, facet? } }`): `hook` searches the entity for a form picker, `facet` filters a list
+  over a key of that entity by the record's name. Both come from the framework's `createEntitySearch` and
+  `createEntityFacet`.
+- **`simplix check-screen [entity...]`** reads the written files against the committed Meta and exits 1 on an error
+  (a missing or unmarked required field, long text on one line, a reference form field with no picker, a name path
+  other than the settled one, a flat key in a frame's sample rows); it warns on a guessed name. It runs after
+  `scaffold` and `generated --all`, so a gap that compiled and rendered is found before a browser.
+- **`simplix generated [path...]`** narrows the report to those files or directories. A screen whose content is the
+  intended one against a template change that conflicts with it is kept with
+  `simplix generated --rebase -y --adopt <path...>` (the options go before `--adopt`): it prints each diff, then
+  records the current render as the file's base.
+
 ## Prerequisites
 
 Before starting, read `simplix.config.ts` at the project root. It defines:
