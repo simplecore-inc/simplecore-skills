@@ -80,8 +80,11 @@ private List<StepSpec> steps;   // a value object, not an entity
 **① The generator emits a service and a test for a repository that does not exist.** It reads
 `StepSpec` as a referenced entity and injects a
 `StepSpecService`. Removing the `reference:` block from the yml does not stop it -
-the type is re-inferred from the field. **Delete the injection by hand after promoting**, and
-expect it back after every regeneration.
+the type is re-inferred from the field. **Delete the injection by hand after promoting.** The
+deletion is an edit of the promoted file, so the three-way merge keeps it on later promotes
+(`promote-workflow.md` § Usage); the injection reappears only in a file that is still untouched
+or after a `--force` promote, and a promote that reports a `conflict` on those lines is resolved
+in the file.
 
 **② The generated test calls setters for derived i18n columns.** `setTitleSearch` /
 `setTitleSortEn` and their siblings are computed by a listener from the i18n map and have no

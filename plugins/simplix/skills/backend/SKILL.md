@@ -123,7 +123,8 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
 
 2. **GENERATE** - Scaffold & promote (`yo simplix:*` is a Yeoman-based code generator; run from project root)
    - First-time config + generate → `entity/yml-configuration.md` § Creating YML Configuration (the step order, from the entity to the customization)
-   - Promote generated → src → `generator/promote-workflow.md`
+   - Promote generated → src, tracked renders, conflicts → `generator/promote-workflow.md`
+   - `yo simplix` · `init` · `version` · `generated` (setup, version pin, state report) → `generator/commands.md`
    - Edit `.java.template` → `generator/template-customization.md`
    - Generator error → `generator/troubleshooting.md`
 
@@ -133,6 +134,7 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
      ※ MUST scaffold via generator first - generate → promote → customize
    - New non-CRUD controller → `convention/non-crud-controller.md`
      ※ Backed by one entity → generator-then-trim (generate as CRUD → promote → trim → add `@SimpliXStandardApi`). Hand-authoring is permitted ONLY for genuinely entity-less/multi-entity surfaces: no backing DB entity, multi-entity aggregation, token/device-authenticated portal, dev/test-only controller. `@MapsId` dependent entity and user-self-over-one-entity are still generate-then-trim.
+   - Class-level list metadata (`@SimpliXDefaultSort`, `@SimpliXListFigures`) → `convention/canonical-controller.md` § Class-Level List Metadata
    - Add endpoint to existing controller → Read `convention/canonical-controller.md` for the endpoint template; for binary/async exceptions additionally verify invariant 1
    - Modify existing code → Read surrounding code first. For convention drift, also check `convention/anti-patterns.md` + `review/common-issues-checklist.md`. Invariants apply.
 

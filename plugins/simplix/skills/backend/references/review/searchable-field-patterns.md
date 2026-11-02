@@ -756,7 +756,7 @@ GET /api/items?createdAt.between=2024-01-01T00:00:00Z,2024-12-31T23:59:59Z
 
 **Symptom**: the list shows a load failure as soon as the date range filter is used; the request carries `<field>.greaterThanOrEqualTo` and `<field>.lessThanOrEqualTo`.
 
-**Cause**: the field declares `GREATER_THAN` / `LESS_THAN` only, so the framework refuses the inclusive operators as undeclared. The generator used to write `[between, greaterThan, lessThan]` into the yml of every temporal field, so a yml created before the default changed still carries it.
+**Cause**: the field declares `GREATER_THAN` / `LESS_THAN` only, so the framework refuses the inclusive operators as undeclared. A yml created by an older generator version carries `[between, greaterThan, lessThan]` on every temporal field; the current default is the inclusive pair.
 
 **Fix**: declare `searchOperators: [between, greaterThanOrEqual, lessThanOrEqual]` in the yml, regenerate, and merge into the promoted DTO the `{BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}` the generator now emits. The audit rule `date-search-field-with-exclusive-bounds` (an error) lists every field that still has the exclusive pair. A field whose bounds really are exclusive says why in a comment beside it and carries a `simplix-audit-ignore[date-search-field-with-exclusive-bounds]` marker with the reason.
 

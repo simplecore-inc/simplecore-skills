@@ -101,9 +101,13 @@ private Boolean deleted = false;
 @RequestMapping("/kebab-case-path")                   // 2
 @Tag(name = "{module}.{subdomain}.EntityName",         // 3
     description = "Entity description")
+@SimpliXDefaultSort(field = "createdAt")              // 4. Only when the list has a default order
+@SimpliXListFigures(statusCounts = {"status"})        // 5. Only when the list publishes figures
 public class EntityNameRestController
     extends SimpliXBaseController<EntityName, String> {
 ```
+
+Both list annotations are optional; what they publish and when SimpliX Meta refuses them: `canonical-controller.md` § Class-Level List Metadata.
 
 ### Controller Method Annotations
 

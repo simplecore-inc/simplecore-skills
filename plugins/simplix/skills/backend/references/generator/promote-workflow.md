@@ -2,7 +2,7 @@
 
 Move generated CRUD code from `generated/` to `src/` after verification.
 
-> **Scope (canonical):** `yo simplix:promote` command, file-mapping table (service/controller/DTO/test destinations), verification steps. Runs after `yo simplix:generate`. For template issues encountered during generation, see **troubleshooting.md**; for template editing see **template-customization.md**.
+> **Scope (canonical):** `yo simplix:promote` command, the tracked-render rules (fingerprint, stored base, three-way merge, conflicts), file-mapping table (service/controller/DTO/test destinations), verification steps. Runs after `yo simplix:generate`. For template issues encountered during generation, see **troubleshooting.md**; for template editing see **template-customization.md**; for `yo simplix:generated`, `version` and `init` see **commands.md**.
 
 ## Required Arguments
 
@@ -12,6 +12,9 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 |----------|----------|-------------|
 | EntityName | **YES** | The name of the entity to promote |
 | `--module` | **YES** | The yml's `promoteModule` (e.g. `admin/billing`); promote refuses to run without it |
+| `--adopt` | no | Record the current render as the base of existing files that have none (§ Usage) |
+| `--force` | no | Overwrite the promoted files, edits and removals included (§ Usage) |
+| `--skip-version-check` | no | Promote although the project requires a newer generator (`commands.md` § `yo simplix:version`) |
 
 ## Why Promote?
 
@@ -21,10 +24,12 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 
 ## What Promote Does
 
-1. Copies files from `generated/` to `src/` directory
-2. **Deletes the original files from `generated/`** (prevents duplicate class errors)
-3. Creates destination directories if they don't exist
-4. Shows summary of promoted files
+1. Stamps each rendered file in `generated/` with the marker and the render fingerprint, and writes it to the module's `src/` directory by the tracked-render rule (§ Usage), creating destination directories as needed
+2. Stores the stamped render under `.simplix/bases/` as the merge base for the next promote
+3. **Deletes the original from `generated/`** once the file is written, merged or left as it was (prevents duplicate class errors in a project that compiles `generated/`). A file whose outcome is `conflict` or `no-base` keeps its render in `generated/`, so the promote can run again after the fix
+4. Prints one outcome per file and a count per outcome, and exits non-zero on `conflict` or `no-base`
+
+A file whose render is missing from `generated/` is skipped with a warning to run `yo simplix:generate <Entity>` first.
 
 ## File Mapping
 
@@ -50,17 +55,29 @@ yo simplix:generated
 
 Every promoted file opens with `// @simplix-generated` and `// @simplix-render <fingerprint> promote
 <Entity> --module <module>`, and promote stores the render under `.simplix/bases/` (committed). A
-later generate then promote rewrites an untouched file, merges the template change three ways into an
-edited one, leaves a deleted one deleted, and never overwrites an edited file whose merge conflicts:
-the merge with markers goes to `generated/conflicts/<path>.conflict` and promote exits non-zero.
-Resolve it in the file, then promote again. A conflict is the expected outcome when the template and
-the customisation both append after the last method of a class.
+later generate then promote reports one outcome per file:
 
-**Resolving in the file does not end the conflict**: the stored base is still the old render, so the
-next promote merges the same two changes and reports the same hunks. `promote` has no flag that
-records a resolution (`--adopt` skips a file that already has a base, `--force` discards the edits).
-After resolving by hand, record the fresh render as the base with the generator's own helpers, run
-from the project root against the `generated/` file `generate` just wrote:
+| Outcome | The file was | What promote did |
+|---|---|---|
+| `written` | absent, or untouched (still exactly the render it was laid down as) | wrote the fresh render and stored it as the base |
+| `merged` | edited, and the template change merges cleanly | wrote the three-way merge (`git merge-file`: edits, stored base, fresh render) and stored the fresh render as the base |
+| `current` | edited, and already carries the template change | left the file, stored the fresh render as the base |
+| `removed` | deleted after it was laid down (a base is stored) | left it deleted |
+| `adopted` | edited, with no base, under `--adopt` | stamped it, kept its edits, stored the fresh render as the base |
+| `conflict` | edited, and the template change collides with the edits | kept the file untouched, wrote the merge with markers to `generated/conflicts/<path>.conflict`, exit 1 |
+| `no-base` | edited, with no stored base | kept the file, exit 1 (run with `--adopt` or `--force`) |
+
+A conflict is the expected outcome when the template and the customisation both append after the
+last method of a class.
+
+**Resolving a conflict.** Edit the promoted file itself, using the `.conflict` file to see both sides
+of each hunk, then promote again. The next promote closes the conflict only when the resolved region
+equals the template's side of the hunk (it then reports `current`). Any other resolution, such as a
+combination of the template change and the customisation, merges the same two changes against the
+same stored base and reports the same hunks again, because `promote` has no flag that records a
+resolution (`--adopt` acts only on files that have no base, `--force` discards the edits). Record the
+fresh render as the base with the generator's own helpers, run from the project root against the
+`generated/` file `generate` just wrote:
 
 ```js
 import fs from 'node:fs';
@@ -74,15 +91,20 @@ Then `yo simplix:promote` reports `current` for the file and `yo simplix:generat
 edited. Do this only after the template's new parts are in the file by hand; recording the base
 over an unresolved file makes the template change look already merged.
 
-`--force` overwrites edits and removals and is never the regeneration path. `--adopt` stamps files
-promoted before tracked renders existed and stores the current render as their base, once per project.
+`--force` writes the fresh render over the promoted file whatever it holds, edits and removals
+included, and stores it as the base; it is never the regeneration path. `--adopt` acts only on files
+that have no stored base: an existing file is stamped, keeps its edits and takes the current render
+as its base (so its customisations read as edits against that render, and any template change that
+landed between the original promote and the adopt reads as a customisation too); a missing file gets
+its base recorded so later promotes leave it deleted. A file that already has a base goes through the
+normal tracked promote. Adopt once per project, for files promoted before tracked renders existed.
 The collision check below still comes first: a hand-authored `XService` with no stamp reads as
 `no-base`, is kept, and fails promote.
 
 **IMPORTANT**: Always use `yo simplix:promote` instead of manual file operations. The command ensures:
-- Files are deleted from `generated/` after copying (no duplicate classes)
+- Files are deleted from `generated/` once handled (no duplicate classes), except on `conflict` and `no-base`
 - Proper directory structure is created
-- Consistent file handling across all entities
+- Every file carries its fingerprint and a stored base, so the next template change reaches it
 
 ## Example: Promote CmsContentLink
 
@@ -94,8 +116,8 @@ yo simplix:generate CmsContentLink --force
 yo simplix:promote CmsContentLink --module <promoteModule>
 ```
 
-It reports one `From` / `To` pair per artefact - service, controller, DTOs, service test - and a
-count. Four promoted files is the normal shape for an entity with no optional parts.
+It reports one `From` / `To` pair per artefact (service, controller, DTOs, service test; the tree
+service and its test are added when the render produced them), its outcome, and a count per outcome.
 
 ## Before generating: the module path names a group
 
@@ -141,8 +163,9 @@ constructor or leaves a dangling body. Remove one endpoint method at a time - Ja
 annotations and body as a unit - and compile after each.
 
 For an append-only audit or history entity, trim the writes down to a read surface (keep `get`
-+ `search`). Re-apply the project's feature-gate annotation, if it has one, and a real `@Tag`
-description after any re-generation; regeneration wipes both.
++ `search`). The project's feature-gate annotation, if it has one, and a real `@Tag` description are
+edits of the promoted file: the three-way merge keeps them across a regeneration, and a promote that
+reports a `conflict` on those lines is resolved in the file (§ Usage).
 
 ## After generating: the promoted service test goes stale with the service
 
@@ -170,6 +193,9 @@ before generating and there is nothing to rewrite here. Otherwise:
 
 ## Post-Promote Verification
 
+Run the first check before `yo simplix:generated`: that command renders every promoted entity into
+`generated/` again and leaves the renders there.
+
 ```bash
 # Verify generated files are deleted
 find generated -name "EntityName*" -type f
@@ -186,8 +212,8 @@ find generated -name "EntityName*" -type f
 ## Checklist
 
 - [ ] Run `yo simplix:promote EntityName --module <promoteModule>`, and resolve every reported conflict in the file
+- [ ] Verify no files remain in `generated/` for the entity (before the next step re-renders them)
 - [ ] `yo simplix:generated` exits 0, and `.simplix/bases/` is committed with the promoted files
-- [ ] Verify no files remain in `generated/` for the entity
 - [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
 - [ ] The service's ID-mismatch guard throws the `{error.<domain>.idCannotChange}` placeholder (#3)
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` reports 0 error-level hits on the promoted files

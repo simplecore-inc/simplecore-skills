@@ -162,3 +162,24 @@ The target is the UPPER_SNAKE feature-area group the related controllers share (
 | `delete`, `batchDelete` | `'delete'` |
 | `get`, `updateForm` | `'view'` |
 | `simpleSearch`, `search` | `'list'` |
+
+---
+
+## Class-Level List Metadata: `@SimpliXDefaultSort` and `@SimpliXListFigures`
+
+Two optional class annotations on a `SimpliXBaseController` subclass publish how its list opens and what a client can sum it up by. SimpliX Meta carries both, so a client draws them instead of guessing a field the server would refuse. They sit with the other class annotations, before `class` (`annotation-ordering.md`).
+
+| Annotation | Members | Published in SimpliX Meta as |
+|---|---|---|
+| `@SimpliXDefaultSort(field, direction)` | `direction` is `asc` or `desc`, default `desc` | `defaultSort` on the entity and on each search operation of that controller |
+| `@SimpliXListFigures(statusCounts, aggregates, timeAxis)` | `statusCounts`: fields to count rows by; `aggregates`: `@SimpliXListFigures.Figure(field, op)` with `op` one of `sum`, `count`, `countDistinct`, `min`, `max`; `timeAxis`: the entity field a time range slices on | `statusCounts`, `aggregates` on the entity; `statusCounts`, `aggregates`, `timeAxis` on each search operation of that controller |
+
+SimpliX Meta refuses to build (it throws `IllegalStateException` naming the entity and the field) when:
+
+- the default sort field is the entity's id, is not declared `sortable` on the search DTO (a `sortAlias` also counts), or the direction is neither `asc` nor `desc`;
+- a status count or aggregate names a field that is neither an entity field nor a field of the search DTO;
+- the time axis names a field that is not a field of the entity.
+
+Two controllers over one entity (an operators' list and a person's own) each publish their own figures and default sort on their operations, so declare them on the controller whose list they describe.
+
+**The annotation publishes; it serves nothing.** The framework declares no `status-counts`, `aggregates` or `counts` endpoint. Those endpoints, and the service code behind them, come from the project's controller and service templates (`../entity/yml-configuration.md` § Project template keys), which read the figures from the yml and emit the annotation and the endpoints together. A figure the annotation names with no endpoint behind it, or an endpoint without the annotation, is a contract the client cannot discover.
