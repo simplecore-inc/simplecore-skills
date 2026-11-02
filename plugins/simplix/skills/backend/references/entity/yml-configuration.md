@@ -176,6 +176,46 @@ name. The generated list and detail DTOs then carry `@I18nTrans(source = "<x>I18
 the hidden map beside it; the search field points at the base column, which is the one a pattern
 operator can run on.
 
+A name a row composes from another record (a person, an owner, an actor) is a localized name like
+any other: declare its `<x>I18n` / `<x>Sort<Lang>` / `<x>Search` family in the entity and in the
+generator yml, so the server resolves, sorts and searches it in the reader's language; the client
+never picks a name field by language. In the yml the three siblings read:
+
+```yaml
+<x>I18n:
+  comment: The name per language, resolved to the reader's language
+  sortable: false
+  views: [list, detail]
+  searchOperators: []
+  type: Map<String, String>
+
+<x>Sort<Lang>:                # one per language
+  comment: The order the name follows for a reader of that language
+  sortable: true
+  views: []
+  maxLength: 255
+  searchOperators: []
+
+<x>Search:
+  comment: Every name the person carries, folded, which a search by name reads
+  sortable: false
+  views: []
+  maxLength: 1000
+  searchOperators: [contains]
+```
+
+- **One formula source.** The name formulas live in one project class that the entities reference,
+  not a copy per entity, so the fallback (the account name when no display name is set, never an
+  encrypted contact address) is written once.
+- **The service moves the sort and the search term.** A sort over `<x>` is rewritten onto the
+  `<x>Sort<Lang>` column of the language the request reads, a sort over the key column the list
+  draws as that name (an owner id drawn as the owner's name) is routed to the same columns, and
+  the term typed into a name filter is folded the way `<x>Search` was stored. The project's
+  generated service template carries that call for the names its surface declares, so a promote
+  keeps it.
+- **A census refuses a gap.** A test over the entities fails a native-first name formula (a
+  `COALESCE` of a native and an English name) that has no per-language family beside it.
+
 ---
 
 ## Views

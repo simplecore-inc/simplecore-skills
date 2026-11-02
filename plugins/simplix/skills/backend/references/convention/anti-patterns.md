@@ -1089,6 +1089,10 @@ several provider calls names the failing one in its exception, and a catch that 
 logs its status or chains it, never neither.
 Example: a deleted identity answered 404 on the language write; the service reported 503 for every
 account whose identity was gone, and the cause pointed to a healthy provider.
+A token outlives the identity it was issued for: a test account deleted while a browser page still
+holds its token keeps that page saving its language, and every save reaches the provider as a 404.
+The product answers "identity missing" there; the run that owns the account closes its pages before
+it deletes the account.
 
 Enforcement: review - a catch block that converts an exception is judged by what the provider's status
 means for the caller, which no pattern over the source can read.
