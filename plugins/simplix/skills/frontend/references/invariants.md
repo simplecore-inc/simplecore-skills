@@ -108,7 +108,7 @@ d. Panel-style list-detail pages render the `Stack flex` root directly - an extr
    `Container` breaks the flex height chain and un-pins the detail footer.
 e. **Whatever `ListDetail.Detail` renders owns the scroll.** `ListDetail.Detail` is
    `overflow-hidden` by design - it never scrolls its own content. Its child MUST supply
-   the scroll container, and there are exactly two ways to do that:
+   the scroll container, and it is supplied in one of these ways:
    - **Read/edit surfaces → `CrudDetail` / `CrudForm`** (header slot / `overflow-auto` body
      slot / pinned footer). This is the default for ANY panel showing entity data,
      including operator consoles and action panels - a panel that runs actions is still a
@@ -261,7 +261,7 @@ from `committedValues`. An inline `FormFields.*` row acting as a report's search
 is a defect. The total badge is the FilterBar `count` prop (it renders the shared
 `ListTotalBadge`) - never a hand-placed badge in `leading`, which is reserved for extra
 summary content (aggregate totals, a pending-count badge). On a page with a status-card
-strip, tab bodies carry no `StatusCard`s of their own - tab aggregates live on this toolbar
+strip, tab bodies carry no status cards of their own - tab aggregates live on this toolbar
 line. Detection recipes → `audit/audit-checklist.md` § 11.
 
 ## #43 Badge density parity
@@ -455,6 +455,50 @@ such message through it. A codebase that gates one message this way and not the 
 has the defect, not the convention. The check when writing any such string: does this page
 render the address it just told them to use?
 
+## #56 A shared catalogue is edited key by key
+
+**A shared catalogue is edited key by key; a whole-file write re-reads inside the same step.**
+Locale catalogues (`modules/<domain>/src/locales/**/*.json`) and codegen output are appended to by
+many tasks that never otherwise touch the same file. The hazard is not two writers at one moment; it
+is ONE writer that reads the file early, works for a while, and writes the whole file late.
+Everything added in between is silently gone - the keys vanish, the widgets naming them stay, and
+the screens print `<namespace>.<key>`; nothing errors, and git shows a plausible small diff because
+the lost keys were never committed. When a whole-file write is genuinely needed (a scripted bulk
+edit, a sort, a reformat), re-read the file inside the same step that writes it. A sudden crop of
+the audit's `missing-translation-key` error across files you did not touch is this, not somebody
+forgetting their keys.
+
+Enforcement: review - a whole-file write is a read-modify-write across time, and a machine reading the source sees one ordinary file write; whether the read happened inside the same step is a property of the task, not of the text.
+
+## #57 An idempotency key is scoped to the payload it guards
+
+**A client-generated idempotency key is scoped to the payload it guards, never to the screen or the
+record it was reached from.** A key scoped to something coarser (the plan, the entity, the tab)
+survives the user going back and CHANGING the form, so the server answers the new basket with the
+old record and the screen after the submit shows values nobody typed: a cross-screen disagreement no
+test catches, because both screens are individually correct. Derive the stored key from the
+submitted values, keep it under a scope string built from them, and release it once the record it
+wrote can no longer move (paid, closed, cancelled) so a second identical purchase is a second
+record. The release half is the one that gets written and never wired - a `clearX`-style helper with
+no importer means the flow does not have it.
+
+Enforcement: review - which scope a key is derived from, and whether the release is wired, are properties of the flow across screens; the same helper call is right in one flow and wrong in another.
+
+## #59 A preference that outlives a session gets its own namespace
+
+**A preference that outlives a session gets its own namespace, outside any token-store prefix.**
+`localStorageStore(prefix)` / `sessionStorageStore(prefix)` clear by sweeping every key starting
+with `prefix`, and signing out calls that clear. A stay-signed-in preference written to
+`"<prefix>remember-me"` is therefore erased by the one act it has to outlive: the box comes back
+unchecked on the sign-in screen the operator was just returned to. Nothing errors and the token
+handling is correct throughout - the key is simply inside the blast radius of a prefix sweep. Give
+any preference that outranks a session its own namespace (`"<app>.prefs:<name>"`), and when reading
+a store's `clear()`, ask what else lives under that prefix. Same trap for any non-token value parked
+beside the tokens for convenience: a last-used tenant, a remembered sign-in address, a "do not show
+again" flag.
+
+Enforcement: review - whether a key falls under a token store's prefix depends on the prefix a store was constructed with elsewhere in the app, which no line-based check sees.
+
 ## #60 A context-owning package resolves to ONE copy
 
 `createContext` at module scope makes one context object per physical copy of the
@@ -639,7 +683,7 @@ value needs: a bordered button at the end of a two-column detail row truncated t
 row exists to show to 「대한건설…」 while the control for opening it stayed whole, and a
 column of them left the panel with two right edges.
 
-**The two ways to get this wrong are opposite, and both were made on one screen in one
+**The ways to get this wrong are opposite, and both were made on one screen in one
 day.** Reading the rule as 「the label is for cards」 strips the footer's verbs to identical
 glyphs in an empty band, which a sighted reader cannot tell apart at all. Reading it as
 「the label is for anything with a label beside it」 puts a button at the end of every detail
@@ -752,8 +796,8 @@ Detected by `audit-strip-outside-the-first-tab` in `audit-frontend.mjs`.
 
 ## #73 Every standing message is a card; only a transient failure stays a banner
 
-**Two kinds of message look identical and behave oppositely - and the line between them is not
-what the message says, it is whether it survives the reader doing nothing.**
+**A standing message and a transient failure look identical and behave oppositely - and the line
+between them is not what the message says, it is whether it survives the reader doing nothing.**
 
 | | A standing message | A transient failure |
 | --- | --- | --- |
@@ -781,7 +825,7 @@ rendered check below makes the same exception.
 an operator who dismissed 「미확인 2건」 on a day it read 2 is not shown it on the day it reads 40 -
 is answered by the header control: a kind with a hidden card is tinted and pulses, so a dismissed
 warning is a message MOVED rather than a message lost, and the reader can see from any route that
-one of that kind is standing. That holds for all four kinds, `danger` included.
+one of that kind is standing. That holds for every kind, `danger` included.
 
 **The test before writing either**: does this message survive the reader doing nothing? If it is
 still there a minute later, it stands, and it closes. If it is the answer to a press - a read that
@@ -819,8 +863,8 @@ costs one press and the sentence costs the same room every day forever. Such a c
 `noticeKey` from the caller rather than fixing one, because the card belongs to the screen it
 stands on and the header control lists that screen's cards.
 
-**One key per message, never one per branch.** A screen that draws the same sentence two ways - a
-phone body and a desktop panel, two arms of a layout switch - is one message in two places, and it
+**A message has a single key, never one per branch.** A screen that draws the same sentence in more
+than one place - a phone body and a desktop panel, the arms of a layout switch - is one message in several places, and it
 takes one `noticeKey`. Splitting it feels safe, because each branch then owns its own dismissal and
 nothing leaks between them; what it actually does is make the operator put the card down twice. The
 dismissal is kept per operator on the server **so that it follows them between devices**, which is
@@ -857,8 +901,8 @@ than leaving the silence to read as coverage.
 
 A record's active / suspended / closed state is moved by an **action** - a row action on the list,
 a button in the detail panel's footer - with the confirmation and the reason prompt that belong to
-it. It is not also a switch inside the edit form: two ways to make the same change are two audit
-trails, two confirmation behaviours and two answers to 「어디서 끄나요」, and the form's switch is
+it. It is not also a switch inside the edit form: a second way to make the same change brings a second audit
+trail, a second confirmation behaviour and a second answer to 「어디서 끄나요」, and the form's switch is
 the one that skips the reason.
 
 So a create/update form does not carry the state field, and the DTO's value for it comes from the
@@ -937,6 +981,26 @@ painted page, because that is the only place it is decidable: a source rule cann
 `return null` from the twelve correct ones. It needs the screen open in the state that produces it
 (`?data=empty`, a fresh installation, a record nobody created), which is why the browser pass is
 the gate and a green build is not.
+
+## #77 A session token reaches the browser in the fragment
+
+**A session token reaches the browser in the fragment, never in the query string.** A query string
+is part of the GET, so it is written to the server's access log, to every proxy in front of it, and
+into `Referer` on any resource the page requests. None of those is reachable from the page, so
+`history.replaceState` does not help: by the time any client-side code runs, the credential has
+already been sent and recorded. A fragment (`#accessToken=…`) is never transmitted, which is why it
+is the standard carrier for a token handed to a browser - and it costs nothing, because a page that
+holds its own tokens and sends them in a header reads either one the same way. Two halves and they
+ship together: whatever redirects to the page writes the fragment, and the page reads
+`location.hash`. **What the query string keeps** is everything that is not a credential - an error
+code, a returned tab, a page number - and an OAuth `code` and `state`, which the provider must send
+that way and which are single-use and bound to a client secret. **The fragment is read before the
+router mounts, and consumed once**: a router builds its location from `window.location` on load and
+may normalise the address, so a fragment read from inside a component is a fragment a future router
+version can drop, and a value read twice re-opens a session under a hot reload. Capture at module
+scope in the app that owns the entry point, strip it in the same breath, and hand it to the
+component the way any other app-owned fact is handed in. `session-token-read-from-the-query-string`
+in `audit-frontend.mjs` catches the read half.
 
 ## #78 A read that decides whether a field is required is never gated on that field
 
