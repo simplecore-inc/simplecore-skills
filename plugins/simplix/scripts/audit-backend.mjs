@@ -302,6 +302,31 @@ function endpointsOf(clean) {
   return out;
 }
 
+/**
+ * The text of the method parameter that the annotation at `at` belongs to: annotations, type and
+ * name, bounded by the commas and parentheses of the signature. Generic arguments and annotation
+ * arguments are balanced, so `Map<String, X>` and `@Size(min = 1, max = 2)` stay whole.
+ */
+function parameterAround(src, at) {
+  let start = at;
+  for (let depth = 0, k = at - 1; k >= 0; k--) {
+    const ch = src[k];
+    if (ch === ")" || ch === ">") depth++;
+    else if (ch === "(" || ch === "<") { if (depth === 0) break; depth--; }
+    else if (ch === "," && depth === 0) break;
+    start = k;
+  }
+  let end = at;
+  for (let depth = 0, k = at; k < src.length; k++) {
+    const ch = src[k];
+    if (ch === "(" || ch === "<") depth++;
+    else if (ch === ")" || ch === ">") { if (depth === 0) break; depth--; }
+    else if (ch === "," && depth === 0) break;
+    end = k + 1;
+  }
+  return src.slice(start, end);
+}
+
 /** Body of a brace-balanced block starting at the first `{` at or after `from`. */
 function braceBody(src, from) {
   const i = src.indexOf("{", from);
@@ -1816,6 +1841,98 @@ public class AreaRestController {
       file: "modules/site/src/main/java/app/web/site/controller/AreaRestController.java",
       broken: `    public SimpliXApiResponse<AreaDetailDTO> get(@PathVariable UUID areaId) { return null; }`,
       fixed: `    public SimpliXApiResponse<AreaDetailDTO> get(@PathVariable String areaId) { return null; }`,
+    },
+  },
+  {
+    id: "request-body-without-validated",
+    invariant: "#13",
+    level: "error",
+    desc: "A @RequestBody parameter carries no @Validated (or @Valid) - its Bean Validation constraints are never evaluated, so a blank or malformed body reaches the service. A body with no constraints to evaluate stays bare: a `Set<...>` multi-update body (validated per element), a `Map<...>`, a raw `String` or `byte[]`",
+    appliesTo: isController,
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      if (!/@RestController\b/.test(clean)) return [];
+      const hits = [];
+      for (const m of clean.matchAll(/@RequestBody\b/g)) {
+        const p = parameterAround(clean, m.index);
+        if (/@Validated\b|@Valid\b/.test(p)) continue;
+        const type = p.replace(/@\w+(?:\.\w+)*(?:\s*\([^)]*\))?/g, "").trim().replace(/^final\s+/, "");
+        // Bodies that carry no constraints to evaluate: a Set multi-update body (validated per
+        // element), an untyped map, a raw string or byte array (a signed webhook is read raw).
+        if (/^(?:Set|Map)\s*</.test(type) || /^(?:String|byte\[\]|Object|JsonNode)\s+\w+$/.test(type)) continue;
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: p.replace(/\s+/g, " ").trim().slice(0, 150) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/main/java/app/web/site/controller/AreaRestController.java",
+      broken: `@RestController
+public class AreaRestController {
+    @PostMapping("/create")
+    public SimpliXApiResponse<AreaDetailDTO> create(@RequestBody AreaCreateDTO createDto) { return null; }
+}`,
+      fixed: `@RestController
+public class AreaRestController {
+    @PostMapping("/create")
+    public SimpliXApiResponse<AreaDetailDTO> create(@RequestBody @Validated AreaCreateDTO createDto) { return null; }
+}`,
+      hit: [
+        {
+          note: "a list body is validated like a single DTO, so a bare List<...> fires",
+          source: `@RestController
+public class AreaRestController {
+    @PatchMapping("/order")
+    public SimpliXApiResponse<Void> updateOrder(@RequestBody List<AreaOrderUpdateDTO> orders) { return null; }
+}`,
+        },
+        {
+          note: "the parameter after a path variable, on a signature split over lines",
+          source: `@RestController
+public class AreaRestController {
+    @PutMapping("/{areaId}")
+    public SimpliXApiResponse<AreaDetailDTO> update(
+            @PathVariable String areaId,
+            @RequestBody AreaUpdateDTO updateDto) { return null; }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "a bare Set<...> multi-update body is the generator's own shape",
+          source: `@RestController
+public class AreaRestController {
+    @PatchMapping
+    public SimpliXApiResponse<List<AreaDetailDTO>> multiUpdate(@RequestBody Set<AreaUpdateDTO> updateDtos) { return null; }
+}`,
+        },
+        {
+          note: "a raw String body (a signed webhook) and an untyped Map body have no constraints to evaluate",
+          source: `@RestController
+public class HookRestController {
+    @PostMapping("/hook")
+    public void hook(@RequestBody String rawBody) { }
+    @PostMapping("/probe")
+    public void probe(@RequestBody Map<String, Object> payload) { }
+}`,
+        },
+        {
+          note: "@Valid in front of @RequestBody counts as validation",
+          source: `@RestController
+public class AreaRestController {
+    @PostMapping("/create")
+    public SimpliXApiResponse<AreaDetailDTO> create(@Valid @RequestBody AreaCreateDTO createDto) { return null; }
+}`,
+        },
+        {
+          note: "the word in a Javadoc line is not a parameter",
+          source: `@RestController
+public class AreaRestController {
+    /** Reads the {@code @RequestBody} once. */
+    @GetMapping("/{areaId}")
+    public SimpliXApiResponse<AreaDetailDTO> get(@PathVariable String areaId) { return null; }
+}`,
+        },
+      ],
     },
   },
   {
