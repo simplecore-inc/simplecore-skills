@@ -106,11 +106,11 @@ Paths in the recipes are written generically (`modules/`, `apps/`, `<backend>/mo
 ## G. Errors and empty paths
 
 1. Force a failure per screen (submit a conflicting value, act on a stale record) and read the dialog as the persona: does it say what went wrong and what to do?
-2. Check the console for errors while walking the flow (`read_console_messages`, filtered) - a silent 500 behind a spinner is a defect the screenshot will not show.
+2. Check the console for errors while walking the flow (the driver's console read, filtered) - a silent 500 behind a spinner is a defect the screenshot will not show.
 3. Loading and empty states come from the shared components, and a slow query shows something other than a blank panel.
 
 ---
 
 ## H. Cross-screen agreement (runs over the cluster, not this screen alone)
 
-After the per-screen axes, run the agreement censuses of `cross-screen-consistency.md` across every surface that shows this entity: value, state (live invalidation), count, terminology, presentation, affordance agreement, and shape parity between sibling screens. Two screens that each pass axes A–G and still disagree with each other are a defect.
+After the per-screen axes, run the agreement censuses of `cross-screen-consistency.md` across every surface that shows this entity: value, state (live invalidation), count, terminology, presentation, affordance agreement, and shape parity between sibling screens. Screens that each pass axes A–G and still disagree with each other are a defect.

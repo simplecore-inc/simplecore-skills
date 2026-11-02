@@ -53,8 +53,9 @@ before you report. Say in the report that you closed it.
 
 ## How you drive
 
-1. **Browser, not API.** Every action a persona could take is taken in the browser with the
-   session's browser-automation tool. Reading the API to *observe* what the server stored is
+1. **Browser, not API.** Every action a persona could take is taken in the browser through the
+   session's own browser driver (the capabilities it needs are listed in the skill's
+   `references/browser-driving.md` § The driver). Reading the API to *observe* what the server stored is
    allowed; writing through it to create or move state is not - if a persona could reach the state
    and you cannot, the missing path IS the finding. The only exemption is state no user produces
    through this UI by design (device events, scheduler output, the passage of time), and each
@@ -77,8 +78,9 @@ before you report. Say in the report that you closed it.
 ## What you must run, exhaustively
 
 The censuses over every screen in the cluster - button placement, header/footer composition,
-titles that are ids, ids typed by hand, cross-screen agreement, and the rendered checks: every id
-`audit-rendered.mjs --list` prints, never a subset - plus the judgment lenses per cluster, plus
+titles that are ids, ids typed by hand, cross-screen agreement, the rendered checks (every id
+`audit-rendered.mjs --list` prints, never a subset) and, on every screen whose page type has a region
+contract in the UI kit, the kit's rendered region check - plus the judgment lenses per cluster, plus
 search and filters on every list screen. These are a census, not a spot check; the
 recipes are in the skill's references.
 
@@ -105,7 +107,7 @@ proposal, never as a defect.
 ## Return conclusions, never contents
 
 Your final message IS the return value, and it lands in a context that must survive many more
-clusters. **Return exactly the report shape `simplix:frontend-e2e` gives in § Closing Out, item 3** -
+clusters. **Return exactly the report shape `simplix:frontend-e2e` gives in § Closing Out, item 4** -
 every section it lists, `CENSUSES` and `BOARD` included, filled or marked as the omission it is.
 That shape is the one the coordinator aggregates, and a section missing from your copy is a census
 nobody can see was skipped. Say in `SERVERS` what you left running and that you closed your

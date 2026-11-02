@@ -22,23 +22,44 @@ Then, before trusting anything on screen:
 
 ---
 
-## Tool of record
+## The driver
 
-Use the session's browser-automation MCP - typically **Claude in Chrome** (`mcp__claude-in-chrome__*`). Start every session with the tab-context call, create a fresh tab for the audit, and only reuse an existing tab if the user asks. Fall back to another automation tool only when it is not connected, and tell the user you did.
+The audit runs through the session's own browser driver. The plugin does not choose one: the driver
+the session prefers wins, and a different one is used only when the preferred one cannot express the
+task or is not connected, with the change stated in the report. The driver has to provide:
+
+| Capability | What the audit uses it for |
+| --- | --- |
+| open a URL, with control over certificate errors and viewport at the start of a session | reaching a development server, loading a page fresh at one width |
+| evaluate a script in the page and return its value | the verdict snippets, the rendered audit's snippets, form read-backs, every "run this snippet in the page" below |
+| click, type and press keys the way a keyboard does, select text | driving forms and controls without bypassing the framework's state |
+| locate an element by role, label or text, or read an accessibility snapshot with element references | acting on what an element is, not where it was |
+| capture a screenshot | judging layout, and the evidence for a finding |
+| read console messages and network requests | a failing request behind a spinner, a query per row, a mutation that refetches nothing |
+| open a second tab or context and keep sessions apart | playing several actors side by side |
+
+The common drivers are examples of drivers that provide this: `ego-browser`, `agent-browser`,
+Playwright and the Claude in Chrome MCP (`mcp__claude-in-chrome__*`). A browser's own developer-tools
+console covers the "evaluate a script" row alone. Their calls differ; this handbook names the capability and
+leaves the call to the driver. Every recipe below that needs a signed-in page is "run this snippet in
+the page through your driver", and works the same through any of them.
+
+Start every session by listing the driver's existing tabs or contexts, create a fresh one for the
+audit, and reuse an existing one only if the user asks.
 
 Practical rules that save an entire session:
 
-1. **Batch.** Predictable sequences (navigate → wait → click → wait → screenshot) go in one batched call. Coordinates in a batch refer to the screenshot taken *before* the call.
-2. **Locate elements by what they are, not where they were.** Use the find/read-page calls to get a reference, then act on the reference. Coordinates and refs go stale after any navigation, HMR reload, or panel switch - re-locate rather than reusing.
+1. **Batch where the driver can.** Predictable sequences (navigate → wait → click → wait → screenshot) go in one batched call or one script. Coordinates in a batch refer to the screenshot taken *before* the call.
+2. **Locate elements by what they are, not where they were.** Use the driver's locator or snapshot to get a reference, then act on the reference. Coordinates and refs go stale after any navigation, HMR reload, or panel switch - re-locate rather than reusing.
 
    **A stale reference does not announce itself as one - it arrives wearing the costume of whatever
    you were about to test.** Fill two fields through refs read before the last navigation and the
-   second fill can land in the first field: the form now holds one 38-character string where a
-   username should be, the server answers "invalid credentials", and everything downstream reads as
-   an authentication problem. Sessions have been spent resetting passwords, restarting servers, and
-   dumping password hashes over exactly this. **Before believing any failure that a form fed, read
-   back what the form actually holds** - one call returning each input's name and value length
-   settles it, and it is cheaper than the first wrong hypothesis:
+   second fill can land in the first field: the form now holds one long string where a username
+   should be, the server answers "invalid credentials", and everything downstream reads as an
+   authentication problem, which sends the work into password resets, server restarts and credential
+   dumps. **Before believing any failure that a form fed, read back what the form actually holds** -
+   one call returning each input's name and value length settles it, and it is cheaper than the
+   first wrong hypothesis:
 
    ```js
    [...document.querySelectorAll('input')].map(e => (e.name || e.type) + ':' + (e.value || '').length)
@@ -50,8 +71,8 @@ Practical rules that save an entire session:
    The same check catches a second, quieter version of it. A fill that writes straight to `value`
    moves the DOM without moving the framework's state, so the screen shows what you typed while the
    component still holds the old value - and a save then writes the old value back and reports
-   success. That is indistinguishable from a form that silently discards edits, and it has been
-   reported as exactly that. The tell is a **field that reads correctly and a request that does
+   success. That is indistinguishable from a form that silently discards edits, and reads as exactly
+   that defect. The tell is a **field that reads correctly and a request that does
    not**; when the two disagree, drive the field the way a keyboard does, or set it through the
    framework's own setter and dispatch the event it listens for:
 
@@ -71,7 +92,7 @@ Practical rules that save an entire session:
    only one of them reaches the code that treats "empty" as "unset". Clear the way a person does:
    focus the field, select all, press Backspace. Then check the request, not the input.
 3. **Screenshot after every state change** you intend to judge. Judge layout from the screenshot; judge structure from the accessibility tree; when the two disagree, believe the screenshot and re-check.
-4. **Watch the console AND the network while you walk** (`read_console_messages` / `read_network_requests`, filtered), so a failing request behind a spinner does not pass as "works" - and so wire-level defects surface: a query per row (N+1), duplicate fetches on mount, a mutation that triggers no refetch on the dependent surfaces (see `judgment-lenses.md` lens 3).
+4. **Watch the console AND the network while you walk** (the driver's console and network reads, filtered), so a failing request behind a spinner does not pass as "works" - and so wire-level defects surface: a query per row (N+1), duplicate fetches on mount, a mutation that triggers no refetch on the dependent surfaces (see `judgment-lenses.md` lens 3).
 5. **Never trigger a native dialog** (`alert`/`confirm`) - it freezes the automation channel. Prefer in-app dialogs; if a control is known to raise a native one, tell the user rather than clicking it.
 6. **Stay out of rabbit holes.** Two or three failed attempts at the same interaction means you stop and report what is blocking, not a fourth attempt.
 
@@ -153,26 +174,43 @@ are questions about boxes on a painted page. Keeping them apart is what stops a 
 
 ```bash
 A="${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs"
-node "$A" --list                       # the checks and what each catches
-node "$A" --print <id> > <scratch>/check.js   # the snippet, for the session's own driver
-node "$A" --url <address>              # its own agent-browser session - only where nothing asks to sign in
-node "$A" --selftest                   # both directions, generated fixtures
+node "$A" --list                          # every check: id, grade, and what it catches
+node "$A" --print <id> > <scratch>/check.js     # one snippet, for the session's own driver
+node "$A" --print-all > <scratch>/checks.json   # every selected check as JSON [{ id, grade, snippet }]
+node "$A" --url <address>                 # its own agent-browser session - only where nothing asks to sign in
+node "$A" --selftest                      # both directions, generated fixtures, through agent-browser
 ```
+
+Flags: `--check <id>` narrows `--url`, `--print-all` or `--selftest` to one check; `--session <name>`
+names the agent-browser session `--url` and `--selftest` use; `--keep-session` leaves a session the run
+opened running, for a caller that runs the script several times against one screen; `--options <json>`
+or `--options @<file>` overrides the vocabulary (below). An unrecognised flag or check id stops the
+run with exit 2.
 
 **On a product that needs signing in, do not use `--url`.** It opens a browser session of its
 own, which lands on the sign-in screen, and a self-signed development certificate needs the flag
-from § Environment on that session's first command. Print the snippet instead and evaluate it in
-the session that is already signed in.
+from § Environment on that session's first command. Print the snippets instead and evaluate them in
+the session that is already signed in, through whatever driver holds it: `--print-all` once, then one
+evaluate call per check, or `--print <id>` for a single check. Each snippet is one self-contained
+expression that returns `{ compared, findings }` and touches nothing on the page.
 
 **Run all of them over every screen the walk opens, while it is open.** The cost is one evaluate
 call per screen and it settles a question no screenshot settles reliably - a reader scanning
 a capture for a missing row is looking for an absence, which is the hardest thing to see.
 
+**Reading a result.** A check reports how many things it compared as well as how many it found:
+`compared 0` means the check reached nothing on this screen (a form has no list, or the screen had
+not finished arriving) and proves nothing, so `--url` prints it with `○` rather than `✔`. Exit 1 means
+an error-grade check has findings; exit 2 means a browser could not be driven or the arguments were
+wrong. `--url` measures again until two readings compare the same number of things, so it does not
+judge a list shell before its rows arrive; a snippet evaluated through another driver is run after the
+screen has settled, by the caller.
+
 **It needs a browser and refuses to answer without one.** `--url` with nothing reachable
 exits 2 rather than 0; there is no source-only mode and no degraded mode, because a check
 that passes without seeing anything is worse than no check - it converts *nobody looked* into
-*something is checking*. Where the session is already driving a page through another tool,
-`--print <id>` hands over one self-contained expression to evaluate through it.
+*something is checking*. `--url` and `--selftest` need `agent-browser` on the path; the printed
+snippets need only a driver that can evaluate a script.
 
 Vocabulary - what a total reads like, what counts as a row, what an empty state says - is
 `--options <json>` with documented defaults, so a product that writes its totals differently
@@ -187,9 +225,9 @@ option labels **as they stood when the items first mounted**. On a screen whose 
 after the first paint - every lazily loaded locale namespace - the mirror keeps the untranslated
 keys for the life of the page. The real dropdown, opened, reads correctly.
 
-That failure wears the exact costume of the bug you are hunting: a session fixing a select's
-labels read `MailTransportSecurity.NONE` out of `innerText` after the fix, concluded the fix had
-not taken, and spent a detour on the i18n registry before opening the list and finding 「없음」.
+That failure wears the exact costume of the bug you are hunting: after a fix to a select's labels,
+`innerText` still reads `<Enum>.<VALUE>` from the mirror, the fix looks as if it had not taken, and
+the work detours into the i18n registry although the opened list shows the translated label.
 
 - **A closed select is settled by opening it**, never by reading the page's text:
   `document.querySelectorAll('[role=option]')` after a press on the trigger.
@@ -306,9 +344,10 @@ path to a moved folder fails with `ENOENT` before the first page opens. Its log 
 commit and the helper version on its first line, so a run that spans a fix cannot pass for a fresh
 one.
 
-A development server on a self-signed certificate (`https://localhost:<port>`) is refused by
-ego-browser with `ERR_CERT_AUTHORITY_INVALID`, and no override is documented; drive it with
-Playwright and `ignoreHTTPSErrors: true`, and say the instrument changed.
+A development server on a self-signed certificate (`https://localhost:<port>`) that the session's
+driver refuses with `ERR_CERT_AUTHORITY_INVALID`, and offers no override for, is driven with a driver
+that can ignore certificate errors (Playwright with `ignoreHTTPSErrors: true`), and the report says
+the instrument changed.
 
 ## A charting library's defaults read as a broken component
 
@@ -332,7 +371,7 @@ into view and re-read `elementFromPoint`; only then is a negative result about t
 });
 ```
 
-**Then: the two ApexCharts defaults that read as a dead control.**
+**Then: the ApexCharts defaults that read as a dead control.**
 
 1. **A single-series axis chart draws no legend at all.** `legend.showForSingleSeries` defaults to
    `false`, so a line/bar/area chart given one series renders an EMPTY `.apexcharts-legend` div:
@@ -352,9 +391,9 @@ click - the legend item's `class` and `data:collapsed`, and the slice path's `se
 `filter`. A run that watched only `apexcharts-inactive-legend` answers "broken" on every pie and
 every one-series chart in the product.
 
-**The trap is that it fails identically on two screens**, which reads as proof that the shared
-adapter is at fault. Two screens drawing the same KIND of chart share the library's default, not a
-bug. Confirm on a chart of a different kind - a multi-series axis chart - before naming the
+**The trap is that it fails identically on every screen drawing the same kind of chart**, which
+reads as proof that the shared adapter is at fault. Screens drawing the same KIND of chart share the
+library's default, not a bug. Confirm on a chart of a different kind - a multi-series axis chart - before naming the
 adapter.
 
 ---
@@ -367,7 +406,7 @@ The audit runs against a live development database, and every flow you complete 
 2. **Valid test data stays.** A record you created correctly and drove through its flow is left in place - it documents the walked scenario and serves as reference data for later sessions. Give created records recognizable, realistic names so they read as scenario data, not garbage.
 3. **Only erroneous data is removed.** Delete (through the UI) records that carry wrong input, were half-created by a failed submit, or were stranded mid-flow by a defect. If such a record cannot be removed through the UI, the missing delete/cancel affordance is itself a finding.
 4. **Report the ledger.** List what was created and kept (per flow), and what was removed and why.
-5. **A scripted write asserts its target first.** Before a script saves, it checks that the record it is about to change is one the audit created or one of its own test accounts, and aborts otherwise. A picker is chosen by the option's exact name, and the pick is read back before the write. Never "the first option": a search that does not narrow puts a real account first. In one audit, a holder probe filed a protected operator account into a test position this way, through a picker that ignored the typed text. Both the probe and the picker were defects.
+5. **A scripted write asserts its target first.** Before a script saves, it checks that the record it is about to change is one the audit created or one of its own test accounts, and aborts otherwise. A picker is chosen by the option's exact name, and the pick is read back before the write. Never "the first option": a search that does not narrow puts a real account first. A holder probe that takes the first option files a protected operator account into a test position through a picker that ignored the typed text; the probe and the picker are both defects.
 6. **A seeded row in a table every server polls is out of your hands.** Every API server on the
    machine works the same queue table, so an older build claims and fails a queued job seeded for
    the pass within minutes. When the pass only needs a queued row, seed it with a future `run_at` or

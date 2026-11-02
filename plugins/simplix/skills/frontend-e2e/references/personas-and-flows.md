@@ -16,7 +16,7 @@ The application's own menu tree is the persona map: each top-level area exists b
 
 Then hold the line: while auditing an area, judge every screen only as that person. Do not let the administrator's knowledge rescue the employee's screen.
 
-Two rules that fall out of this:
+Rules that fall out of this:
 
 1. **Self-service areas are judged hardest.** An area an ordinary employee uses (their own records, their own requests, their inbox) must not show administrator terms, internal identifiers, scope selectors, or policy fields. Their presence is a defect on its own - no further argument needed.
 2. **Operator areas are judged by speed and by error-proofing.** A desk operator repeats the same transaction dozens of times; a screen that makes them hunt, retype, or guess a state is a defect even if every value is technically visible.
@@ -51,7 +51,7 @@ Rules for the flow:
 When the flow needs a second person:
 
 1. **Sequential login (default).** Complete the first persona's step, log out, log in as the next, and continue. Slower, but it is exactly what the product does, and it catches the "the approver cannot even find it" class of defect.
-2. **Two tabs (when comparing).** Keep one tab per actor when you need to see cause and effect at once (a request submitted in tab A appearing in tab B's inbox). Create the second tab with the browser tool's own tab-create call and keep the tab ids straight; re-read the tab context after any tab closes.
+2. **Two tabs (when comparing).** Keep one tab per actor when you need to see cause and effect at once (a request submitted in tab A appearing in tab B's inbox). Create the second tab or context with the driver's own call and keep the tab ids straight; re-read the driver's tab list after any tab closes.
 3. **Never simulate the counterpart with an API call.** "I'll just approve it via the endpoint" removes precisely the screen you were supposed to audit.
 4. **Note what each actor could not see.** If the second actor's screen does not show the record, that is the finding - not a reason to switch back to the first account and force the state.
 

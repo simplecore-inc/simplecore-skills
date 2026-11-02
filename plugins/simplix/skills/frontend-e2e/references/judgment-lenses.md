@@ -1,6 +1,6 @@
-# Judgment Lenses - the four reviewers every screen faces
+# Judgment Lenses - the reviewers every screen faces
 
-A screen is judged four times, by four reviewers you play in turn. The persona finds what is unusable; the UI/UX reviewer finds what is confusing or inconsistent; the backend reviewer finds where the UI and the server disagree; the framework auditor finds where the screen deviates from the handbook and from its sibling screens. One lens' pass is not another's - a screen can be perfectly usable and still violate the handbook, or perfectly compliant and still confusing.
+A screen is judged by each reviewer you play in turn. The persona finds what is unusable; the UI/UX reviewer finds what is confusing or inconsistent; the backend reviewer finds where the UI and the server disagree; the framework auditor finds where the screen deviates from the handbook and from its sibling screens. One lens' pass is not another's - a screen can be perfectly usable and still violate the handbook, or perfectly compliant and still confusing.
 
 The standard of "correct" is NOT taste. Lenses 2–4 anchor every finding to the `simplix:frontend` skill - invoke it during the audit if it is not already loaded this session. Its Non-Negotiable Invariants, its Task Router references, and the precedent screens located via its `customize/precedent-check.md` are the rubric you judge WITH, not just the rules you fix UNDER. **A finding that cites neither an invariant, nor a precedent screen, nor a server contract, nor a concrete persona failure is an opinion - it may enter the report as a proposal, never as a defect.**
 
@@ -23,7 +23,7 @@ An explicit pass per screen cluster. Asks:
 5. **Cognitive load** - field, filter, and column counts are tuned to the persona's task (#39: the filter bar is the operator's index, not the DTO dump); defaults make the common case zero-configuration; the screen a badge leads to opens on the set the badge counts (#48).
 6. **Error prevention over error messages** - pickers over typed identifiers, server-published constrained choices (#38), gates mirroring server rules (#35) - the form that cannot be filled wrong beats the dialog that explains what went wrong.
 
-Anchor: the invariant that applies (#31 chrome, #39 filters, #43 badge parity, #48 badge semantics, …); where none applies directly, the precedent screen - two screens solving the same problem differently is a defect on whichever is less conventional.
+Anchor: the invariant that applies (#31 chrome, #39 filters, #43 badge parity, #48 badge semantics, …); where none applies directly, the precedent screen - screens solving the same problem differently are a defect on whichever is less conventional.
 
 ## Lens 3 - The backend developer
 
@@ -31,7 +31,7 @@ An explicit pass per screen cluster. Loads the module's controller surface and g
 
 1. **Contract agreement** - every UI state and action maps to a real endpoint and state; UI gates mirror the server's guards. Submit both sides of the boundary on purpose (`screen-checklist.md` § E.3): the UI offering what the server refuses means the gate is wrong; the server accepting what it should refuse means the server is wrong.
 2. **Validation parity** - client validation is a convenience copy of the server's rules, never a different rule set; server failures surface their message keys in every locale (#40).
-3. **Wire sanity** - watch the network while walking (`read_network_requests`): duplicate fetches on mount, a query per row (N+1), refetch storms after one mutation, list reads missing `page`/`size` together (#3), payloads carrying fields the form never edited (#34).
+3. **Wire sanity** - watch the network while walking (the driver's network read): duplicate fetches on mount, a query per row (N+1), refetch storms after one mutation, list reads missing `page`/`size` together (#3), payloads carrying fields the form never edited (#34).
 4. **Invalidation** - after a mutation, the dependent queries actually refetch: the other list, the tab count, the nav badge showing this record update without a manual reload (`cross-screen-consistency.md` § state agreement).
 5. **State truth** - after a UI save, read the API (observe-only, per Ground Rules) and confirm the stored value matches what the screen shows: enum shape (#10), temporal encoding and zone (#42).
 6. **Missing contract** - a filter, field, or action the persona needs with no backend support is a backend defect to implement end-to-end (backend first, regen, wire - SKILL.md § Fixing), not a frontend workaround.

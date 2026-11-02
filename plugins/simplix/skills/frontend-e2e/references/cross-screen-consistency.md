@@ -13,7 +13,7 @@ Before judging, enumerate EVERY surface that shows or moves the entity under aud
 3. Aggregates - dashboard cards, report rows, nav / sidebar / tab count badges
 4. Embedded appearances - peek labels and dialogs on OTHER modules' screens, FK columns and pickers elsewhere
 
-Start from the screen inventory (`node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"`, run from the frontend project root) - it lists every screen-bearing file by shape, which seeds both the cluster list and the coverage bookkeeping. Then narrow to the entity with the recipes below (convention-based; run from the frontend subproject root):
+Start from the screen inventory (`node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"`, run from the frontend project root) - it lists every screen-bearing file by shape (`--module=<module>` narrows it to one module, `--shape=<id>` to one shape), which seeds both the cluster list and the coverage bookkeeping. Then narrow to the entity with the recipes below (convention-based; run from the frontend subproject root):
 
 ```bash
 # Every widget that reads this entity's hooks
@@ -37,7 +37,7 @@ Run each census over the WHOLE cluster, with the browser as the instrument. Anch
 1. **Value agreement** - the same record opened on two surfaces shows the same values, with names resolved the same way. A list that shows a person's name while the detail shows a UUID is a projection defect fixed in the backend, not with a frontend lookup.
 2. **State agreement (live)** - perform a transition on surface A, then check surface B: when both are on screen (two tabs, a board next to a badge), B reflects the change WITHOUT a manual reload - a stale list, tab count, or badge after a mutation is an invalidation defect; after navigation, B must reflect it unconditionally.
 3. **Count agreement** - the nav badge, the tab count, and the list's total agree for the same set, share the same query figure, and the screen a badge leads to opens by default on exactly the set it counts (#48). A badge of N over a default view of 0 rows is a wiring defect.
-4. **Terminology agreement** - the same state or action carries the same word on every surface, in every locale; sidebar label, page title, and breadcrumb agree. One screen saying "승인" while another says "결재" for the same act is a defect even though each screen passes alone.
+4. **Terminology agreement** - the same state or action carries the same word on every surface, in every locale; sidebar label, page title, and breadcrumb agree. One screen saying 「승인」 while another says 「결재」 for the same act is a defect even though each screen passes alone.
 5. **Presentation agreement** - the same status uses the same badge component and tone map on every surface, at parity size (#43); red is reserved cluster-wide for act-now sets (#48); the same temporal kind formats through the same components and zone everywhere (#42).
 6. **Affordance agreement** - an action available for state X on one surface is available, or deliberately absent, on every other surface showing state X. Deliberate asymmetry (a trust boundary #47, a scope restriction) is verified as SERVER-enforced - visually absent but callable is a hole, not an asymmetry.
 7. **Shape parity between sibling screens** - two same-shape screens inside the cluster (two lists, two boards) walk the comparison sheet from the `simplix:frontend` skill's `customize/precedent-check.md` against each other in the live browser (lens 4, `judgment-lenses.md`).

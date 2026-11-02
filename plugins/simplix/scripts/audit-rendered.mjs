@@ -9,8 +9,9 @@
  * is imported, the props type-check, the request answers 200, and the screen is unusable.
  *
  * Usage:
- *   node audit-rendered.mjs --url https://localhost:5173/frame/c-20
+ *   node audit-rendered.mjs --url https://localhost:<port>/<route>
  *   node audit-rendered.mjs --url <u> --check countedListDrawsNoRows
+ *   node audit-rendered.mjs --url <u> --session <name> [--keep-session]   # name the agent-browser session; leave it open after the run
  *   node audit-rendered.mjs --list                  # the checks and what each catches
  *   node audit-rendered.mjs --print <id>            # the snippet, to paste into any driver
  *   node audit-rendered.mjs --print-all [--options @<file>]   # every selected check as JSON [{ id, grade, snippet }]
