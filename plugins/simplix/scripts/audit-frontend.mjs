@@ -6464,7 +6464,13 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
         if (!label || STATIC_LABEL.test(label)) continue;
         // A property read off the row is what varies; a bare identifier is usually a constant
         // the file computed once, and reporting those buries the shape this rule exists for.
-        if (!/^\s*\w+\s*[.?]/.test(label)) continue;
+        const receiver = label.match(/^\s*(\w+)\s*[.?]/)?.[1];
+        if (!receiver) continue;
+        // The receiver must be the row: its usual names, or the parameter the action's own callback
+        // takes. `words.view` is the screen's constant sentence read off its words object, the same
+        // for every row, and the generated page writes it on every list.
+        const callbackParam = block.match(/\bonClick\s*:\s*\(?\s*(\w+)/)?.[1];
+        if (!/^(row|item|record|entry|data|r)$/.test(receiver) && receiver !== callbackParam) continue;
         hits.push({ line: lineOfIndex(c, m.index), excerpt: block.replace(/\s+/g, " ").slice(0, 140) });
       }
       return hits;
@@ -6491,6 +6497,11 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
           note: "a label that is a literal or a translation names one verb, and the type's own icon is that verb's",
           file: "modules/site/src/widgets/area/list.tsx",
           source: `<RowActionCell row={row} actions={[{ type: "view", label: t("action.view"), onClick: open }]} />`,
+        },
+        {
+          note: "a label read off the screen's words object is the same for every row, whatever the callback's parameter is called",
+          file: "modules/site/src/pages/area/crud-page.tsx",
+          source: `const actions = [{ type: "view", label: words.view, onClick: (row) => nav.showDetail(String(row.areaId)) }];`,
         },
       ],
     },
