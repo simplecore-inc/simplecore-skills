@@ -2359,6 +2359,9 @@ export function ThingList() {
     desc: "An instant put on the screen through `new Date(value).toLocale*String()` instead of `<InstantText value={value} format=\"datetime\" />`. The hand-built string is formatted in the BROWSER's zone and the browser's locale, so the same record reads as a different moment to a reader abroad and as a different language to a reader whose console is Korean but whose laptop is not - and it disagrees, on the same panel, with every neighbouring field the framework drew. Nothing about it looks wrong in a screenshot taken on the developer's machine, which is why it survives review",
     appliesTo: (path) => isTsx(path),
     check: (c) => {
+      // A file that imports nothing of the framework (an identity provider's theme page, drawn for
+      // the reader's own browser) has no component to defer to: the reader's zone IS the display zone.
+      if (!/from\s+["']@simplix-react\//.test(c)) return [];
       const lines = c.split("\n");
       const hits = [];
       for (let i = 0; i < lines.length; i += 1) {
@@ -2371,10 +2374,12 @@ export function ThingList() {
     },
     samples: {
       file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
-      broken: `<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
+      broken: `import { DetailFieldWrapper } from "@simplix-react/ui";
+<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
   <span>{new Date(record.requestedAt).toLocaleString()}</span>
 </DetailFieldWrapper>`,
-      fixed: `<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
+      fixed: `import { DetailFieldWrapper, InstantText } from "@simplix-react/ui";
+<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
   <InstantText value={record.requestedAt} format="datetime" />
 </DetailFieldWrapper>`,
       miss: [
@@ -2385,6 +2390,11 @@ export function ThingList() {
         {
           note: "the framework's own component, which resolves the display zone",
           source: `<InstantText value={row.occurredAt} format="datetime" />`,
+        },
+        {
+          note: "a page that imports nothing of the framework (an identity provider's theme), read in the reader's own zone",
+          source: `import { useState } from "react";
+const when = new Date(millis).toLocaleDateString(language, { dateStyle: "medium" });`,
         },
       ],
     },
