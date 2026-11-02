@@ -10,10 +10,24 @@ Read this before planning a screen or dispatching agents for screen work.
    default sort (never the primary key) and filters; the detail sections in reading order. Write
    the decision where a machine can check it (a design manifest with one entry per routed screen,
    which the project's gate refuses a route without) and draw the board frame from it by hand.
+   Two more facts are read before the entry is written. **What the backend offers the entity**
+   (list access, default sort, keyword search, status counts, time range counts, export, actions,
+   filters) is read with `simplix meta-info <Entity>`: a card, a time range, an export or a search
+   box the entity does not offer is a backend or Meta gap to raise, never a region to draw from
+   invented data. **Where the screen sits in the menu** (the group and the icon) is part of the
+   decision, recorded in the entry as `menu: { group, icon }` and passed to the scaffold as
+   `--menu-group` and `--menu-icon`; the board's menu check compares the entry with the product's
+   menu.
    **A frame mirrored from the screen's own template is not a design, and agreement against such a
    frame proves nothing**: both sides come from one render, so zero differences says the template
    matches itself. A screen whose blocks are still the empty stub, or whose list still sorts by its
    primary key, has not been customised.
+   - **The gate judges what the page draws, not whether it was edited.** A page laid down whole
+     from the template draws the description its catalog states and, where the entity's Meta
+     counts, the figure row; a design asking for only those passes before any edit. Notices, and
+     figures the template does not draw, need the screen's own code, and a comment naming them
+     does not count. A screen not yet customised is listed under the manifest's `acknowledged`
+     with its reason, which the gate reports as stale once the page is customised.
    - Misreading: "the board frame was generated from the same template, so 0 differences was read
      as done".
    - **Description, cards and notices are present by design, never by accident.** A description
@@ -47,9 +61,11 @@ Read this before planning a screen or dispatching agents for screen work.
      and token-only, with its Storybook template and tests, so the next screen can reuse it.
    - Misreading: "most screens are a list and a detail, so the screens are finished" while the
      description, cards and notices were never decided.
-1. **Four steps, in order, after step 0.** Template on the kit, then scaffold, then customise to
-   the step-0 design and its board frame, then bring the board into agreement. A gap at any step is
-   closed at that step's layer, not worked around in a later one.
+1. **Four steps, in order, after step 0.** Template on the kit, then scaffold (which lays down
+   the screen and the board frame as starting points), then draw the board frame as the design
+   from the step-0 entry, then customise the screen to the frame's design direction. The board is
+   the plan and the work runs from the board to the screen. A gap at any step is closed at that
+   step's layer, not worked around in a later one.
 2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
    edited. The CLI rewrites an untouched file, and merges a template change into an edited one
    three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is

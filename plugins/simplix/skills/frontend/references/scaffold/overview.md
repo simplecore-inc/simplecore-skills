@@ -67,6 +67,28 @@ CUSTOMIZE-category tasks (widget composition, column restyling, filter design) a
 
 The Scaffold Update path regenerates that directory in place and surfaces the diff as TypeScript compile errors - the fastest path to correctness.
 
+## Which steps this project runs
+
+The steps below were written for the `orval` layout. Read `codegen` from `detect-simplix.mjs --json`
+(and whether `simplix.config.ts` has a `routes.<group>` target) before following any of them:
+
+| Step | `orval` | `meta` |
+| --- | --- | --- |
+| 0 Register the domain | yes, for a new domain or a new tag | the same for a new domain; an entity whose tag is already under a domain needs nothing: `simplix meta-info <Entity>` answers "does the config export this entity from meta" and what the backend offers it |
+| 1 `add-domain` | yes | yes (reads the mode itself) |
+| 2 Code generation | `simplix openapi`, output in `src/generated/`, `src/hooks/`, `src/mock/` | `simplix meta -d <domain>`, output in `src/generated-meta/`; no `src/hooks/` layer and no `generated/mock/` |
+| 3, 6 Install and build | yes | yes |
+| 4 `add-module` | yes, for a new module | yes, for a new module |
+| 5 `scaffold` | widgets and pages | widgets and pages, and with a `routes.<group>` target also the route file, the menu entry (placed with `--menu-group` and `--menu-icon` where the screen's design decided them), the subjects-table key, the board frame and the catalogs |
+| 7a Dependencies in the app | by hand | written by the scaffold when it writes the route |
+| 7b Mock in `main.tsx` | yes | not applicable: the domain mock is wired in the domain package, nothing is registered in `main.tsx` |
+| 7c Route file and sidebar entry | by hand (this document's recipe) | not applicable with a `routes.<group>` target: the scaffold writes the route and the menu entry; without a target, use the recipe |
+| 8 Final verification | build | typecheck and lint of the project, then the audit scripts |
+
+The **Update path** reads the same way: its snapshot recipe greps `src/generated/model/`; on `meta`
+the changed surface is `git diff` of `src/generated-meta/` and of the committed Meta snapshot, and
+`simplix meta-info <Entity>` states what an entity offers after the change.
+
 ## Prerequisites
 
 Before starting, read `simplix.config.ts` at the project root. It defines:
@@ -343,6 +365,10 @@ output and the `source` condition is missing. `audit-frontend.mjs`'s
 
 ### Step 7: App Integration
 
+> **Does not apply as written on a `meta` project with a `routes.<group>` target** (see "Which
+> steps this project runs"): the scaffold writes the route, the menu entry and the app
+> dependencies, and no mock is registered in `main.tsx`.
+
 Three files need updating in the app (`apps/<app-name>/`):
 
 #### 7a. Add Dependencies to `package.json`
@@ -425,7 +451,7 @@ When the server-side API changes (fields added/removed/renamed, new endpoints, e
 Before regenerating, capture the current field list from the generated model types. This enables diff-based detection of changes.
 
 ```bash
-# Extract field names from DetailDTO types for each entity (orval model layout)
+# Extract field names from DetailDTO types for each entity (orval model layout only; on meta, diff src/generated-meta/)
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<domain>/src/generated/model/*DetailDTO.ts | \
   sed 's/[?:].*//' | sort > /tmp/fields-before.txt
 ```

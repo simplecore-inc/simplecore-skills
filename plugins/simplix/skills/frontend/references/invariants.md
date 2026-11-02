@@ -228,6 +228,11 @@ give the SearchDTO a `@SearchableField` over a read-only association on the pare
 NEVER name that association the same as a DTO collection the entity's create/update path
 maps (ModelMapper will bind transient children onto it and the save fails at flush).
 
+The survivors follow the category order of #16 (String, Date, Number, Attribute), and the design
+entry's `filters` list names them in that order. A sibling screen that places the period last or a
+choice first predates the rule and is not a precedent for order (#67: a survey of hand-written
+screens measures drift). The stamp a log is read by keeps its period filter (#54).
+
 ## #40 Failure messages are a product surface
 
 A user-facing exception carries a message key (`"{error.<module>.<case>}"`), resolved at
@@ -412,6 +417,22 @@ Same treatment for the entity PK and the audit quartet (`createdAt` / `createdBy
 `updatedAt` / `updatedBy`) - `CrudDetail`'s `auditData` slot already carries those. The
 framework has no declarative "hidden by default": `hiddenColumns` is a runtime toggle the
 operator can open, so hiding means removing from source.
+
+**Two cases are settled by the generator, so the author removes nothing and adds nothing.**
+
+- **The stamp the list is read by stays.** An entity whose rows are events (a log, a ledger)
+  declares a default sort that names an audit stamp (`createdAt`, `occurredAt`). The generated
+  list keeps that stamp as its leading column and as its period filter, because the order the
+  list opens in has to be readable off a column and narrowable by a filter. The detail's
+  `auditData` strip still carries it. Every other stamp is stripped as above; a log whose
+  actor or change columns are its primary data takes the domain exception of #18 by hand.
+- **A masked twin replaces the field it masks.** SimpliX Meta marks no personal data, so the
+  pairing is the statement: a record carrying `recipientEmail` (decrypted for display) beside
+  `recipientEmailMasked` is drawn with the masked one only. The project names the suffix once
+  (`scaffold.maskedSuffix: "Masked"` in `simplix.config.ts`), and the list, the detail and the
+  sample rows leave the unmasked field out. `simplix meta-info <Entity>` lists the fields it
+  left out. A personal-data field with no masked twin is not detected: it is a backend gap to
+  raise (a masked form, or the field removed from the read DTO), never a field to draw.
 
 ## #55 Contact messages are written twice
 

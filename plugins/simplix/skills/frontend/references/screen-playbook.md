@@ -16,6 +16,11 @@ in the project's `CLAUDE.md`, never here.
 | A story merge that fails midway leaves the generated base overwritten with the fresh render; the next merge compares fresh against fresh and keeps the old frame silently | take the base from `git show HEAD:<path>` and merge again; never rerun a failed merge |
 | A blocks file equal to its base was read as a stub and deleted although its base had been recorded after the customisation | a stub is a blocks file whose every hook returns `{}`; test the rule on a real stub and on a customised file |
 | A page template change makes every moved screen stale at once | stale is the normal state of an edited page; `simplix generated` fails only on a page that did not start from its template; re-scaffold one screen when its own change needs it |
+| Hand-editing the menu file after the scaffold leaves the board's console menu red | decide the group and icon in the design entry before scaffolding and pass `--menu-group` and `--menu-icon`; a menu edit made any other way is followed by the board's menu generator |
+| A module or entity locale file edited by hand leaves the board's catalogs stale, and copying the file across by hand drifts again | the board's catalog generator writes module and entity catalogs from the packages' own files; run it after the edit and let the board check confirm |
+| Board files edited by hand fail the formatter only when it runs from the apps project | the board's check runs the formatter first; fix with the formatter's write mode from the apps project |
+| A route path is guessed (`/audit-events` against `/audit-log`) | the entity's plural in kebab case is the default; a path override in `routes.<group>.paths` is written before the scaffold, and only where the menu word differs from the entity's plural |
+| A generated list or detail draws a field with a masked twin, or a decrypted personal field | `scaffold.maskedSuffix` makes the generator leave the unmasked field out; a personal field with no masked twin is a backend gap, raised and not drawn |
 | A probe that finds nothing reports a clean 0 | prove every counting check on a known hit before trusting a 0; a command whose failure is swallowed reports 0 for the wrong reason |
 
 ## Regions, figures and filters
@@ -32,7 +37,9 @@ in the project's `CLAUDE.md`, never here.
   per-slice counts come from the generated bucket read published in Meta, and the heatmap is drawn
   in theme tokens (a ramp from the muted to the primary colour), never a named fixed palette.
 - A list keeps the leading column, the column its default sort names and the row-action column
-  drawn at any width; the columns menu offers every declared column.
+  drawn at any width; the columns menu offers every declared column. A default sort that names an
+  audit stamp (an event log read by `createdAt`) keeps the stamp as that column and as the period
+  filter; the generator does it (#54), so the author adds neither by hand.
 - A label in the backend bundle never names a unit the kind draws itself (cents, ms): the kind
   owns the unit, the label names the quantity.
 - A verb the backend has and no type names takes its own kind and glyph in the kit; a borrowed
@@ -44,6 +51,9 @@ in the project's `CLAUDE.md`, never here.
   with a compare-and-swap on the branch; a commit landed meanwhile is otherwise reverted file by
   file (`~/.claude/references/shared-checkout-git.md`). After parallel work read `git show --stat`
   of each commit: only that agent's paths.
+- A browser sign-in of a test account replaces the stored session of whoever is signed in at that
+  origin in the same browser profile, and the identity provider returns a sign-in only to the origin
+  its client registers; the project's reference names that origin and the account script.
 - A shared test-account sign-in helper that resets the password on expiry signs other agents out:
   every agent creates and deletes its own account. A deleted identity's username cannot be reused,
   so pick a fresh name.

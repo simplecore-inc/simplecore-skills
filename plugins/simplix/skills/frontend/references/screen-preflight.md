@@ -68,8 +68,8 @@ against the preflight, and screens are rebuilt one at a time as a simulation of 
    use, and fix any that still teach a second path or disown a generated file. The census of
    step 1 above is current before the first screen.
 2. **Rebuild one screen from nothing** through the documented steps only: design, scaffold or
-   add-page from the type template, customise inside slots, board frame from the story template,
-   checks, browser in every locale. Rebuild means regenerate from the template and port the
+   add-page from the type template, the board frame drawn from the design, the screen customised
+   inside slots to the frame, checks, browser in every locale. Rebuild means regenerate from the template and port the
    screen's customisation into the slots, never edit the old file toward the new shape.
 3. **Log every trial and error**: a step the documentation did not cover, a command that failed,
    a slot that was missing, a check that did not catch something, a choice the agent had to make
