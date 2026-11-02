@@ -410,6 +410,33 @@ const DEFAULTS = {
    */
   recordCollectionSelector: '[data-slot="console-record-list"], [data-slot="crud-card"]',
 
+  /**
+   * Whether the design decided this screen's list as a table, for `aListDecidedAsATableDrawsTableRows`.
+   * A caller that knows the decision (the screen's design entry) sets it; absent, the check compares
+   * nothing, since a list that was meant to be cards is not wrong for drawing them.
+   */
+  decidedAsTable: false,
+
+  /**
+   * The narrowest window at which a list decided as a table must draw table rows. Narrower than
+   * this the list may fall to cards on purpose, so the check judges nothing there. A run drives the
+   * page at every width the screen is judged at (1440 and 1024), so one reading is one width.
+   */
+  tableMinViewportPx: 1024,
+
+  /** The list a screen's rows are drawn in, and what a table row and a card of it are. */
+  listRootSelector: '[data-slot="console-record-list"]',
+  tableRowSelector: "tbody tr",
+  cardRowSelector: '[data-slot="crud-card"]',
+
+  /**
+   * A record's section, its title, and the label of a field in it, for
+   * `aSectionTitleRepeatsItsOwnField`. Named as the console kit marks them.
+   */
+  detailSectionSelector: '[data-slot="section-shell"]',
+  detailSectionTitleSelector: '[data-slot="section-shell-title"]',
+  detailFieldLabelSelector: '[data-slot="field-detail-label"]',
+
   /** What a standing page notice is drawn as: the kit's notice card, or a message by its role. */
   pageNoticeSelector: '[data-slot="console-notice-card"], [role="alert"], [role="note"], [role="status"]',
 
@@ -2026,7 +2053,21 @@ const theCardRegionReadsLoudestFirst = {
     // Said out loud rather than left as a smaller number: a message whose glyph this vocabulary
     // does not carry is one the rule did not judge, and a count that quietly excluded it reads
     // exactly like a count that judged it and passed.
-    const unread = ordered.filter((m) => !m.kind).length;
+    const unreadMessages = ordered.filter((m) => !m.kind);
+    const unread = unreadMessages.length;
+    // Which message, and what it draws, so the finding can be acted on without opening the page: the
+    // first words of the message and the glyph it leads with, as the vocabulary would have to name it.
+    const glyphName = (el) => {
+      const g = [...el.querySelectorAll("svg, [role=img]")].find((s) => !s.closest('button, [role="button"], a[href]'));
+      if (!g) return "no glyph";
+      const cls = String(g.getAttribute("class") || "").trim().split(/\s+/).filter(Boolean).sort((a, b) => b.length - a.length).find((c) => /^(lucide|icon)/.test(c));
+      return cls ?? g.tagName.toLowerCase();
+    };
+    const unreadNames = unreadMessages
+      .slice(0, 3)
+      .map((m) => `「${prose(m.el).replace(/\s+/g, " ").slice(0, 34)}」 (${glyphName(m.el)}, role ${m.el.getAttribute("role") ?? "none"})`)
+      .join(", ");
+    const unreadMore = unread > 3 ? ` and ${unread - 3} more` : "";
 
     const regions = new Map();
     for (const m of ordered) {
@@ -2050,7 +2091,7 @@ const theCardRegionReadsLoudestFirst = {
           + "order the header control lists its kinds - 위험 · 경고 · 알림 · 도움말 - so whoever has "
           + "something to deal with today meets the loudest of it on the first line. Read down this "
           + "page the reader meets the second thing before the first"
-          + (unread ? `. ${unread} message(s) on this page draw a glyph this vocabulary does not carry, and were not judged` : ""),
+          + (unread ? `. ${unread} message(s) on this page draw a glyph this vocabulary does not carry, and were not judged: ${unreadNames}${unreadMore}` : ""),
       );
       if (findings.length >= o.maxFindings) break;
     }
@@ -2059,9 +2100,97 @@ const theCardRegionReadsLoudestFirst = {
       // of them survives a count.
       findings.push(
         `${unread} of ${ordered.length} message(s) on this page draw a glyph 「noticeKinds」 does not `
-          + "carry, so their place in the order was not judged. A vocabulary that does not reach a "
-          + "message reports the same clean page as one that judged it",
+          + `carry, so their place in the order was not judged: ${unreadNames}${unreadMore}. A vocabulary `
+          + "that does not reach a message reports the same clean page as one that judged it",
       );
+    }
+    return { compared, findings };
+  },
+};
+
+/**
+ * A list the design decided as a table, drawn as cards at a width that holds a table.
+ *
+ * <p><b>Every other check here reads a painted list, and the card fallback paints one too.</b> A
+ * list whose columns are written by hand can carry none of the width ladder, so the whole list falls
+ * to cards at the width of a laptop; every box check, every contrast check and every figure check
+ * then passes on a screen that is not the screen the design drew. The page is the only place this is
+ * visible, and 「compared 2835」 on it reads exactly like a clean list.
+ *
+ * <p><b>It needs the decision, and a window.</b> The design entry says table or cards, so the caller
+ * hands it over (`decidedAsTable`); without it nothing is compared, because cards drawn on purpose
+ * are not a defect. And a table may fall to cards on a phone on purpose, so the check judges only a
+ * window at least `tableMinViewportPx` wide, and a run drives the screen at 1440 and at 1024.
+ *
+ * <p><b>An empty list draws neither,</b> and a list that drew no row cannot be judged, so it compares
+ * nothing and says so.
+ */
+const aListDecidedAsATableDrawsTableRows = {
+  id: "aListDecidedAsATableDrawsTableRows",
+  grade: "error",
+  title:
+    "a list the design decided as a table, drawn as cards at a width that holds a table - every other check passes on the fallback",
+  page: (o) => {
+    const findings = [];
+    if (!o.decidedAsTable) return { compared: 0, findings };
+    const width = window.innerWidth || document.documentElement.clientWidth;
+    if (width < o.tableMinViewportPx) return { compared: 0, findings };
+    const root = document.querySelector(o.listRootSelector);
+    if (!root) return { compared: 0, findings };
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && s.display !== "none";
+    };
+    const rows = [...root.querySelectorAll(o.tableRowSelector)].filter(visible);
+    const cards = [...root.querySelectorAll(o.cardRowSelector)].filter(visible);
+    if (rows.length === 0 && cards.length === 0) return { compared: 0, findings };
+    if (rows.length === 0) {
+      findings.push(
+        `the design decides this list as a table and at ${width}px it draws ${cards.length} card(s) and no ` +
+          `table row (${o.tableRowSelector}). A list whose columns are all dropped, or whose widest ` +
+          "column set does not fit the pane, falls to cards - give the columns the width ladder " +
+          "(minTableWidth from the fifth column) so the table holds at this width",
+      );
+    }
+    return { compared: rows.length + cards.length, findings };
+  },
+};
+
+/**
+ * A section titled by the very word of the field it holds.
+ *
+ * <p><b>The title is there to say what the fields add, and a title that repeats its field says
+ * nothing.</b> A section 「Exception」 holding a field 「Exception」, or 「Stack trace」 over 「Stack
+ * trace」, reads as the same word twice and gives the reader no reason to expect more under it. It
+ * comes from naming a section after its contents while the field already carries the name, and it is
+ * invisible in the source: the title and the label are two catalogue keys.
+ *
+ * <p>The page holds both words, so the comparison is made on what is painted: a section whose title,
+ * case and spacing aside, equals the label of any field inside it.
+ */
+const aSectionTitleRepeatsItsOwnField = {
+  id: "aSectionTitleRepeatsItsOwnField",
+  grade: "error",
+  title: "a section titled by the same word as a field it holds - the title says nothing the field does not",
+  page: (o) => {
+    const findings = [];
+    const norm = (text) => (text || "").replace(/\s+/g, " ").trim().toLowerCase();
+    let compared = 0;
+    for (const section of document.querySelectorAll(o.detailSectionSelector)) {
+      const titleEl = section.querySelector(o.detailSectionTitleSelector);
+      const title = titleEl ? norm(titleEl.textContent) : "";
+      if (!title) continue;
+      const labels = [...section.querySelectorAll(o.detailFieldLabelSelector)].map((el) => norm(el.textContent));
+      compared += 1;
+      if (labels.includes(title)) {
+        findings.push(
+          `the section 「${(titleEl.textContent || "").trim()}」 holds a field with the same label. Name the ` +
+            "section for what its fields add to the record, or merge the field into the section above",
+        );
+        if (findings.length >= o.maxFindings) break;
+      }
     }
     return { compared, findings };
   },
@@ -2658,6 +2787,8 @@ export const checks = [
   standingMessageDrawsNoClose,
   theFigureRowSitsAgainstTheHeader,
   theCardRegionReadsLoudestFirst,
+  aListDecidedAsATableDrawsTableRows,
+  aSectionTitleRepeatsItsOwnField,
   noticesFollowTheStatusCards,
   textBoxesOverlap,
   blockInsideParagraph,
@@ -3986,6 +4117,60 @@ const FIXTURES = {
         <tr><td>119</td></tr><tr><td>관할 소방서</td></tr><tr><td>관할 경찰서</td></tr>
         <tr><td>협력 병원</td></tr><tr><td>환경청 상황실</td></tr><tr><td>안전보건공단</td></tr>
         </tbody></table></div>`,
+    },
+  },
+  aListDecidedAsATableDrawsTableRows: {
+    // The window of a fixture page is whatever the driver opened, so the floor is dropped and the
+    // decision is given: what is proved is the reading of the rows, not the width.
+    options: { decidedAsTable: true, tableMinViewportPx: 0 },
+    broken: {
+      // The /audit-log regression: a list decided as a table whose hand-written columns carried no
+      // width ladder, so it fell to cards on a laptop and every other check passed.
+      "a list decided as a table drawn as cards":
+        `<style>body{margin:0;font:14px sans-serif}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:900px}
+        .card{border:1px solid #ccc;border-radius:8px;padding:12px}</style>
+        <div data-slot="console-record-list"><div class=grid>
+        <div data-slot="crud-card" class=card>감사 기록 1</div><div data-slot="crud-card" class=card>감사 기록 2</div><div data-slot="crud-card" class=card>감사 기록 3</div>
+        </div></div>`,
+    },
+    quiet: {
+      "the same list drawn as a table":
+        `<style>body{margin:0;font:14px sans-serif}table{width:900px;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #ddd}</style>
+        <div data-slot="console-record-list"><table><tbody><tr><td>감사 기록 1</td><td>로그인</td></tr><tr><td>감사 기록 2</td><td>로그아웃</td></tr></tbody></table></div>`,
+      // A card in a detail panel beside the list is not the list's rows: it is read inside the list's own root only.
+      "a table list with a card drawn in the panel beside it":
+        `<style>body{margin:0;font:14px sans-serif}table{width:600px;border-collapse:collapse}td{padding:8px}.card{border:1px solid #ccc;padding:12px;width:200px}</style>
+        <div data-slot="console-record-list"><table><tbody><tr><td>감사 기록 1</td></tr></tbody></table></div>
+        <aside><div data-slot="crud-card" class=card>상세</div></aside>`,
+      // A list that drew no row cannot be judged and says so by comparing nothing.
+      "an empty list":
+        `<style>body{margin:0;font:14px sans-serif}</style><div data-slot="console-record-list"><p>기록이 없습니다</p></div>`,
+    },
+  },
+  aSectionTitleRepeatsItsOwnField: {
+    broken: {
+      // The screen this was written from: a section 「Exception」 holding a field 「Exception」.
+      "a section titled by its only field":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div data-slot="section-shell"><h3 data-slot="section-shell-title">Exception</h3>
+        <dl><dt data-slot="field-detail-label">Exception</dt><dd>PersistenceException</dd></dl></div>`,
+      "a title that differs only in case and spacing":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div data-slot="section-shell"><h3 data-slot="section-shell-title">Stack  trace</h3>
+        <dl><dt data-slot="field-detail-label">Class</dt><dd>x</dd><dt data-slot="field-detail-label">stack trace</dt><dd>at ...</dd></dl></div>`,
+    },
+    quiet: {
+      "a section named for what its fields add":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div data-slot="section-shell"><h3 data-slot="section-shell-title">Failure</h3>
+        <dl><dt data-slot="field-detail-label">Class</dt><dd>PersistenceException</dd><dt data-slot="field-detail-label">Message</dt><dd>duplicate key</dd></dl></div>`,
+      "a title equal to a field of another section":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div data-slot="section-shell"><h3 data-slot="section-shell-title">Request</h3><dl><dt data-slot="field-detail-label">Method</dt><dd>GET</dd></dl></div>
+        <div data-slot="section-shell"><h3 data-slot="section-shell-title">Outcome</h3><dl><dt data-slot="field-detail-label">Request</dt><dd>r-1</dd></dl></div>`,
+      "a section with no title":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div data-slot="section-shell"><dl><dt data-slot="field-detail-label">Note</dt><dd>x</dd></dl></div>`,
     },
   },
   unresolvedKeyOnTheScreen: {
