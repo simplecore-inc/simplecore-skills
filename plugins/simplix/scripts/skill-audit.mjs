@@ -347,7 +347,7 @@ function unenforcedInvariants(files, plugin) {
     const sectionFiles = statSync(spec.sections).isDirectory() ? walk(spec.sections).filter(isMarkdown) : [spec.sections];
     for (const f of sectionFiles) {
       const text = readFileSync(f, "utf8");
-      for (const m of text.matchAll(/^## #(\d+)\b[\s\S]*?(?=^## #|\Z)/gm)) {
+      for (const m of text.matchAll(/^## #(\d+)\b[\s\S]*?(?=^## #|$(?![\s\S]))/gm)) {
         if (/^Enforcement: review\b/m.test(m[0])) reviewed.add(Number(m[1]));
       }
     }
@@ -608,6 +608,17 @@ function selfTest() {
     check("yo-drift: unknown flag found", yoResult.drift.some((f) => f.text === "yo simplix:generate has no --bogus"));
     check("yo-drift: known flag quiet", !yoResult.drift.some((f) => f.text.includes("--force")));
     check("yo-drift: unknown generator found", yoResult.drift.some((f) => f.text === "unknown generator: yo simplix:nonesuch"));
+    const fe = join(root, "skills", "frontend");
+    mkdirSync(join(fe, "references"), { recursive: true });
+    writeFileSync(join(fe, "SKILL.md"), "## Non-Negotiable Invariants\n\n1. **A** - a.\n2. **B** - b.\n3. **C** - c.\n4. **D** - d.\n");
+    writeFileSync(
+      join(fe, "references", "invariants.md"),
+      "## #2 B\n\nUses Zod here.\nEnforcement: review - a person reads it.\n\n## #3 C\n\nEnforcement: review - last section of the file.\n",
+    );
+    const unenforced = unenforcedInvariants(collect(root), root).map((f) => f.text);
+    check("unenforced-invariant: marker after a capital Z is seen", !unenforced.some((t) => t.includes("#2 ")));
+    check("unenforced-invariant: marker in the last section is seen", !unenforced.some((t) => t.includes("#3 ")));
+    check("unenforced-invariant: an uncited, unmarked invariant is found", unenforced.some((t) => t.includes("#4 ")));
     const symbolRoot = join(root, "src");
     mkdirSync(symbolRoot);
     writeFileSync(join(symbolRoot, "a.ts"), "export function RealWidget() {}\n");
