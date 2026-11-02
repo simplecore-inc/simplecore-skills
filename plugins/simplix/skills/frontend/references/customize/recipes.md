@@ -87,10 +87,7 @@ How the actions draw (`actionVariant`) is the product's default, set once on `UI
 modules/<domain>/src/widgets/<entity>/editor.tsx
 ```
 
-Or generate from template:
-```bash
-npx simplix scaffold <entity> --module <domain> --template editor
-```
+There is no template for a bespoke editor: `simplix scaffold` lays down the list, form and detail widgets (and the page) from the kit's templates, and an editor is written by hand beside them.
 
 ### Step 2: Outer guard component
 

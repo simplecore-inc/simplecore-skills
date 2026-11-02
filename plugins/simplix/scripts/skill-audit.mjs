@@ -11,13 +11,17 @@
  *   node scripts/skill-audit.mjs --only <id>[,<id>]   one or more classes, every finding
  *   node scripts/skill-audit.mjs --project <dir>      also diff the `simplix` commands and flags the
  *                                                     text names against the CLI installed in <dir>
+ *   node scripts/skill-audit.mjs --generator <dir>    also diff the `yo simplix:` names and flags against the
+ *                                                     generator checkout <dir> (the folder holding generators/)
+ *   node scripts/skill-audit.mjs --source <a,b>       also list PascalCase names in backticks that none of the
+ *                                                     comma-separated source roots spells anywhere
  *   node scripts/skill-audit.mjs --json               the findings as JSON, for another tool
  *   node scripts/skill-audit.mjs --self-test          hit and miss cases for every class
  *
  * Classes marked `review` are candidates for a reader and never fail the run; the rest gate it.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, lstatSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -318,16 +322,40 @@ function orphanReferences(files, plugin) {
   return found;
 }
 
-/** Each defined invariant of the frontend skill is enforced by an audit rule or says it is not. */
+/**
+ * Each defined invariant is enforced by an audit rule that cites it, or its reference section
+ * carries a line `Enforcement: review - <reason>` saying a machine cannot judge it.
+ */
 function unenforcedInvariants(files, plugin) {
-  const md = join(plugin, "skills", "frontend", "SKILL.md");
-  if (!existsSync(md)) return [];
-  const defined = [...definedInvariants(readFileSync(md, "utf8"))].sort((a, b) => a - b);
-  const scriptText = readFileSync(join(plugin, "scripts", "audit-frontend.mjs"), "utf8");
-  const registry = walk(join(plugin, "skills", "frontend", "references", "audit")).filter(isMarkdown).map((f) => readFileSync(f, "utf8")).join("\n");
-  const cited = new Set();
-  for (const m of (scriptText + "\n" + registry).matchAll(/#(\d+)/g)) cited.add(Number(m[1]));
-  return defined.filter((n) => !cited.has(n)).map((n) => ({ file: md, line: 0, text: `invariant #${n} has no audit rule or registry entry citing it` }));
+  const found = [];
+  const specs = [
+    { skill: "frontend", script: "audit-frontend.mjs", registry: join(plugin, "skills", "frontend", "references", "audit"), sections: join(plugin, "skills", "frontend", "references", "invariants.md") },
+    { skill: "backend", script: "audit-backend.mjs", registry: join(plugin, "skills", "backend", "references"), sections: join(plugin, "skills", "backend", "references") },
+  ];
+  for (const spec of specs) {
+    const md = join(plugin, "skills", spec.skill, "SKILL.md");
+    const script = join(plugin, "scripts", spec.script);
+    if (!existsSync(md) || !existsSync(script)) continue;
+    const defined = [...definedInvariants(readFileSync(md, "utf8"))].sort((a, b) => a - b);
+    const cited = new Set();
+    const ruleText = readFileSync(script, "utf8");
+    for (const m of ruleText.matchAll(/invariant:\s*"([^"]*)"/g)) for (const n of m[1].matchAll(/#(\d+)/g)) cited.add(Number(n[1]));
+    for (const f of walk(spec.registry).filter(isMarkdown)) {
+      for (const m of readFileSync(f, "utf8").matchAll(/audit rule[^\n]*#(\d+)/gi)) cited.add(Number(m[1]));
+    }
+    const reviewed = new Set();
+    const sectionFiles = statSync(spec.sections).isDirectory() ? walk(spec.sections).filter(isMarkdown) : [spec.sections];
+    for (const f of sectionFiles) {
+      const text = readFileSync(f, "utf8");
+      for (const m of text.matchAll(/^## #(\d+)\b[\s\S]*?(?=^## #|\Z)/gm)) {
+        if (/^Enforcement: review\b/m.test(m[0])) reviewed.add(Number(m[1]));
+      }
+    }
+    for (const n of defined) {
+      if (!cited.has(n) && !reviewed.has(n)) found.push({ file: md, line: 0, text: `${spec.skill} invariant #${n} has no audit rule citing it and no "Enforcement: review" line` });
+    }
+  }
+  return found;
 }
 
 const CROSS_CLASSES = [
@@ -402,11 +430,98 @@ function cliDrift(files, registry) {
     });
   }
   const unnamed = [];
+  const corpus = files.filter(isMarkdown).map((f) => readFileSync(f, "utf8")).join("\n");
   for (const [cmd, flags] of Object.entries(registry)) {
-    if (!mentioned.has(cmd)) unnamed.push({ file: PLUGIN, line: 0, text: `command never named: simplix ${cmd}` });
-    for (const f of flags) if (f !== "--help" && f !== "--version" && !mentioned.has(`${cmd} ${f}`)) unnamed.push({ file: PLUGIN, line: 0, text: `flag never named: simplix ${cmd} ${f}` });
+    if (!mentioned.has(cmd) && !new RegExp(`simplix\\s+${cmd}\\b`).test(corpus)) unnamed.push({ file: PLUGIN, line: 0, text: `command never named: simplix ${cmd}` });
+    // A flag counts as named when the text spells it anywhere; a flag named only in another command's
+    // sentence is still a pointer the reader can find.
+    for (const f of flags) if (f !== "--help" && f !== "--version" && !corpus.includes(f)) unnamed.push({ file: PLUGIN, line: 0, text: `flag never named: simplix ${cmd} ${f}` });
   }
   return { drift: found, unnamed };
+}
+
+
+/* ------------------------------------------------------------------ yo drift (needs the generator checkout) */
+
+function yoRegistry(dir) {
+  const registry = {};
+  const gens = join(dir, "generators");
+  for (const name of readdirSync(gens)) {
+    const index = join(gens, name, "index.js");
+    if (!existsSync(index)) continue;
+    const source = readFileSync(index, "utf8");
+    registry[name] = new Set([...source.matchAll(/this\.option\(\s*['"]([a-z][a-z0-9-]*)['"]/g)].map((m) => `--${m[1]}`));
+    // An alias generator re-exports another one and takes its options.
+    const alias = /export\s*\{\s*default\s*\}\s*from\s*['"]\.\.\/([a-z-]+)\/index\.js['"]/.exec(source);
+    if (alias) registry[name].aliasOf = alias[1];
+  }
+  for (const [name, set] of Object.entries(registry)) {
+    if (set.aliasOf && registry[set.aliasOf]) for (const f of registry[set.aliasOf]) set.add(f);
+  }
+  return registry;
+}
+
+function yoDrift(files, registry) {
+  const drift = [];
+  const named = new Set();
+  for (const file of files.filter(isMarkdown)) {
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      for (const m of line.matchAll(/\byo\s+simplix:([a-z][a-z0-9-]*)((?:\s+[^`|)]*)?)/g)) {
+        named.add(m[1]);
+        if (!registry[m[1]]) {
+          drift.push({ file, line: i + 1, text: `unknown generator: yo simplix:${m[1]}` });
+          continue;
+        }
+        for (const f of m[2].matchAll(/(--[a-z][a-z0-9-]*)/g)) {
+          if (!registry[m[1]].has(f[1])) drift.push({ file, line: i + 1, text: `yo simplix:${m[1]} has no ${f[1]}` });
+        }
+      }
+    });
+  }
+  const unnamed = Object.keys(registry).filter((g) => !named.has(g)).map((g) => ({ file: PLUGIN, line: 0, text: `generator never named: yo simplix:${g}` }));
+  return { drift, unnamed };
+}
+
+
+/* ------------------------------------------------------------------ named code symbols (needs source roots) */
+
+const SOURCE_EXT = /\.(ts|tsx|mts|mjs|js|jsx|java|kt|hbs|json)$/;
+
+function identifierSet(roots) {
+  const known = new Set();
+  const visit = (dir) => {
+    for (const name of readdirSync(dir)) {
+      if (name.startsWith(".") || name === "node_modules" || name === "dist" || name === "build" || name === "target") continue;
+      const path = join(dir, name);
+      let st;
+      try {
+        st = lstatSync(path);
+        if (st.isSymbolicLink()) continue;
+      } catch (error) {
+        if (error.code === "ENOENT") continue;
+        throw error;
+      }
+      if (st.isDirectory()) visit(path);
+      else if (SOURCE_EXT.test(name) && st.size < 2_000_000) {
+        for (const m of readFileSync(path, "utf8").matchAll(/[A-Za-z_][A-Za-z0-9_]{3,}/g)) known.add(m[0]);
+      }
+    }
+  };
+  for (const root of roots) if (existsSync(root)) visit(root);
+  return known;
+}
+
+/** A PascalCase compound named in backticks that no source root spells anywhere. */
+function unknownSymbols(files, known) {
+  const found = [];
+  for (const file of files.filter(isMarkdown)) {
+    proseLines(readFileSync(file, "utf8")).forEach((line, i) => {
+      for (const m of line.matchAll(/`([A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+)`/g)) {
+        if (!known.has(m[1])) found.push({ file, line: i + 1, text: m[1] });
+      }
+    });
+  }
+  return found;
 }
 
 /* ------------------------------------------------------------------ run */
@@ -432,6 +547,14 @@ function audit(plugin, options = {}) {
     const { drift, unnamed } = cliDrift(files, options.registry);
     results.push({ id: "cli-drift", gate: true, desc: "a simplix command or flag the text names that the installed CLI does not have", findings: drift });
     results.push({ id: "cli-unnamed", gate: false, desc: "a command or flag the installed CLI has that no instruction file names", findings: unnamed });
+  }
+  if (options.known) {
+    results.push({ id: "unknown-symbol", gate: false, desc: "a PascalCase name in backticks that no given source root spells (a renamed or invented part)", findings: unknownSymbols(files, options.known) });
+  }
+  if (options.yo) {
+    const { drift, unnamed } = yoDrift(files, options.yo);
+    results.push({ id: "yo-drift", gate: true, desc: "a yo simplix generator or flag the text names that the installed generator does not have", findings: drift });
+    results.push({ id: "yo-unnamed", gate: false, desc: "a generator the checkout has that no instruction file names", findings: unnamed });
   }
   return results;
 }
@@ -479,6 +602,19 @@ function selfTest() {
     check("cli-drift: unknown flag found", drift.drift.some((f) => f.text === "simplix scaffold has no --bogus"));
     check("cli-drift: known flag quiet", !drift.drift.some((f) => f.text.includes("--module")));
     check("cli-drift: unknown command found", drift.drift.some((f) => f.text === "unknown command: simplix nonesuch"));
+    const yoReg = { generate: new Set(["--force"]) };
+    writeFileSync(join(skill, "references", "yo.md"), "Run `yo simplix:generate X --force --bogus` and `yo simplix:nonesuch`.\n");
+    const yoResult = yoDrift(collect(root), yoReg);
+    check("yo-drift: unknown flag found", yoResult.drift.some((f) => f.text === "yo simplix:generate has no --bogus"));
+    check("yo-drift: known flag quiet", !yoResult.drift.some((f) => f.text.includes("--force")));
+    check("yo-drift: unknown generator found", yoResult.drift.some((f) => f.text === "unknown generator: yo simplix:nonesuch"));
+    const symbolRoot = join(root, "src");
+    mkdirSync(symbolRoot);
+    writeFileSync(join(symbolRoot, "a.ts"), "export function RealWidget() {}\n");
+    writeFileSync(join(skill, "references", "sym.md"), "Use `RealWidget` and `GhostWidget`.\n");
+    const symbols = unknownSymbols(collect(root), identifierSet([symbolRoot]));
+    check("unknown-symbol: hit is found", symbols.some((f) => f.text === "GhostWidget"));
+    check("unknown-symbol: miss stays quiet", !symbols.some((f) => f.text === "RealWidget"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -489,7 +625,9 @@ function selfTest() {
 if (flag("--self-test")) selfTest();
 
 const registry = value("--project") ? cliRegistry(resolve(value("--project"))) : undefined;
-const results = audit(PLUGIN, { registry });
+const yo = value("--generator") ? yoRegistry(resolve(value("--generator"))) : undefined;
+const known = value("--source") ? identifierSet(value("--source").split(",").map((p) => resolve(p))) : undefined;
+const results = audit(PLUGIN, { registry, yo, known });
 const only = value("--only")?.split(",");
 const shown = only ? results.filter((r) => only.includes(r.id)) : results;
 
