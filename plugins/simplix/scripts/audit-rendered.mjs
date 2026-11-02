@@ -399,6 +399,17 @@ const DEFAULTS = {
    */
   statusCardsSelector: '[data-slot="console-tile-gutter"], [data-part="console-tile-gutter"]',
 
+  /**
+   * What a collection of records draws: the kit's record list, and one card of it.
+   *
+   * <p>**Cards in a grid are the same shape as a figure row** - boxes of one height side by side,
+   * each carrying a number - so a figure-row reading that does not know them calls a list of
+   * connections a row of figures, and passes or fails by whether the cards happen to share a
+   * height. A box matching this, or a parent inside one, holds records and is never a figure row.
+   * A shell that marks its record cards differently names its own selector through `--options`.
+   */
+  recordCollectionSelector: '[data-slot="console-record-list"], [data-slot="crud-card"]',
+
   /** What a standing page notice is drawn as: the kit's notice card, or a message by its role. */
   pageNoticeSelector: '[data-slot="console-notice-card"], [role="alert"], [role="note"], [role="status"]',
 
@@ -1642,7 +1653,9 @@ const standingMessageDrawsNoClose = {
  *
  * **A figure row is what it looks like**: two or more boxes of one height standing side by side,
  * each carrying a number, none of them a line of a table. No component name enters it, so a row
- * of figures drawn some other way is still a row of figures.
+ * of figures drawn some other way is still a row of figures. A grid of record cards is the one
+ * shape that matches those tests and is not a row of figures, so `recordCollectionSelector` names
+ * what a collection of records is marked as, and neither the boxes nor a parent inside one count.
  *
  * **What belongs to a tab is not the page's.** A message inside a `tabpanel` is that tab's
  * footnote, drawn under the rows it annotates, and hoisting it would put it over three tabs it
@@ -1765,7 +1778,10 @@ const theFigureRowSitsAgainstTheHeader = {
     const rows = [];
     for (const parent of main.querySelectorAll("*")) {
       if (parent.closest('table, [role="table"], [role="grid"], [role="rowgroup"]')) continue;
+      // A grid of record cards is a collection, not a row of figures, however alike the cards are.
+      if (parent.closest(o.recordCollectionSelector)) continue;
       const boxes = [...parent.children].filter((k) => {
+        if (k.matches(o.recordCollectionSelector)) return false;
         if (!visible(k) || !/\d/.test(k.textContent)) return false;
         const q = k.getBoundingClientRect();
         return q.width >= o.minFigureTileWidthPx
@@ -3142,6 +3158,17 @@ const FIXTURES = {
         <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다<button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 가동을 중지해도 검사 유효기간은 그대로입니다<button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+      // A real figure row above a cards list. Skipping record cards must not blank the tile row
+      // that stands over them, or a screen drawing both would stop being checked at all.
+      "a message above the tile row, with a cards list under it":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px;margin-bottom:12px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}
+        .grid{display:flex;gap:16px}.card{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 켜져 있는 연결이 없습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>정상<br>3건</div><div class=fig>실패<br>1건</div></div>
+        <div data-slot=console-record-list><div class=grid><div data-slot=crud-card class=card>OpenAI<br>한도 30건</div><div data-slot=crud-card class=card>Azure<br>한도 12건</div></div></div></main>`,
       // The shape this rule exists to catch: a card wedged between the page header and the
       // figure row. The row folds behind the header's rule, so the card severs the fold from the
       // thing it folds behind - and this was the CORRECT arrangement under the rule's first
@@ -3232,6 +3259,27 @@ const FIXTURES = {
             <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 이 기록의 법정 최소 보존기간은 3년입니다
             <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
           </div></div></main>`,
+      // A grid of cards, each holding a number, under a message. The cards are one height and
+      // side by side, which is every test a figure row is read by, so a reading that does not know
+      // a collection of records reports the message as drawn above a row of figures.
+      "a message above a cards list whose cards each hold a number":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}
+        .grid{display:flex;gap:16px}.card{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 켜져 있는 연결이 없습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div data-slot=console-record-list><div class=grid>
+        <div data-slot=crud-card class=card>OpenAI<br>한도 30건</div><div data-slot=crud-card class=card>Azure<br>한도 12건</div><div data-slot=crud-card class=card>Google<br>한도 5건</div>
+        </div></div></main>`,
+      // The same cards outside the record list's own box: the card marks itself, so the grid is
+      // not read as figures whichever box holds it.
+      "a message above a grid of record cards outside a record list":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}
+        .grid{display:flex;gap:16px}.card{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 켜져 있는 연결이 없습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=grid><div data-slot=crud-card class=card>OpenAI<br>한도 30건</div><div data-slot=crud-card class=card>Azure<br>한도 12건</div></div></main>`,
       // Figures and no message at all. The rule says nothing about a screen that leads with them.
       "a page of figures with no message on it":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
