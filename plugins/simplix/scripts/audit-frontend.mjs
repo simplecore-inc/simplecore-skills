@@ -8785,7 +8785,10 @@ function koParticleFindings() {
   // so the particle still has to agree with the VALUE's last syllable and the sentence is wrong
   // for half the values exactly as before. Skipping one such character is what makes the rule
   // see the quoted form, which is the form these sentences are actually written in.
-  const particle = /\}\}\s*[」』〉》”’"'\)\]]?\s*(?:[을를이가은는와과](?!\s*\(\s*[을를이가은는와과]\s*\))|로(?![그긴깅]))/;
+  //
+  // A particle is written against the word it follows, so a space after the value starts the next
+  // word: `{{plan}} 이상`, `{{n}} 가능`, `{{n}} 이하` begin with a particle's syllable and carry none.
+  const particle = /\}\}[」』〉》”’"'\)\]]?(?:[을를이가은는와과](?!\s*\(\s*[을를이가은는와과]\s*\))|로(?![그긴깅]))/;
   for (const abs of koCatalogues()) {
     const rel = path.relative(ROOT, abs);
     const raw = fs.readFileSync(abs, "utf8");
@@ -9143,6 +9146,12 @@ const COLLECTION_RULES = [
           note: "a word that merely begins with the same syllable",
           files: {
             "modules/site/src/locales/widgets/ko.json": `{ "area": { "signedIn": "{{user}}로그인 기록" } }`,
+          },
+        },
+        {
+          note: "a space after the value starts the next word, so its first syllable is no particle",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "plans": "{{plan}} 이상 · {{count}} 가능" } }`,
           },
         },
       ],
