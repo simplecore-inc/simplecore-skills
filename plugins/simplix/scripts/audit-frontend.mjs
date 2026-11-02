@@ -8268,7 +8268,249 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
       ],
     },
   },
+  {
+    id: "filterbar-total-badge-in-leading",
+    invariant: "#41",
+    level: "error",
+    desc: "A FilterBar draws its own total through `ListTotalBadge` in the `leading` slot instead of the `count` prop. `count` is what puts the shared total badge at the start of the bar, with its not-known-yet state read from the same place as every other list, so a total hand-placed in `leading` is a second copy that drifts in position, in its loading state and in what it counts; `leading` is for the summary content the bar does not already draw (an aggregate, a pending-count badge). Pass `count={list.pagination.total}` and leave `leading` for what is extra",
+    appliesTo: isTsx,
+    check: (c) => {
+      const hits = [];
+      for (const m of c.matchAll(/<(?:CrudList\.)?FilterBar\b/g)) {
+        const { tag } = jsxOpenTag(c, m.index);
+        const lead = /\bleading=\{/.exec(tag);
+        if (!lead) continue;
+        if (!/\bListTotalBadge\b/.test(braceBody(tag, lead.index + lead[0].length - 1))) continue;
+        hits.push({ line: lineOfIndex(c, m.index + lead.index), excerpt: tag.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.FilterBar
+  maxBadges={3}
+  leading={<ListTotalBadge count={list.pagination.total} />}
+  filters={filters}
+  state={list.filters}
+/>`,
+      fixed: `<CrudList.FilterBar
+  maxBadges={3}
+  count={list.pagination.total}
+  filters={filters}
+  state={list.filters}
+/>`,
+      miss: [
+        {
+          note: "summary content the bar does not draw itself: a pending-count badge",
+          source: `<CrudList.FilterBar
+  maxBadges={3}
+  count={list.pagination.total}
+  leading={<Badge variant="destructive">{pending}</Badge>}
+  filters={filters}
+  state={list.filters}
+/>`,
+        },
+        {
+          note: "a total badge outside any filter bar, in a card header",
+          source: `<CardHeader>
+  <ListTotalBadge count={rows.length} />
+</CardHeader>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "status-badge-enlarged",
+    invariant: "#43",
+    level: "error",
+    desc: "A `StatusBadge` (or a domain wrapper named `<Domain>StatusBadge`) passes `size=\"default\"`. The badge defaults to `sm`, the size the list draws, so omitting `size` keeps the list, the detail and the form at one density; `default` is the larger step, and a detail or form badge drawn one step above the list's reads as a different component for the same value. `xs` is the only explicit size, for a genuinely denser context (a legend, a live strip). Delete the prop",
+    appliesTo: isTsx,
+    check: (c) => {
+      const hits = [];
+      for (const m of c.matchAll(/<(?:[A-Za-z]+\.)?[A-Za-z]*StatusBadge\b/g)) {
+        const { tag } = jsxOpenTag(c, m.index);
+        if (!/\bsize=(?:"default"|'default'|\{\s*["']default["']\s*\})/.test(tagAttrs(tag))) continue;
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: tag.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<StatusBadge tone={areaStatusToTone[status]} label={t("area.status." + status)} size="default" />`,
+      fixed: `<StatusBadge tone={areaStatusToTone[status]} label={t("area.status." + status)} />`,
+      miss: [
+        {
+          note: "the denser step, which the invariant allows in a legend",
+          source: `<StatusBadge tone="success" label={t("legend.active")} size="xs" />`,
+        },
+        {
+          note: "a button's own default size, on a component that is not a badge",
+          source: `<Button size="default" onClick={onSave}>{t("common.save")}</Button>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "peek-label-takes-onpeek",
+    invariant: "#45",
+    level: "error",
+    desc: "A file that defines a `<Entity>PeekLabel` also names an `onPeek` callback. A label takes no `onPeek` prop and holds no open state: it dispatches through `usePeekHost()`, and the host mounted at the app root owns the dialog. A callback handed down from the screen that opens the dialog means the dialog lives inside the subtree that triggered it, and that subtree's next re-render (an activity stream invalidating its reads is enough) unmounts the dialog, which closes itself within seconds of opening. Have the trigger call `peek.open({ render: ... })` and drop the prop",
+    appliesTo: isTsx,
+    check: (c) => (/\b[A-Z]\w*PeekLabel\b/.test(c) ? lineHits(c, /\bonPeek\b/, notCommentLine) : []),
+    samples: {
+      file: "modules/site/src/widgets/zone/peek.tsx",
+      broken: `export interface ZonePeekLabelProps {
+  zoneId: string;
+  name: string;
+  onPeek: (zoneId: string) => void;
+}
+
+export function ZonePeekLabel({ zoneId, name, onPeek }: ZonePeekLabelProps) {
+  return <button type="button" onClick={() => onPeek(zoneId)}>{name}</button>;
+}`,
+      fixed: `export interface ZonePeekLabelProps {
+  zoneId: string;
+  name: string;
+}
+
+export function ZonePeekLabel({ zoneId, name }: ZonePeekLabelProps) {
+  const peek = usePeekHost();
+  return (
+    <button type="button" onClick={() => peek.open({ render: ({ open, onOpenChange }) => <ZonePeekDialog zoneId={zoneId} open={open} onOpenChange={onOpenChange} /> })}>
+      {name}
+    </button>
+  );
+}`,
+      miss: [
+        {
+          note: "an onPeek name in a file that defines no peek label",
+          source: `export function ZoneCell({ zoneId, onPeek }: { zoneId: string; onPeek: (id: string) => void }) {
+  return <button type="button" onClick={() => onPeek(zoneId)}>{zoneId}</button>;
+}`,
+        },
+        {
+          note: "the prop named only in a comment that explains why labels have none",
+          source: `/** A peek label takes no onPeek prop: the host owns the dialog. */
+export function ZonePeekLabel({ zoneId }: { zoneId: string }) {
+  const peek = usePeekHost();
+  return <button type="button" onClick={() => peek.open({ render: () => null })}>{zoneId}</button>;
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "browser-zone-offset-math",
+    invariant: "#42",
+    level: "error",
+    desc: "`getTimezoneOffset()` called in a screen or a shared module. The browser's offset is the one zone a record is never displayed in: a zone-scoped instant is encoded and decoded in the record's display zone, a calendar date and a wall-clock time carry no zone at all, and the framework owns the zone math (`serializeInstant`, `serializeCalendarDate`, the date components). Hand-rolled offset arithmetic gives the same record a different moment to a reader whose laptop is in another zone. Encode through the framework's primitive for the field's semantic kind",
+    appliesTo: (p) => /\.tsx?$/.test(p) && !/(?:\.test\.|\.spec\.|__tests__\/)/.test(p),
+    check: (c) => lineHits(c, /\.getTimezoneOffset\s*\(/, notCommentLine),
+    samples: {
+      file: "modules/site/src/widgets/shift/form.tsx",
+      broken: `const offsetMinutes = new Date(values.startsAt).getTimezoneOffset();
+const instant = new Date(values.startsAt.getTime() - offsetMinutes * 60_000).toISOString();`,
+      fixed: `const instant = serializeInstant(values.startsAt, zone);`,
+      miss: [
+        {
+          note: "the offset named in a comment that explains why it is not used",
+          source: `// Never getTimezoneOffset(): the zone is the record's, not the browser's.
+const instant = serializeInstant(values.startsAt, zone);`,
+        },
+      ],
+    },
+  },
+  {
+    id: "schemas-file-exports-a-type",
+    invariant: "#4",
+    level: "error",
+    desc: "A domain package's `src/schemas.ts` exports a type or an interface. That file re-exports the generated Zod constants, and the types are derived from them elsewhere; an `export type` here collides with the derived type of the same name, and the collision surfaces at the barrel as an ambiguous or duplicate export far from its cause. Export only Zod constants from `schemas.ts` and take the type from the derived types",
+    appliesTo: (p) => /(?:^|\/)src\/schemas\.ts$/.test(p),
+    check: (c) => lineHits(c, /^\s*export\s+(?:type|interface)\b/, notCommentLine),
+    samples: {
+      file: "packages/domain-site/src/schemas.ts",
+      broken: `export * from "./generated-meta/schema";
+
+export const areaFilter = z.object({ name: z.string().optional() });
+export type AreaFilter = z.infer<typeof areaFilter>;`,
+      fixed: `export * from "./generated-meta/schema";
+
+export const areaFilter = z.object({ name: z.string().optional() });`,
+      miss: [
+        {
+          note: "the rule written out in a comment above the constants",
+          source: `// export type AreaFilter = z.infer<typeof areaFilter>; would collide with the derived type.
+export const areaFilter = z.object({ name: z.string().optional() });`,
+        },
+      ],
+    },
+  },
+  {
+    id: "soft-delete-field-drawn",
+    invariant: "#54",
+    level: "error",
+    desc: "The soft-delete flag or stamp (`deleted`, `deletedTimestamp`) drawn as a column, a card row, a detail or form field. A soft-deleted row is filtered out of the list, so the flag always reads false and the stamp always reads `-1`: the field says nothing and takes a column's width. The CLI marks both as audit fields and the console kit's templates skip them, so one that appears was added by hand or came from a template that still emits it; remove it from the contract tables and the markup. A toggle filter on `deleted` is reported by `deleted-toggle-filter`, not here",
+    appliesTo: isTsx,
+    check: (c) =>
+      lineHits(
+        c,
+        /\{\s*name:\s*["'](?:deleted|deletedTimestamp)["']\s*,\s*kind:|\bfieldLabel\(\s*["'](?:deleted|deletedTimestamp)["']\s*\)|\bfield=["'](?:deleted|deletedTimestamp)["']/,
+        (line, lines, i) => notCommentLine(line, lines, i) && !/\btype:\s*"toggle"/.test(line),
+      ),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const AreaColumnFields: readonly ContractField[] = [
+  { name: "name", kind: "text" },
+  { name: "deleted", kind: "boolean" },
+];`,
+      fixed: `const AreaColumnFields: readonly ContractField[] = [
+  { name: "name", kind: "text" },
+];`,
+      miss: [
+        {
+          note: "the toggle filter on the flag, which deleted-toggle-filter owns",
+          source: `const filters = [{ type: "toggle", field: "deleted", label: fieldLabel("deleted") }];`,
+        },
+        {
+          note: "a field whose name merely begins with the flag's",
+          source: `const AreaColumnFields: readonly ContractField[] = [
+  { name: "deletedByOperator", kind: "text" },
+];`,
+        },
+      ],
+    },
+  },
 ];
+
+/**
+ * The text inside the brace group that opens at `open` (an index of `{`), or "" when it never closes.
+ *
+ * <p>Quote state is tracked so a brace inside a string does not move the depth; a template literal
+ * with `${` nests like any other brace group.
+ *
+ * @param text the source holding the group
+ * @param open index of the opening `{`
+ * @returns the group's inner source
+ */
+function braceBody(text, open) {
+  let depth = 0;
+  let quote = null;
+  for (let i = open; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'" || ch === "`") {
+      quote = ch;
+    } else if (ch === "{") {
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0) return text.slice(open + 1, i);
+    }
+  }
+  return "";
+}
 
 // ---------------------------------------------------------------------------
 // Package export rules (package.json-based, separate collection)
@@ -8677,6 +8919,74 @@ function emptyLocaleValueFindings() {
 // to have no id anybody could pass to `--rule=` and no way to be proved at all.
 // ---------------------------------------------------------------------------
 
+/**
+ * Every markdown file shipped with the code: the package, module and app trees, and the README /
+ * CONTRIBUTING / CHANGELOG at the root. A `docs/` directory is left out: its language and format
+ * are the project's own call (invariant #25), and design notes there routinely carry plain-text
+ * diagrams in bare fences.
+ *
+ * @returns absolute paths, with the dependency and build directories left out
+ */
+function projectMarkdownFiles() {
+  const out = [];
+  const visit = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(e.name) && e.name !== ".git") visit(path.join(dir, e.name));
+      } else if (e.name.endsWith(".md")) {
+        out.push(path.join(dir, e.name));
+      }
+    }
+  };
+  for (const root of SRC_ROOTS) visit(path.join(ROOT, root));
+  let rootEntries = [];
+  try {
+    rootEntries = fs.readdirSync(ROOT, { withFileTypes: true });
+  } catch {
+    rootEntries = [];
+  }
+  for (const e of rootEntries) {
+    if (e.isFile() && /^(?:README|CONTRIBUTING|CHANGELOG)\.md$/i.test(e.name)) out.push(path.join(ROOT, e.name));
+  }
+  return out;
+}
+
+/**
+ * An opening code fence with no language tag, in the project's own markdown.
+ *
+ * <p>Fence state is tracked so the closing fence of a block is never read as an opener, and a fence
+ * of more backticks (or tildes) than the one that opened a block stays inside it.
+ *
+ * @returns one finding per untagged opening fence
+ */
+function untaggedFenceFindings() {
+  const findings = [];
+  for (const abs of projectMarkdownFiles()) {
+    let open = null;
+    fs.readFileSync(abs, "utf8")
+      .split("\n")
+      .forEach((line, i) => {
+        const m = /^\s*(`{3,}|~{3,})(.*)$/.exec(line);
+        if (!m) return;
+        if (open) {
+          if (m[1][0] === open.ch && m[1].length >= open.len && m[2].trim() === "") open = null;
+          return;
+        }
+        open = { ch: m[1][0], len: m[1].length };
+        if (m[2].trim() === "") {
+          findings.push({ file: path.relative(ROOT, abs), line: i + 1, excerpt: "code fence opened without a language tag" });
+        }
+      });
+  }
+  return findings;
+}
+
 const COLLECTION_RULES = [
   {
     id: "empty-locale-value",
@@ -9020,6 +9330,33 @@ const COLLECTION_RULES = [
   "area": { "newHeader": "구역 추가", "pageDescription": "구역별 출입 권한을 확인합니다" }
 }
 `,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "markdown-code-fence-without-language",
+    invariant: "#27",
+    level: "error",
+    desc: "A code fence in the project's markdown opens without a language tag. Every fence carries one (`ts`, `tsx`, `bash`, `json`, `md`, `text` for plain output) so a renderer highlights it, a reader knows what they are looking at, and a doc linter can tell code from prose. Add the tag to the opening fence",
+    collect: untaggedFenceFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/README.md": "# Site\n\n```\npnpm build\n```\n",
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/README.md": "# Site\n\n```bash\npnpm build\n```\n",
+        },
+      },
+      miss: [
+        {
+          note: "a bare closing fence and a longer fence nested inside a tagged block",
+          files: {
+            "modules/site/README.md": "# Site\n\n````md\n```\ninner\n```\n````\n",
           },
         },
       ],
