@@ -55,7 +55,7 @@ let ts;
 try {
   ts = require("typescript");
 } catch {
-  console.error(`✖ typescript is not resolvable from ${ROOT} — install it there, or point --root at the project.`);
+  console.error(`✖ typescript is not resolvable from ${ROOT} - install it there, or point --root at the project.`);
   process.exit(warnOnly ? 0 : 1);
 }
 
@@ -180,7 +180,7 @@ if (asJson) {
   console.log(JSON.stringify({ pairs: pairs.size, judged, unresolved, findings }, null, 2));
 } else {
   if (findings.length) {
-    console.log("\n✖ [error] number-format-on-a-value-that-is-not-a-number — a formatted placeholder handed something that is not a number");
+    console.log("\n✖ [error] number-format-on-a-value-that-is-not-a-number - a formatted placeholder handed something that is not a number");
     console.log("  Intl.NumberFormat coerces, so the screen draws NaN. Either the caller is the thing that formats,");
     console.log("  and the placeholder goes back to {{x}}; or the catalogue should format, and the caller hands over");
     console.log("  the raw number. Never both.");
@@ -191,10 +191,10 @@ if (asJson) {
     }
   }
   if (unresolved) {
-    console.log(`\n◐ ${unresolved} value(s) whose type the checker could not resolve — not judged, and not cleared.`);
+    console.log(`\n◐ ${unresolved} value(s) whose type the checker could not resolve - not judged, and not cleared.`);
   }
   console.log(
-    `\n${pairs.size} formatted placeholder(s) declared — ${judged} call-site value(s) judged, ${findings.length} not a number.`,
+    `\n${pairs.size} formatted placeholder(s) declared - ${judged} call-site value(s) judged, ${findings.length} not a number.`,
   );
   if (!findings.length && !unresolved) console.log("✔ every formatted placeholder receives a number.");
 }

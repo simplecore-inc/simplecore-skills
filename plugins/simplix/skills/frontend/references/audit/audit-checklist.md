@@ -140,7 +140,7 @@ Exception: May match legitimate string conversions in non-detail contexts
 **Pattern 3 - Hardcoded em-dash outside framework (medium confidence)**
 ```bash
 # Detects hardcoded em-dash fallback that should use DetailFields built-in fallback
-grep -rn '??\s*"\\u2014"\|??\s*"—"\|??\s*"—"' --include="*.tsx" modules/
+grep -rn '??\s*"\-"\|??\s*"-"\|??\s*"-"' --include="*.tsx" modules/
 ```
 Expected: 0 results in detail view context
 Exception: Non-detail display locations
@@ -741,7 +741,7 @@ for path in glob.glob("modules/*/src/**/*.tsx", recursive=True):
             print(path, types)
 PY
 ```
-Expected: 0 hits for the first two. The order sweep lists candidates - review each against invariant #16 before reordering (some option-first layouts were user-approved; do not bulk-rewrite without confirmation). Then verify in the browser: every tab of the audited page opens its conditions behind the same 검색 button, applied conditions appear as removable chips, and the total badge is the same pill on every tab.
+Expected: 0 hits for the first two. The order sweep lists candidates - review each against invariant #16 before reordering (some option-first layouts were user-approved; do not bulk-rewrite without confirmation). Then verify in the browser: every tab of the audited page opens its conditions behind the same `검색` button, applied conditions appear as removable chips, and the total badge is the same pill on every tab.
 
 ## Scaffold Locale Default Violations (untranslated widget locale sections)
 

@@ -103,7 +103,7 @@ Date/time display goes through a framework component, never an inline `formatDat
 
 ```tsx
 // FORBIDDEN - Custom inline fallback handling in modules
-{value ? <DetailFields.DetailTextField value={value} /> : <span>—</span>}
+{value ? <DetailFields.DetailTextField value={value} /> : <span>-</span>}
 
 // FORBIDDEN - Blanking the value at the call site; pass the raw nullable instead
 <DetailFields.DetailTextField value={String(value ?? "")} />
@@ -204,7 +204,7 @@ The template names are listed once, in SKILL.md invariant #67. Of these:
 
 ### Rule
 
-Muted em-dash placeholder (`children` default `—`) for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies - table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>—</span>` and inline `?? "—"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` - the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`), keep a string fallback - `EmptyValue` is a node.
+Muted em-dash placeholder (`children` default `-`) for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies - table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>-</span>` and inline `?? "-"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` - the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`), keep a string fallback - `EmptyValue` is a node.
 
 ## EmptyValueBadge (no-value pill for detail-style displays)
 

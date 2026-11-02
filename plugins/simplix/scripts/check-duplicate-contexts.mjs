@@ -582,7 +582,7 @@ function selfTest() {
 
 const byName = collectCopies();
 if (!byName) {
-  console.error("✖ node_modules/.pnpm not found — run the audit from a pnpm workspace after install.");
+  console.error("✖ node_modules/.pnpm not found - run the audit from a pnpm workspace after install.");
   process.exit(1);
 }
 
@@ -646,7 +646,7 @@ for (const file of unreadable) {
 }
 
 if (dedupeError) {
-  console.log(`⚠ dedupe list at ${dedupeSource} could not be read — treating it as empty (${dedupeError})`);
+  console.log(`⚠ dedupe list at ${dedupeSource} could not be read - treating it as empty (${dedupeError})`);
 } else if (dedupeSource) {
   console.log(`dedupe list: ${dedupeSource} (${dedupe.length} entries)`);
 } else if (!unreadable.length) {
@@ -656,7 +656,7 @@ if (dedupeError) {
 }
 
 if (errors.length) {
-  console.log("\n✖ [error] duplicate-context-package — a package that creates a React context resolves to more than one copy");
+  console.log("\n✖ [error] duplicate-context-package - a package that creates a React context resolves to more than one copy");
   console.log("  Each copy carries its own context object, so a provider rendered from one copy is invisible to a");
   console.log("  consumer that imported the other. Add the name to the bundler's resolve.dedupe list.");
   for (const e of errors) {
@@ -665,7 +665,7 @@ if (errors.length) {
 }
 
 if (reviews.length) {
-  console.log("\n◐ [review] duplicate-package — more than one copy, no module-scope context found");
+  console.log("\n◐ [review] duplicate-package - more than one copy, no module-scope context found");
   console.log("  Usually harmless. It matters when the package holds any other module-level singleton");
   console.log("  (a registry, a global store, an instanceof check).");
   for (const e of reviews) {
@@ -697,7 +697,7 @@ if (kitCopies.kits.length === 0) {
 
 const total = [...byName.values()].filter((c) => c.length > 1).length;
 console.log(
-  `\n${byName.size} packages installed — ${total} with more than one copy, ${errors.length} context-owning and not deduped.`,
+  `\n${byName.size} packages installed - ${total} with more than one copy, ${errors.length} context-owning and not deduped.`,
 );
 if (!failing && !reviews.length) console.log("✔ no duplicated packages.");
 if (undecided) {

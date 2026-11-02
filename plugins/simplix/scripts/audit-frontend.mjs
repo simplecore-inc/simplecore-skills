@@ -1163,7 +1163,7 @@ function settings() {
     const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
     settingsCache = parsed.audit ?? {};
   } catch {
-    console.error(`⚠ .claude/simplix.json is not valid JSON — auditing with defaults.`);
+    console.error(`⚠ .claude/simplix.json is not valid JSON - auditing with defaults.`);
     settingsCache = {};
   }
   return settingsCache;
@@ -1449,7 +1449,7 @@ const RULES = [
     id: "a-form-reports-a-refusal-as-a-toast",
     invariant: "#40 / #34",
     level: "review",
-    desc: "A form that submits through a raw `mutateAsync` and reports the failure with a toast. The server answers a refused write with a per-field detail — which field, why, and what it is called in the reader's language — and a toast can carry only the envelope's one top-level sentence, so 「유효성 검사에 실패했습니다」 reaches the reader and names nothing. The detail was on the wire the whole time. `useCrudFormSubmit` is the framework's channel for it: it puts the refusal on the field that caused it and hands a summary the names to list. A dialog that is really an ACTION with an input or two is the legitimate shape here — a record-level refusal has no field to land on — so this names the site and a person decides which of the two it is",
+    desc: "A form that submits through a raw `mutateAsync` and reports the failure with a toast. The server answers a refused write with a per-field detail - which field, why, and what it is called in the reader's language - and a toast can carry only the envelope's one top-level sentence, so 「유효성 검사에 실패했습니다」 reaches the reader and names nothing. The detail was on the wire the whole time. `useCrudFormSubmit` is the framework's channel for it: it puts the refusal on the field that caused it and hands a summary the names to list. A dialog that is really an ACTION with an input or two is the legitimate shape here - a record-level refusal has no field to land on - so this names the site and a person decides which of the two it is",
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
     check: (c) => {
       // A form rather than an action: it draws the framework's form shell or several of its
@@ -1542,7 +1542,7 @@ const RULES = [
     id: "list-adapter-spreads-a-filters-property-that-is-not-there",
     invariant: "#3 / #32",
     level: "error",
-    desc: "A hand-written `adaptOrvalList` callback that picks `params.page` / `params.size` / `params.sort` off the request and then spreads `params.filters`. What the adapter hands the callback is ALREADY the flat request the server takes — `buildSearchableParams` has folded every committed filter into it as its own key (`title.contains`, `sentAt.between`) — so there is no `filters` property, spreading `undefined` contributes nothing, and every filter the reader commits is dropped on the floor. Nothing errors and nothing is logged: the badge appears over the toolbar, a counts strip built from the same state narrows, and only the rows stay as they were. Pass the generated hook to `adaptForcedList(hook, forced)` (or spread `...params` whole) so the request keeps what the caller did not think to name",
+    desc: "A hand-written `adaptOrvalList` callback that picks `params.page` / `params.size` / `params.sort` off the request and then spreads `params.filters`. What the adapter hands the callback is ALREADY the flat request the server takes - `buildSearchableParams` has folded every committed filter into it as its own key (`title.contains`, `sentAt.between`) - so there is no `filters` property, spreading `undefined` contributes nothing, and every filter the reader commits is dropped on the floor. Nothing errors and nothing is logged: the badge appears over the toolbar, a counts strip built from the same state narrows, and only the rows stay as they were. Pass the generated hook to `adaptForcedList(hook, forced)` (or spread `...params` whole) so the request keeps what the caller did not think to name",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -1630,7 +1630,7 @@ const save = async (changes) => update.mutateAsync({
     id: "row-action-that-only-some-rows-draw",
     invariant: "#50 / board kit `rowActions`",
     level: "error",
-    desc: "A row action whose `when` reads the row, with no other conditional action beside it to take its place. `when` REMOVES the control, so the action column carries three glyphs on one line and two on the next and changes width as the reader scans it — and a row with fewer reads as a row missing something rather than as one where the verb does not apply. Every row draws every action, in the same place and the same number of them: `disabled` with a `disabledReason` saying which of the states this row is in, never `when`. Two shapes are not this and the check leaves both alone — a predicate that does not read the row (`when: () => canEdit`) is a permission and takes the action off the whole table at once, and two or more conditional actions in one array are a choice BETWEEN verbs (끄기 / 켜기, 내리기 / 되살리기) whose count stays constant. Whether such a group really partitions every row is the one part of this a machine cannot see, and it is checked by eyes at one moment: whoever adds the SECOND conditional action to an array says which rows each predicate is false for, and the group is right only when no row falls outside all of them. `usage.holdersOf(row.x) > 0` beside `!erp.has(row) && usage.holdersOf(row.x) === 0` is the shape that fails it — an ERP-owned rank with no holders draws neither, so that condition belongs in `disabled` where pressability lives rather than in `when` where presence does",
+    desc: "A row action whose `when` reads the row, with no other conditional action beside it to take its place. `when` REMOVES the control, so the action column carries three glyphs on one line and two on the next and changes width as the reader scans it - and a row with fewer reads as a row missing something rather than as one where the verb does not apply. Every row draws every action, in the same place and the same number of them: `disabled` with a `disabledReason` saying which of the states this row is in, never `when`. Two shapes are not this and the check leaves both alone - a predicate that does not read the row (`when: () => canEdit`) is a permission and takes the action off the whole table at once, and two or more conditional actions in one array are a choice BETWEEN verbs (끄기 / 켜기, 내리기 / 되살리기) whose count stays constant. Whether such a group really partitions every row is the one part of this a machine cannot see, and it is checked by eyes at one moment: whoever adds the SECOND conditional action to an array says which rows each predicate is false for, and the group is right only when no row falls outside all of them. `usage.holdersOf(row.x) > 0` beside `!erp.has(row) && usage.holdersOf(row.x) === 0` is the shape that fails it - an ERP-owned rank with no holders draws neither, so that condition belongs in `disabled` where pressability lives rather than in `when` where presence does",
     appliesTo: isTsx,
     check: (c) => {
       const hits = [];
@@ -1674,7 +1674,7 @@ const save = async (changes) => update.mutateAsync({
 />`,
       miss: [
         {
-          note: "a predicate that does not read the row — a permission, off every row at once",
+          note: "a predicate that does not read the row - a permission, off every row at once",
           source: `<ThingList
   actions={[
     { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
@@ -1683,7 +1683,7 @@ const save = async (changes) => update.mutateAsync({
 />`,
         },
         {
-          note: "two conditional actions in one array — a choice between verbs, constant count",
+          note: "two conditional actions in one array - a choice between verbs, constant count",
           source: `<ThingList
   actions={[
     { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
@@ -1724,7 +1724,7 @@ const save = async (changes) => update.mutateAsync({
     id: "mutator-does-not-unwrap-the-boot-envelope",
     invariant: "#2 / audit: api layer",
     level: "error",
-    desc: "A domain package's mutator calls `getMutator()` with no profile, so nothing unwraps the Boot envelope — React Query's `data` is the envelope rather than the DTO, every field on every screen of that domain reads `undefined`, and the screens render as though the server sent nothing. Nothing errors and nothing warns: the requests are correct, the responses are correct, the tiles draw an em-dash and the lists draw their empty state. `mutator.ts` is one of the two codegen outputs that are hand-edited after a scaffold, and this is that edit — `getMutator(\"boot\")`",
+    desc: "A domain package's mutator calls `getMutator()` with no profile, so nothing unwraps the Boot envelope - React Query's `data` is the envelope rather than the DTO, every field on every screen of that domain reads `undefined`, and the screens render as though the server sent nothing. Nothing errors and nothing warns: the requests are correct, the responses are correct, the tiles draw an em-dash and the lists draw their empty state. `mutator.ts` is one of the two codegen outputs that are hand-edited after a scaffold, and this is that edit - `getMutator(\"boot\")`",
     appliesTo: (p) => /\/src\/mutator\.ts$/.test(p),
     check: (c) => lineHits(c, /getMutator\(\s*\)/),
     samples: {
@@ -1741,7 +1741,7 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
 }`,
       miss: [
         {
-          note: "a profile named explicitly — the rule asks for a profile, not for one particular word",
+          note: "a profile named explicitly - the rule asks for a profile, not for one particular word",
           source: `export async function customFetch<T>(url: string, options: RequestInit): Promise<T> {
   return getMutator("raw")<T>(url, options);
 }`,
@@ -1760,7 +1760,7 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
     id: "unguarded-route",
     invariant: "audit: route permission",
     level: "error",
-    desc: "Route mounts its screen directly — a typed address or an old bookmark opens a screen the operator's grants do not admit, and the denial only arrives when something is clicked",
+    desc: "Route mounts its screen directly - a typed address or an old bookmark opens a screen the operator's grants do not admit, and the denial only arrives when something is clicked",
     appliesTo: (p) =>
       /\/src\/routes\/[^/]+\/index\.tsx$/.test(p)
       && !publicRouteDirs().some((dir) => p.includes(`/src/routes/${dir}/`))
@@ -1784,7 +1784,7 @@ export const Route = createFileRoute("/areas/")({
 });`,
       miss: [
         {
-          note: "a route directory the product declares public — no operator, no grants to check",
+          note: "a route directory the product declares public - no operator, no grants to check",
           file: "apps/console/src/routes/checkout/index.tsx",
           source: `export const Route = createFileRoute("/checkout/")({
   component: CheckoutPage,
@@ -1792,7 +1792,7 @@ export const Route = createFileRoute("/areas/")({
           files: { ".claude/simplix.json": `{ "audit": { "publicRouteDirs": ["checkout"] } }` },
         },
         {
-          note: "an app whose root route admits nobody without a session — the stronger form of the same guard",
+          note: "an app whose root route admits nobody without a session - the stronger form of the same guard",
           source: `export const Route = createFileRoute("/areas/")({
   component: AreaListPage,
 });`,
@@ -1811,7 +1811,7 @@ export const Route = createFileRoute("/areas/")({
     id: "internal-address-as-a-bare-anchor",
     invariant: "audit: routed navigation",
     level: "error",
-    desc: "An in-app address reached through a bare `<a href=\"/...\">`. The browser treats it as a document request, so the whole application is torn down and rebuilt: every cached read is refetched, whatever the reader had typed is gone, and the panel or tab they were on resets — a screen that works and feels broken, and nothing errors. Route it through the router's link component (`<Link to=\"/...\">`), which changes the address in place. What legitimately stays an anchor is an address that leaves the application — an absolute URL, a `mailto:`/`tel:`, a download, or anything carrying `target=\"_blank\"` or `download`",
+    desc: "An in-app address reached through a bare `<a href=\"/...\">`. The browser treats it as a document request, so the whole application is torn down and rebuilt: every cached read is refetched, whatever the reader had typed is gone, and the panel or tab they were on resets - a screen that works and feels broken, and nothing errors. Route it through the router's link component (`<Link to=\"/...\">`), which changes the address in place. What legitimately stays an anchor is an address that leaves the application - an absolute URL, a `mailto:`/`tel:`, a download, or anything carrying `target=\"_blank\"` or `download`",
     appliesTo: isTsx,
     check: (c) =>
       lineHits(
@@ -1856,7 +1856,7 @@ export const Route = createFileRoute("/areas/")({
     id: "dead-dialog-width",
     invariant: "#8 / audit: dialog width",
     level: "error",
-    desc: "A dialog asks for a width with a bare `max-w-*` utility — `DialogContent` already carries `sm:max-w-lg`, which wins at every viewport above 640px, so the wider width never takes effect and the dialog stays 512px. A three-column table inside then wraps one syllable to a line and reads as a broken screen while every string in it is right. Write the breakpoint variant (`sm:max-w-3xl`), which is what overrides the component's own",
+    desc: "A dialog asks for a width with a bare `max-w-*` utility - `DialogContent` already carries `sm:max-w-lg`, which wins at every viewport above 640px, so the wider width never takes effect and the dialog stays 512px. A three-column table inside then wraps one syllable to a line and reads as a broken screen while every string in it is right. Write the breakpoint variant (`sm:max-w-3xl`), which is what overrides the component's own",
     appliesTo: isTsx,
     // Only widths wider than the component's own default are dead in a way anybody notices;
     // `max-w-lg` and below resolve to the same box the dialog already had.
@@ -1898,7 +1898,7 @@ export function AssignDialog() { return null; }`,
     id: "unbounded-overlay-panel",
     invariant: "#58 / audit: dialog geometry",
     level: "error",
-    desc: "A component draws its own centred overlay panel with a width and no height ceiling. Pinned at `top-1/2` and translated back by half its own height, such a panel grows in BOTH directions at once: the title leaves the top of the window and the confirm button leaves the bottom, and because nothing in the chain scrolls there is no way to reach either — Escape is the only exit, guessed. Whether it happens is decided by the data, not by the code, so it passes review on the day it is written. Give the panel `max-h-[calc(100dvh-2rem)]`, make it a flex column, and let the body scroll (`min-h-0 overflow-y-auto`) with the title and the footer `shrink-0`",
+    desc: "A component draws its own centred overlay panel with a width and no height ceiling. Pinned at `top-1/2` and translated back by half its own height, such a panel grows in BOTH directions at once: the title leaves the top of the window and the confirm button leaves the bottom, and because nothing in the chain scrolls there is no way to reach either - Escape is the only exit, guessed. Whether it happens is decided by the data, not by the code, so it passes review on the day it is written. Give the panel `max-h-[calc(100dvh-2rem)]`, make it a flex column, and let the body scroll (`min-h-0 overflow-y-auto`) with the title and the footer `shrink-0`",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -1984,7 +1984,7 @@ export function AlertPanel() { return null; }`,
     id: "unpaged-table-without-reason",
     invariant: "#32 / audit: tables are lists",
     level: "error",
-    desc: "A table draws rows with no paging under it and nothing saying why it needs none. A table that pages is a list wherever it sits and carries all four — a count, filters, sorting, paging; a table that does NOT page is the bounded kind, and bounded is a claim about the data that only a person can make. The component cannot tell a catalogue of eleven from a history of eleven-so-far, so the claim is written where the table is: a comment opening `Bounded:` and saying what fixes the count. A missing paged endpoint on the server is not a reason — building it is the work",
+    desc: "A table draws rows with no paging under it and nothing saying why it needs none. A table that pages is a list wherever it sits and carries all four - a count, filters, sorting, paging; a table that does NOT page is the bounded kind, and bounded is a claim about the data that only a person can make. The component cannot tell a catalogue of eleven from a history of eleven-so-far, so the claim is written where the table is: a comment opening `Bounded:` and saying what fixes the count. A missing paged endpoint on the server is not a reason - building it is the work",
     appliesTo: isTsx,
     // Judged per table rather than per file: a screen with a bounded catalogue beside a growing
     // collection is the ordinary case here, and a file-level test would let the second one pass on
@@ -2074,7 +2074,7 @@ export function AlertPanel() { return null; }`,
     id: "paged-panel-collection-is-not-a-list",
     invariant: "#71 / audit: a tab's collection is a list",
     level: "error",
-    desc: "A collection inside a detail panel or a tab is paged, and paging is the proof that it grows — yet it is drawn with `CrudDetail.List` / `CrudDetail.Table` and nothing else, so the reader gets pages and none of the three things they reach for when there are more rows than a page: the total, a way to search, a way to sort. A collection that grows is a list wherever it sits, and a list is `CrudList` — the same compound the list screen uses, bound to the parent record with a forced request parameter rather than a filter the reader can type away. What the two paged frames are for is the other half of the split: a set that does NOT grow, drawn as a bordered card with no pager at all",
+    desc: "A collection inside a detail panel or a tab is paged, and paging is the proof that it grows - yet it is drawn with `CrudDetail.List` / `CrudDetail.Table` and nothing else, so the reader gets pages and none of the three things they reach for when there are more rows than a page: the total, a way to search, a way to sort. A collection that grows is a list wherever it sits, and a list is `CrudList` - the same compound the list screen uses, bound to the parent record with a forced request parameter rather than a filter the reader can type away. What the two paged frames are for is the other half of the split: a set that does NOT grow, drawn as a bordered card with no pager at all",
     appliesTo: isTsx,
     // Judged per file rather than per tag: the chrome a paged collection is missing (the total,
     // the search box, the sortable header) is not written next to the pager, so a tag-local test
@@ -2163,7 +2163,7 @@ export function AlertPanel() { return null; }`,
     id: "audit-strip-outside-the-first-tab",
     invariant: "#72 / audit: where the audit strip sits",
     level: "error",
-    desc: "A record's audit strip — its identifier and its created / updated stamps — is drawn somewhere other than the first tab of the panel. On the `CrudDetail` root it stands under every tab, so the stamps of the RECORD sit beneath a tab listing other records and read as the stamps of those rows; in a later tab it is the same claim made once more in a place nobody looks for it. The strip belongs to the record, the first tab is where the record itself is, and one strip is all a panel has",
+    desc: "A record's audit strip - its identifier and its created / updated stamps - is drawn somewhere other than the first tab of the panel. On the `CrudDetail` root it stands under every tab, so the stamps of the RECORD sit beneath a tab listing other records and read as the stamps of those rows; in a later tab it is the same claim made once more in a place nobody looks for it. The strip belongs to the record, the first tab is where the record itself is, and one strip is all a panel has",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -2225,7 +2225,7 @@ export function AlertPanel() { return null; }`,
     id: "tab-panel-repeats-its-tab-name",
     invariant: "#63 / audit: a tab said its name once",
     level: "error",
-    desc: "A section inside a tab panel is titled with the same string the tab itself carries, so the reader who just pressed 「이력」 is told 「이력」 again at the top of what they opened. It costs a heading's height on a panel where the rows are what the tab was pressed for, and it says nothing the press did not. Delete the heading rather than move it — the tab is the title",
+    desc: "A section inside a tab panel is titled with the same string the tab itself carries, so the reader who just pressed 「이력」 is told 「이력」 again at the top of what they opened. It costs a heading's height on a panel where the rows are what the tab was pressed for, and it says nothing the press did not. Delete the heading rather than move it - the tab is the title",
     appliesTo: isTsx,
     check: (c) => {
       const keysOf = (re) => {
@@ -2314,7 +2314,7 @@ export function AlertPanel() { return null; }`,
       broken: `function KindBadge({ row }: { readonly row: ThingListDTO }) {
   const { enumLabel } = useEntityTranslation("thing");
   const kind = resolveBootEnum(row.kind);
-  return <Badge variant="warning">{kind ? enumLabel("ThingKind", kind) : "—"}</Badge>;
+  return <Badge variant="warning">{kind ? enumLabel("ThingKind", kind) : "-"}</Badge>;
 }`,
       fixed: `import { thingKindToTone } from "@acme/site-ui";
 
@@ -2356,7 +2356,7 @@ export function ThingList() {
     id: "instant-formatted-by-hand",
     invariant: "#36",
     level: "error",
-    desc: "An instant put on the screen through `new Date(value).toLocale*String()` instead of `<InstantText value={value} format=\"datetime\" />`. The hand-built string is formatted in the BROWSER's zone and the browser's locale, so the same record reads as a different moment to a reader abroad and as a different language to a reader whose console is Korean but whose laptop is not — and it disagrees, on the same panel, with every neighbouring field the framework drew. Nothing about it looks wrong in a screenshot taken on the developer's machine, which is why it survives review",
+    desc: "An instant put on the screen through `new Date(value).toLocale*String()` instead of `<InstantText value={value} format=\"datetime\" />`. The hand-built string is formatted in the BROWSER's zone and the browser's locale, so the same record reads as a different moment to a reader abroad and as a different language to a reader whose console is Korean but whose laptop is not - and it disagrees, on the same panel, with every neighbouring field the framework drew. Nothing about it looks wrong in a screenshot taken on the developer's machine, which is why it survives review",
     appliesTo: (path) => isTsx(path),
     check: (c) => {
       const lines = c.split("\n");
@@ -2393,7 +2393,7 @@ export function ThingList() {
     id: "unfrozen-now-in-a-request",
     invariant: "#3 / #32",
     level: "error",
-    desc: "「now」 read during render and put into a request parameter. The value differs on every pass, so the query key differs on every pass: the read never settles, the screen holds its loading rows for as long as it is open, and anything watching the parameters — a page reset, an invalidation — fires forever. Hold the instant in `useState(() => …)` or a `useMemo(…, [])`, which is what the window a reader asked about actually means: the moment they opened the screen",
+    desc: "「now」 read during render and put into a request parameter. The value differs on every pass, so the query key differs on every pass: the read never settles, the screen holds its loading rows for as long as it is open, and anything watching the parameters - a page reset, an invalidation - fires forever. Hold the instant in `useState(() => …)` or a `useMemo(…, [])`, which is what the window a reader asked about actually means: the moment they opened the screen",
     appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
     check: (c) => {
       const lines = c.split("\n");
@@ -2452,7 +2452,7 @@ const all = useListUserAccessLogs({ "loginAt.greaterThan": since, page: 0, size:
     id: "translation-frozen-at-mount",
     invariant: "#70",
     level: "review",
-    desc: "A translated sentence resolved once at mount and kept — `useState(t(…))`, `useRef(t(…))`, `useMemo(() => t(…), [])`. `t` answers with the KEY until that namespace's resources have landed, and the first render of a screen is reliably that moment: the stored value stays the literal `<namespace>.<key>` for as long as the screen stands, while every other line on it reads correctly. Keep the KEY in state and call `t` where the sentence is drawn. The one legitimate shape is a seed value for a field the reader then edits",
+    desc: "A translated sentence resolved once at mount and kept - `useState(t(…))`, `useRef(t(…))`, `useMemo(() => t(…), [])`. `t` answers with the KEY until that namespace's resources have landed, and the first render of a screen is reliably that moment: the stored value stays the literal `<namespace>.<key>` for as long as the screen stands, while every other line on it reads correctly. Keep the KEY in state and call `t` where the sentence is drawn. The one legitimate shape is a seed value for a field the reader then edits",
     appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
     check: (c) => {
       const hits = [];
@@ -2582,7 +2582,7 @@ export function useFormBlocks() { return { sections: formSections }; }`,
     id: "session-token-read-from-the-query-string",
     invariant: "#77",
     level: "error",
-    desc: "An access, refresh, or ID token pulled out of `location.search`. A query string is part of the GET, so the credential is already in the server's access log, in every proxy in front of it, and in `Referer` on the page's next resource request — before any client-side code exists. `history.replaceState` cleans the address bar and reaches none of those. The carrier for a token handed to a browser is the fragment, which is never transmitted; read `location.hash` instead, and have whatever redirects here write it there. What legitimately stays in the query string is everything that is not a credential — an error code, a tab, a page — and an OAuth `code` and `state`, which the provider must send that way",
+    desc: "An access, refresh, or ID token pulled out of `location.search`. A query string is part of the GET, so the credential is already in the server's access log, in every proxy in front of it, and in `Referer` on the page's next resource request - before any client-side code exists. `history.replaceState` cleans the address bar and reaches none of those. The carrier for a token handed to a browser is the fragment, which is never transmitted; read `location.hash` instead, and have whatever redirects here write it there. What legitimately stays in the query string is everything that is not a credential - an error code, a tab, a page - and an OAuth `code` and `state`, which the provider must send that way",
     appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
     check: (c) => {
       // Named narrowly on purpose. These three have no shape in which a query string is the right
@@ -2664,7 +2664,7 @@ const state = params.get("state");`,
 const accessToken = params.get("accessToken");`,
         },
         {
-          note: "the fix in full \u2014 it reads the fragment and names the search only to preserve it while cleaning the address, which a file-wide test reports as the very defect it removed",
+          note: "the fix in full - it reads the fragment and names the search only to preserve it while cleaning the address, which a file-wide test reports as the very defect it removed",
           source: `const params = new URLSearchParams(window.location.hash.slice(1));
 const accessToken = params.get("accessToken");
 window.history.replaceState(null, "", window.location.pathname + window.location.search);`,
@@ -2814,7 +2814,7 @@ export function SettingCrudPage() { return null; }`,
     id: "row-action-that-reads-as-text",
     invariant: "#20",
     level: "error",
-    desc: "An action inside a table cell drawn as a ghost button carrying words. With no border and no glyph it reads as a sentence rather than as something to press, and where two sit side by side — one available and one not — nothing but the tone tells them apart. A row action carries a border and its own glyph; ghost is for an icon-only control, where the glyph is the whole button",
+    desc: "An action inside a table cell drawn as a ghost button carrying words. With no border and no glyph it reads as a sentence rather than as something to press, and where two sit side by side - one available and one not - nothing but the tone tells them apart. A row action carries a border and its own glyph; ghost is for an icon-only control, where the glyph is the whole button",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -2903,7 +2903,7 @@ export function SettingCrudPage() { return null; }`,
     id: "bounded-table-without-its-border",
     invariant: "#71",
     level: "error",
-    desc: "A bounded collection in a panel or a tab — the shapes invariant #71 sends to a bordered card — drawn as a bare `<Table>` standing on the page. The two shapes are how a reader tells a set that is finished from one that accrues: a bordered card says these are all of them, a list with a pager says there are more. A bare table is neither, so the reader cannot tell which they are looking at, and the same kind of content reads differently on adjacent screens. Wrap it in `TableCard`. A table inside a help dialog or a peek is already inside a border and is not this",
+    desc: "A bounded collection in a panel or a tab - the shapes invariant #71 sends to a bordered card - drawn as a bare `<Table>` standing on the page. The two shapes are how a reader tells a set that is finished from one that accrues: a bordered card says these are all of them, a list with a pager says there are more. A bare table is neither, so the reader cannot tell which they are looking at, and the same kind of content reads differently on adjacent screens. Wrap it in `TableCard`. A table inside a help dialog or a peek is already inside a border and is not this",
     appliesTo: isTsx,
     check: (c) => {
       // Anything drawn inside a dialog already has its border from the dialog.
@@ -2982,7 +2982,7 @@ export function SettingCrudPage() { return null; }`,
     id: "forced-list-keeps-a-stale-page",
     invariant: "#32 / #76",
     level: "error",
-    desc: "A list narrowed from outside — a tab, a chip row, a parent record — whose page index survives the narrowing. The page is state the list keeps and the narrowing changes how many pages there are without touching it, so a reader on page 5 of 활성 who presses 정지 asks the server for page 5 of three rows and is handed nothing. The total in the toolbar comes from the same response and is right, so the screen states 「전체 3건」 over an empty table — which reads as a broken list rather than as an empty one, and nothing on the screen contradicts it. Pass `scopeKey` alongside the forced parameters",
+    desc: "A list narrowed from outside - a tab, a chip row, a parent record - whose page index survives the narrowing. The page is state the list keeps and the narrowing changes how many pages there are without touching it, so a reader on page 5 of 활성 who presses 정지 asks the server for page 5 of three rows and is handed nothing. The total in the toolbar comes from the same response and is right, so the screen states 「전체 3건」 over an empty table - which reads as a broken list rather than as an empty one, and nothing on the screen contradicts it. Pass `scopeKey` alongside the forced parameters",
     appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
     check: (c) => {
       if (!/\badaptForcedList\s*\(/.test(c)) return [];
@@ -3021,7 +3021,7 @@ export function SettingCrudPage() { return null; }`,
 }`,
       miss: [
         {
-          note: "a forced read with no page to go stale — a combobox's options",
+          note: "a forced read with no page to go stale - a combobox's options",
           source: `export function useThingOptions(ownerId: string) {
   const query = adaptForcedList(useListThings, { "ownerId.equals": ownerId });
   return query({ pagination: { type: "offset", page: 1, limit: 200 } });
@@ -3044,7 +3044,7 @@ export function SettingCrudPage() { return null; }`,
     id: "optional-select-cannot-be-emptied",
     invariant: "#34 / #75",
     level: "error",
-    desc: "A select offers only its options, so a field the form itself declares optional — submitted as `X || undefined` — becomes permanent the moment somebody picks a value. The rank set on the wrong account, the parent chosen for a node that belongs at the top level, the zone type applied to an area that turned out not to be one: each can be changed to another value and never taken off, and the only route back is a column the screen does not offer. The DTO accepts absence and the control cannot produce it. Pass `clearable`, which puts an entry at the top of the list that hands `\"\"` back",
+    desc: "A select offers only its options, so a field the form itself declares optional - submitted as `X || undefined` - becomes permanent the moment somebody picks a value. The rank set on the wrong account, the parent chosen for a node that belongs at the top level, the zone type applied to an area that turned out not to be one: each can be changed to another value and never taken off, and the only route back is a column the screen does not offer. The DTO accepts absence and the control cannot produce it. Pass `clearable`, which puts an entry at the top of the list that hands `\"\"` back",
     appliesTo: isTsx,
     check: (c) => {
       // What the submit path declares optional: `X: values.X || undefined`, `X: X || undefined`.
@@ -3064,7 +3064,7 @@ export function SettingCrudPage() { return null; }`,
         if (!optional.has(field)) continue;
         hits.push({
           line: c.slice(0, m.index).split("\n").length,
-          excerpt: `SelectField value={${value[1]}} — the submit writes ${field} || undefined`,
+          excerpt: `SelectField value={${value[1]}} - the submit writes ${field} || undefined`,
         });
       }
       return hits;
@@ -3212,7 +3212,7 @@ export function Page() {
     id: "hand-rolled-detail-footer",
     invariant: "#31 / audit: page chrome",
     level: "error",
-    desc: "CrudDetail footer built from raw layout instead of CrudDetail.DefaultActions / CrudDetail.ActionFooter — the panel's buttons drift in size, order and spacing from every other panel, and domain actions that should stay visible-but-disabled get hidden instead",
+    desc: "CrudDetail footer built from raw layout instead of CrudDetail.DefaultActions / CrudDetail.ActionFooter - the panel's buttons drift in size, order and spacing from every other panel, and domain actions that should stay visible-but-disabled get hidden instead",
     appliesTo: isTsx,
     check: (c) =>
       blockHits(c, /footer=\{\s*\n\s*<(?!CrudDetail)(?:Stack|Flex|div|Box)\b/g),
@@ -3257,7 +3257,7 @@ export function Page() {
     id: "wrapping-value-in-fixed-row",
     invariant: "audit: layout",
     level: "error",
-    desc: "DetailListRow given a trailing value that wraps — the row is a fixed-height line (h-10), so a second line of chips or badges leaves the row's box and crosses the card's border. A set that can wrap is a block: put it under the list with its own label, not in a row",
+    desc: "DetailListRow given a trailing value that wraps - the row is a fixed-height line (h-10), so a second line of chips or badges leaves the row's box and crosses the card's border. A set that can wrap is a block: put it under the list with its own label, not in a row",
     appliesTo: isTsx,
     // Bounded to ONE element: a lazy span would run past this row's `/>` and pair the first
     // DetailListRow on the screen with a `wrap` belonging to something else entirely.
@@ -3298,7 +3298,7 @@ export function Page() {
     id: "scope-filter-empty-state",
     invariant: "#32 / audit: empty state",
     level: "error",
-    desc: "List sets defaultFilters but passes list.emptyReason straight through — a screen-forced scope counts as a filter, so an empty result tells the reader their filters matched nothing when they applied none, and offers to clear a scope the screen is supposed to hold",
+    desc: "List sets defaultFilters but passes list.emptyReason straight through - a screen-forced scope counts as a filter, so an empty result tells the reader their filters matched nothing when they applied none, and offers to clear a scope the screen is supposed to hold",
     appliesTo: isTsx,
     check: (c) =>
       c.includes("defaultFilters")
@@ -3316,13 +3316,13 @@ return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
 });
 
 // The site is forced by the screen, so an empty result is "no rows here", never
-// "your filters matched nothing" — the reader applied none and can clear none.
+// "your filters matched nothing" - the reader applied none and can clear none.
 const emptyReason = list.userFilterCount > 0 ? list.emptyReason : "no-data";
 
 return <CrudList.Table list={list} emptyReason={emptyReason} />;`,
       miss: [
         {
-          note: "a list with no screen-forced scope — every filter in it is one the reader applied",
+          note: "a list with no screen-forced scope - every filter in it is one the reader applied",
           source: `const list = useCrudList({});
 
 return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
@@ -3334,7 +3334,7 @@ return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
     id: "unknown-enum-name",
     invariant: "#10 / audit: enum labels",
     level: "error",
-    desc: "Enum name has no generated model of that name — the label lookup misses and the screen prints the raw `Enum.VALUE` key instead of a translated word",
+    desc: "Enum name has no generated model of that name - the label lookup misses and the screen prints the raw `Enum.VALUE` key instead of a translated word",
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g, (line) => {
@@ -3376,7 +3376,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
             source: `<DetailEnumField enumName="AreaStatus" value={resolveBootEnum(displayData.status)} />`,
           },
           {
-            note: "a project with no codegen output — an unread contract is not evidence of a wrong name",
+            note: "a project with no codegen output - an unread contract is not evidence of a wrong name",
             source: `{enumLabel("AreaState", resolveBootEnum(row.status))}`,
           },
         ],
@@ -3387,7 +3387,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     id: "translator-options-arg",
     invariant: "#44 / audit: scaffold locale",
     level: "error",
-    desc: "t() is handed translator OPTIONS where it takes interpolation VALUES — the framework translator's second argument is `Record<string, string|number>` and has no options, so `{ defaultValue: x }` matches no placeholder, is dropped, and a missing entry prints the key itself (`auditEvent.entityType.LicenseSeat` on the screen). Look the key up first (`exists(key) ? t(key) : fallback`) or route it through the project's falling-back translator helper",
+    desc: "t() is handed translator OPTIONS where it takes interpolation VALUES - the framework translator's second argument is `Record<string, string|number>` and has no options, so `{ defaultValue: x }` matches no placeholder, is dropped, and a missing entry prints the key itself (`auditEvent.entityType.LicenseSeat` on the screen). Look the key up first (`exists(key) ? t(key) : fallback`) or route it through the project's falling-back translator helper",
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
     check: (c) => {
       // Only the option names no author would ever use as an interpolation placeholder.
@@ -3432,7 +3432,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
 </CrudList.Column>`,
       miss: [
         {
-          note: "an ordinary interpolation value — the second argument is what it is for",
+          note: "an ordinary interpolation value - the second argument is what it is for",
           source: `const { t } = useTranslation("audit/widgets");
 
 <Text>{t("auditEvent.total", { count: rows.length })}</Text>`,
@@ -3450,7 +3450,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     id: "missing-translation-key",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator — i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
+    desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator - i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
     // An app's own screens are checked as well as a module's. Scoping this to `modules/` left every
     // hand-written app screen unread, and a deployable's error and empty-state pages are exactly
     // the screens written by hand and seen least often: two apps were printing ten raw `error.*`
@@ -3573,7 +3573,7 @@ const description = line && line !== "screen.area.description" ? line : undefine
 return <Header title={t("area.title")} description={description} />;`,
           },
           {
-            note: "the app under test owns the key while the app that sorts first does not — the owning catalogue answers, not the one directory order reaches",
+            note: "the app under test owns the key while the app that sorts first does not - the owning catalogue answers, not the one directory order reaches",
             file: "apps/z-second/src/widgets/error/error-pages.tsx",
             files: {
               "apps/a-first/src/locales/common/ko.json": `{
@@ -3590,13 +3590,13 @@ return <Header title={t("area.title")} description={description} />;`,
 return <ErrorPageLayout action={t("error.goHome")} />;`,
           },
           {
-            note: "a namespace this repository does not own — an absent catalogue is not an empty one",
+            note: "a namespace this repository does not own - an absent catalogue is not an empty one",
             source: `const { t } = useTranslation("framework/ui");
 
 return <Button>{t("common.retry")}</Button>;`,
           },
           {
-            note: "a shared package reading the consuming app's namespace, with the key defined there — the package is in scope, and a key an app publishes answers it",
+            note: "a shared package reading the consuming app's namespace, with the key defined there - the package is in scope, and a key an app publishes answers it",
             file: "packages/console-ui/src/manual/manual-panel.tsx",
             files: {
               "apps/a-first/src/locales/common/ko.json": `{
@@ -3635,7 +3635,7 @@ return (
     id: "dropped-interpolation",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "t() passes a value the catalogue entry has no `{{placeholder}}` for — i18next drops it in silence, so the sentence reaches the screen with the word missing and reads as finished. Nothing errors: no console warning, no type error, a green build. Either add the placeholder to the entry in every language, or drop the value the sentence does not want",
+    desc: "t() passes a value the catalogue entry has no `{{placeholder}}` for - i18next drops it in silence, so the sentence reaches the screen with the word missing and reads as finished. Nothing errors: no console warning, no type error, a green build. Either add the placeholder to the entry in every language, or drop the value the sentence does not want",
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && /\.tsx?$/.test(p),
     check: (c, file) => {
       const binds = translatorNamespaces(c, file);
@@ -3674,7 +3674,7 @@ return (
             if (!missing.has(value)) continue;
             hits.push({
               line: lineOfIndex(c, m.index),
-              excerpt: `t("${key}", { ${value} }) — no {{${value}}} in ${missing.get(value).join(", ")}`,
+              excerpt: `t("${key}", { ${value} }) - no {{${value}}} in ${missing.get(value).join(", ")}`,
             });
           }
         }
@@ -3724,20 +3724,20 @@ addToast({ message: t("area.moved", { name }) });`,
 <Text>{t("area.total", { count: rows.length })}</Text>`,
           },
           {
-            note: "a ternary value — the old scanner read ` fallback :` as a second property name",
+            note: "a ternary value - the old scanner read ` fallback :` as a second property name",
             files: catalogue(true, true),
             source: `const { t } = useTranslation("site/widgets");
 
 addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) });`,
           },
           {
-            note: "a namespace this repository does not own — an absent catalogue is not an empty one",
+            note: "a namespace this repository does not own - an absent catalogue is not an empty one",
             source: `const { t } = useTranslation("framework/ui");
 
 <Button>{t("common.retry", { label })}</Button>;`,
           },
           {
-            note: "a key no catalogue defines — missing-translation-key owns that, and reporting it here would name it twice",
+            note: "a key no catalogue defines - missing-translation-key owns that, and reporting it here would name it twice",
             files: catalogue(true, true),
             source: `const { t } = useTranslation("site/widgets");
 
@@ -3758,7 +3758,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
     id: "counted-string-without-number-format",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "A catalogue entry filled through i18next's `count` whose placeholder carries no format — `\"{{count}}건\"` renders 「1358건」 where the design says 「1,358건」, in every language at once. Nothing errors and nothing looks wrong in the source: the value is a number, the sentence is complete, the build is green, and the separator is simply never applied. Write the entry as `{{count, number}}` and i18next runs the value through `Intl.NumberFormat` for the resolved language (built in since v21, no configuration). The number stays a number, so `_one` / `_other` selection is untouched — which is why the fix belongs in the string and never at the call site: handing `count` a pre-formatted string groups the digits and silently breaks the plural in every language that has one",
+    desc: "A catalogue entry filled through i18next's `count` whose placeholder carries no format - `\"{{count}}건\"` renders 「1358건」 where the design says 「1,358건」, in every language at once. Nothing errors and nothing looks wrong in the source: the value is a number, the sentence is complete, the build is green, and the separator is simply never applied. Write the entry as `{{count, number}}` and i18next runs the value through `Intl.NumberFormat` for the resolved language (built in since v21, no configuration). The number stays a number, so `_one` / `_other` selection is untouched - which is why the fix belongs in the string and never at the call site: handing `count` a pre-formatted string groups the digits and silently breaks the plural in every language that has one",
     // Only `count` is judged, and that is the whole of what a catalogue can decide. i18next reserves
     // `count` for plural selection, so a value arriving under that name is a number by the library's
     // own contract - no type information needed. Every other placeholder would need one: `{{days}}`
@@ -3823,7 +3823,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
           if (!bare.length) continue;
           hits.push({
             line: lineOfIndex(c, index),
-            excerpt: `${key} — {{count}} without a format in ${[...new Set(bare)].join(", ")}`,
+            excerpt: `${key} - {{count}} without a format in ${[...new Set(bare)].join(", ")}`,
           });
         }
       }
@@ -3872,21 +3872,21 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
         },
         miss: [
           {
-            note: "a percentage — never grouped, and a helper that hardcodes `count` is how one arrives under that name",
+            note: "a percentage - never grouped, and a helper that hardcodes `count` is how one arrives under that name",
             files: catalogue(true),
             source: `const { t } = useTranslation("site/widgets");
 
 <Text>{t("tile.readShare", { count: census.readPercent })}</Text>`,
           },
           {
-            note: "a year, which must never become 2,026 — the rule judges `count` and nothing else, so no other placeholder is guessed at",
+            note: "a year, which must never become 2,026 - the rule judges `count` and nothing else, so no other placeholder is guessed at",
             files: catalogue(true),
             source: `const { t } = useTranslation("site/widgets");
 
 <Heading>{t("form.year", { year: today.getFullYear() })}</Heading>`,
           },
           {
-            note: "reached through a helper that writes `count` itself — the key is judged, and here it is already formatted",
+            note: "reached through a helper that writes `count` itself - the key is judged, and here it is already formatted",
             files: catalogue(true),
             source: `const { t } = useTranslation("site/widgets");
 
@@ -3897,7 +3897,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
             // the sample existed. An outer sentence composed from a counted one receives a rendered
             // string under `count`; telling its author to add a format would draw NaN, and
             // `number-format-on-a-value-that-is-not-a-number` is what judges that call instead.
-            note: "`count` filled from a local wrapper round the translator — a rendered sentence, so the outer entry is right to be bare",
+            note: "`count` filled from a local wrapper round the translator - a rendered sentence, so the outer entry is right to be bare",
             files: catalogue(true),
             source: `const { t } = useTranslation("site/widgets");
 const counted = (n: number) => t("unit.areaCount", { count: n });
@@ -3905,13 +3905,13 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
 <Text>{t("bulk.blockedOf", { count: counted(blocked) })}</Text>`,
           },
           {
-            note: "a namespace this repository does not own — an absent catalogue is not an unformatted one",
+            note: "a namespace this repository does not own - an absent catalogue is not an unformatted one",
             source: `const { t } = useTranslation("framework/ui");
 
 <Text>{t("common.selected", { count: rows.length })}</Text>`,
           },
           {
-            note: "a key no catalogue defines — missing-translation-key owns that",
+            note: "a key no catalogue defines - missing-translation-key owns that",
             files: catalogue(true),
             source: `const { t } = useTranslation("site/widgets");
 
@@ -3932,7 +3932,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
     id: "number-format-on-a-value-that-is-not-a-number",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "A catalogue placeholder written `{{x, number}}` whose call site hands it something that is not a number. `Intl.NumberFormat` coerces, so the screen reads `법정 NaN` — and it renders, type-checks and builds green, because the value's type never leaves the options object. The two shapes that produce it are a value already turned into words somewhere else (a translator call, `toLocaleString`, a `join`, a `toFixed`, a byte-size helper) and an absent-value fallback to a placeholder string (`?? \"—\"`), which is worse because the defect only shows on the empty record. Decide which one the sentence wants: where the caller is the thing that formats, the placeholder goes back to `{{x}}`; where the catalogue should format, hand it the raw number and delete the caller's formatting — never both",
+    desc: "A catalogue placeholder written `{{x, number}}` whose call site hands it something that is not a number. `Intl.NumberFormat` coerces, so the screen reads `법정 NaN` - and it renders, type-checks and builds green, because the value's type never leaves the options object. The two shapes that produce it are a value already turned into words somewhere else (a translator call, `toLocaleString`, a `join`, a `toFixed`, a byte-size helper) and an absent-value fallback to a placeholder string (`?? \"-\"`), which is worse because the defect only shows on the empty record. Decide which one the sentence wants: where the caller is the thing that formats, the placeholder goes back to `{{x}}`; where the catalogue should format, hand it the raw number and delete the caller's formatting - never both",
     // This is the far side of `counted-string-without-number-format`. That rule reads a catalogue
     // that forgot to format; this one reads a call site that formatted twice. They share nothing:
     // one is decided by the entry alone, the other only by holding the entry against its caller.
@@ -3945,7 +3945,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
       // words, or a stand-in for a value that is not there.
       const wrappers = translatorWrappers(c);
       const NOT_A_NUMBER = [
-        [/(^|[^\w.$])t[A-Za-z]*\s*\(/, "a translator call — the value arrives as a rendered sentence"],
+        [/(^|[^\w.$])t[A-Za-z]*\s*\(/, "a translator call - the value arrives as a rendered sentence"],
         ...[...wrappers].map((w) => [
           new RegExp(`(^|[^\\w.$])${w}\\s*\\(`),
           `\`${w}()\` is declared in this file as a wrapper round the translator, so it returns a rendered sentence`,
@@ -3953,9 +3953,9 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
         [/\.toLocaleString\s*\(/, "already grouped by the caller"],
         [/\.toFixed\s*\(/, "toFixed returns a string, and the format would drop its trailing zero"],
         [/\.join\s*\(/, "a joined list"],
-        [/\?\?\s*["'`]/, "a fallback to a string — the defect shows only where the value is absent"],
+        [/\?\?\s*["'`]/, "a fallback to a string - the defect shows only where the value is absent"],
         [/^\s*["'`]/, "a string literal"],
-        [/\bString\s*\(/, "String() — a string"],
+        [/\bString\s*\(/, "String() - a string"],
       ];
       const hits = [];
       for (const [alias, ns] of binds) {
@@ -3987,7 +3987,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
             if (!formattedIn) continue;
             hits.push({
               line: lineOfIndex(c, m.index),
-              excerpt: `${key} — {{${name}, number}} in ${formattedIn} is handed \`${expr.slice(0, 60)}\` (${why[1]})`,
+              excerpt: `${key} - {{${name}, number}} in ${formattedIn} is handed \`${expr.slice(0, 60)}\` (${why[1]})`,
             });
           }
         }
@@ -4026,7 +4026,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
         },
         miss: [
           {
-            note: "a rendered string handed to a placeholder that asks for no format — most of what a screen does",
+            note: "a rendered string handed to a placeholder that asks for no format - most of what a screen does",
             files: catalogue,
             source: `const { t } = useTranslation("site/widgets");
 
@@ -4047,7 +4047,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
 <Text>{t("asset.length", { metres: (row.endM ?? 0) - (row.startM ?? 0) })}</Text>`,
           },
           {
-            note: "a namespace this repository does not own — an absent catalogue asks for no format",
+            note: "a namespace this repository does not own - an absent catalogue asks for no format",
             source: `const { t } = useTranslation("framework/ui");
 
 <Text>{t("common.span", { metres: value.toLocaleString("ko-KR") })}</Text>`,
@@ -4060,7 +4060,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
     id: "translation-key-prefix-table-has-a-dead-entry",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "A lookup table of catalogue prefixes with an entry that names none. A screen choosing its vocabulary per field writes the prefixes as data (`{ recordKinds: \"form.recordKind\", sourceKey: \"form.source\" }`) and builds the key at the call site — so the key is a template with nothing static in front of it, `missing-translation-key` has no literal to judge, and a prefix that resolves to nothing is invisible until a record carries that field. Then the falling-back lookup prints the stored value and a machine word reaches the reader under a human column header (`dataIo.importJob` under 「대상」). The table's other entries are what settle it: where most of them name a catalogue subtree and one does not, that one is a typo in a prefix rather than a string that was never a key",
+    desc: "A lookup table of catalogue prefixes with an entry that names none. A screen choosing its vocabulary per field writes the prefixes as data (`{ recordKinds: \"form.recordKind\", sourceKey: \"form.source\" }`) and builds the key at the call site - so the key is a template with nothing static in front of it, `missing-translation-key` has no literal to judge, and a prefix that resolves to nothing is invisible until a record carries that field. Then the falling-back lookup prints the stored value and a machine word reaches the reader under a human column header (`dataIo.importJob` under 「대상」). The table's other entries are what settle it: where most of them name a catalogue subtree and one does not, that one is a typo in a prefix rather than a string that was never a key",
     // Judged against every namespace the file binds, because the table is usually declared beside
     // the pane that reads it and a file may hold several translators.
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
@@ -4120,7 +4120,7 @@ export function ScopePane({ line }: Props) {
         fixed: { files: catalogue, source: pane("source") },
         miss: [
           {
-            note: "a table of tones — none of its values is a prefix, so there is nothing to corroborate",
+            note: "a table of tones - none of its values is a prefix, so there is nothing to corroborate",
             files: catalogue,
             source: `const TONE_BY_STATE: Readonly<Record<string, string>> = {
   OPEN: "success",
@@ -4134,7 +4134,7 @@ export function StatePill({ state }: Props) {
 }`,
           },
           {
-            note: "two entries is below the corroboration floor — one prefix beside one string proves nothing",
+            note: "two entries is below the corroboration floor - one prefix beside one string proves nothing",
             files: catalogue,
             source: `const VALUE_CATALOGUE: Readonly<Record<string, string>> = {
   kind: "areaKind",
@@ -4147,7 +4147,7 @@ export function ScopePane({ line }: Props) {
 }`,
           },
           {
-            note: "a namespace this repository does not publish — an absent catalogue is not an empty one",
+            note: "a namespace this repository does not publish - an absent catalogue is not an empty one",
             source: `const VALUE_CATALOGUE: Readonly<Record<string, string>> = {
   kind: "areaKind",
   sourceKey: "widgets.source",
@@ -4167,7 +4167,7 @@ export function ScopePane({ line }: Props) {
     id: "write-only-form-field",
     invariant: "#34 / audit: page chrome",
     level: "review",
-    desc: "Form edits a field its sibling detail never renders — the operator can set the value but has to reopen the form to see what it is, so the read surface stops being an answer to \"how does this record stand?\"",
+    desc: "Form edits a field its sibling detail never renders - the operator can set the value but has to reopen the form to see what it is, so the read surface stops being an answer to \"how does this record stand?\"",
     appliesTo: (p) => inModules(p) && /\/widgets\/[^/]+\/form\.tsx$/.test(p),
     check: (c, rel) => {
       const detail = path.join(ROOT, path.dirname(rel), "detail.tsx");
@@ -4287,7 +4287,7 @@ export function ScopePane({ line }: Props) {
     id: "unresolved-boot-enum-label",
     invariant: "#10 / #36",
     level: "error",
-    desc: "enumLabel() called on a DTO field straight from the row — a boot enum arrives as an object, so the key becomes `Enum.[object Object]` and the screen prints the key",
+    desc: "enumLabel() called on a DTO field straight from the row - a boot enum arrives as an object, so the key becomes `Enum.[object Object]` and the screen prints the key",
     appliesTo: isTsx,
     check: (c) =>
       // A file with no server data in it cannot be holding a boot enum, however it names its
@@ -4313,7 +4313,7 @@ export function ScopePane({ line }: Props) {
 </CrudList.Column>`,
       miss: [
         {
-          note: "a static reference table that binds `row` too — no server value can be in scope",
+          note: "a static reference table that binds `row` too - no server value can be in scope",
           source: `const ROWS = [
   { status: "ACTIVE" },
   { status: "CLOSED" },
@@ -4328,7 +4328,7 @@ export function ScopePane({ line }: Props) {
     id: "second-viewport-ceiling-inside-a-dialog",
     invariant: "#58",
     level: "error",
-    desc: "A region inside a dialog capped at its own fraction of the viewport — the panel already has a ceiling on that axis, so the tighter inner one decides, and the dialog stands short in an empty window while its content scrolls",
+    desc: "A region inside a dialog capped at its own fraction of the viewport - the panel already has a ceiling on that axis, so the tighter inner one decides, and the dialog stands short in an empty window while its content scrolls",
     appliesTo: isTsx,
     check: (c) =>
       /<\w*DialogContent\b/.test(c)
@@ -4348,7 +4348,7 @@ export function ScopePane({ line }: Props) {
 </BoundedDialogContent>`,
       miss: [
         {
-          note: "a viewport cap on a region that is not inside a dialog — a popover list, a page section — where nothing else is capping that axis",
+          note: "a viewport cap on a region that is not inside a dialog - a popover list, a page section - where nothing else is capping that axis",
           source: `<PopoverContent>
   <Stack className="max-h-[40vh] overflow-y-auto">{options}</Stack>
 </PopoverContent>`,
@@ -4366,7 +4366,7 @@ export function ScopePane({ line }: Props) {
     id: "boot-enum-read-through-a-cast",
     invariant: "#10 / #36 / #44",
     level: "error",
-    desc: "A boot enum read by casting the field to the envelope's shape — `as unknown as { value }` is `resolveBootEnum` written so nothing can check it, and the day the envelope gains a field or the DTO stops wrapping one, the comparison is silently false on every row",
+    desc: "A boot enum read by casting the field to the envelope's shape - `as unknown as { value }` is `resolveBootEnum` written so nothing can check it, and the day the envelope gains a field or the DTO stops wrapping one, the comparison is silently false on every row",
     appliesTo: isTsx,
     // `notCommentLine`, because the comment that explains this defect beside its fix contains
     // the defect - and a rule without it fires hardest on the files that took the trouble to say
@@ -4394,7 +4394,7 @@ export function ScopePane({ line }: Props) {
     id: "boot-enum-stringified-with-a-nullish-default",
     invariant: "#10 / #36",
     level: "error",
-    desc: "A boot enum wrapped in `String()` and defaulted with `??` — the server sends `{type,value,label}`, which is neither null nor undefined, so the fallback never fires and `String()` answers the literal `[object Object]`. The control then matches no option and draws blank, and the save comes back 400 on a field the operator can see is filled. It shows only on EDIT: on create the value really is absent, the default really does fire, and the same line is correct — which is why the create form works and its edit form does not",
+    desc: "A boot enum wrapped in `String()` and defaulted with `??` - the server sends `{type,value,label}`, which is neither null nor undefined, so the fallback never fires and `String()` answers the literal `[object Object]`. The control then matches no option and draws blank, and the save comes back 400 on a field the operator can see is filled. It shows only on EDIT: on create the value really is absent, the default really does fire, and the same line is correct - which is why the create form works and its edit form does not",
     appliesTo: isTsx,
     // Scanned with balanced parens rather than a line regex, because the wrapped form -
     // `String(\n  loaded.x ?? Enum.MEMBER,\n)` - is what prettier writes as soon as the enum
@@ -4445,7 +4445,7 @@ export function ScopePane({ line }: Props) {
           source: `        rowId={(row) => String(row.apiClientId)}`,
         },
         {
-          note: "a plain-string field defaulted with `??` — nothing is wrapped, and `??` fires",
+          note: "a plain-string field defaulted with `??` - nothing is wrapped, and `??` fires",
           source: `  const tab = search.tab ?? IdentityProviderType.OIDC;`,
         },
         {
@@ -4459,7 +4459,7 @@ export function ScopePane({ line }: Props) {
     id: "phantom-projection-read",
     invariant: "audit: generated contract",
     level: "error",
-    desc: "Widget reads a nested object its entity's generated projection does not carry — every row falls through to the `??` branch, so the screen shows a raw id and nobody sees an error",
+    desc: "Widget reads a nested object its entity's generated projection does not carry - every row falls through to the `??` branch, so the screen shows a raw id and nobody sees an error",
     appliesTo: (p) => inModules(p) && /\/widgets\/[^/]+\/(detail|list|form)\.tsx$/.test(p),
     check: (c, rel) => {
       const own = projectionProps(rel);
@@ -4510,7 +4510,7 @@ export interface AreaDetailDTO {
         },
         miss: [
           {
-            note: "an entity whose projection this project has not generated — an unknown contract is not a defect",
+            note: "an entity whose projection this project has not generated - an unknown contract is not a defect",
             source: `<DetailFields.DetailTextField value={displayData.building?.name ?? displayData.buildingId} />`,
           },
         ],
@@ -4521,7 +4521,7 @@ export interface AreaDetailDTO {
     id: "raw-layout-div",
     invariant: "#8",
     level: "error",
-    desc: 'Raw layout <div> without a {/* raw layout: <reason> */} justification — use Flex/Stack/Grid',
+    desc: 'Raw layout <div> without a {/* raw layout: <reason> */} justification - use Flex/Stack/Grid',
     appliesTo: isTsx,
     check: (c) =>
       lineHits(
@@ -4542,7 +4542,7 @@ export interface AreaDetailDTO {
 </Flex>`,
       miss: [
         {
-          note: "a justified raw layout — the reason stands on the two lines above it",
+          note: "a justified raw layout - the reason stands on the two lines above it",
           source: `{/* raw layout: the canvas measures this element's box, so it cannot be a Flex */}
 <div className="flex items-center gap-2" ref={canvasBox}>
   <Handle />
@@ -4594,7 +4594,7 @@ export interface AreaDetailDTO {
     id: "unnamed-icon-button",
     invariant: "audit: accessible name on icon-only controls",
     level: "error",
-    desc: "Control with nothing to announce — its children are bare marks, or it has no children at all, and it carries no aria-label, aria-labelledby, title, or sr-only text. Assistive technology reads it as an unlabelled button. A tooltip does not fix this: Radix describes an open tooltip's trigger, it never names it. Add aria-label with the same word the tooltip carries",
+    desc: "Control with nothing to announce - its children are bare marks, or it has no children at all, and it carries no aria-label, aria-labelledby, title, or sr-only text. Assistive technology reads it as an unlabelled button. A tooltip does not fix this: Radix describes an open tooltip's trigger, it never names it. Add aria-label with the same word the tooltip carries",
     appliesTo: isTsx,
     // Structural, not textual: the shape being judged is "what does this control CONTAIN", and the
     // markup that produces it varies far more than a pattern can enumerate - a raw <svg> instead of
@@ -4678,7 +4678,7 @@ export interface AreaDetailDTO {
 </IconButton>`,
         },
         {
-          note: "a forwarder — both the name and the children arrive from its caller",
+          note: "a forwarder - both the name and the children arrive from its caller",
           source: `const FieldClearButton = forwardRef((props, ref) => <button {...props} ref={ref} />);`,
         },
         {
@@ -4700,7 +4700,7 @@ export interface AreaDetailDTO {
     id: "jsx-child-line-comment",
     invariant: "audit: comments in JSX children render as text",
     level: "error",
-    desc: "A `//` line comment sitting between an opening JSX tag and its children is not a comment — JSX treats it as a text child, so the comment paints on screen and becomes part of the element's accessible content. Move it above the opening tag, or write it as {/* ... */}",
+    desc: "A `//` line comment sitting between an opening JSX tag and its children is not a comment - JSX treats it as a text child, so the comment paints on screen and becomes part of the element's accessible content. Move it above the opening tag, or write it as {/* ... */}",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -4785,7 +4785,7 @@ const pages = Math.ceil(total / size);`,
     id: "boolean-faceted",
     invariant: "#14",
     level: "error",
-    desc: 'Boolean field as faceted filter with true/false options — use type: "toggle"',
+    desc: 'Boolean field as faceted filter with true/false options - use type: "toggle"',
     appliesTo: isTsx,
     check: (c) => blockHits(c, /type:\s*"faceted"[\s\S]{0,300}?value:\s*("?(true|false)"?)/g),
     samples: {
@@ -4806,7 +4806,7 @@ const pages = Math.ceil(total / size);`,
 ];`,
       miss: [
         {
-          note: "a faceted filter over an enum — the sanctioned use",
+          note: "a faceted filter over an enum - the sanctioned use",
           source: `const filters = [
   {
     type: "faceted",
@@ -4869,7 +4869,7 @@ const confirmOptions = [
     id: "local-page-heading",
     invariant: "#31a",
     level: "review",
-    desc: "Level 1/2 Heading in a pages/ file — page titles go through usePageHeader (header-slot Headings are OK)",
+    desc: "Level 1/2 Heading in a pages/ file - page titles go through usePageHeader (header-slot Headings are OK)",
     appliesTo: (p) => inPages(p) && isTsx(p),
     // The exception the description names, implemented rather than only promised: a Heading handed
     // to a `header` slot is chrome the framework places, not a page title standing in for
@@ -4920,7 +4920,7 @@ const confirmOptions = [
 </CrudDetail.Section>`,
         },
         {
-          note: "a widget is not a page — the page title rule is about routed pages",
+          note: "a widget is not a page - the page title rule is about routed pages",
           file: "modules/site/src/widgets/area/detail.tsx",
           source: `<Heading level={1}>{displayData.name}</Heading>`,
         },
@@ -4931,7 +4931,7 @@ const confirmOptions = [
     id: "page-root-padding",
     invariant: "#31c",
     level: "review",
-    desc: "Ad-hoc p-4 padding in a pages/ file — the app layout owns page padding (inner cards are OK)",
+    desc: "Ad-hoc p-4 padding in a pages/ file - the app layout owns page padding (inner cards are OK)",
     appliesTo: (p) => inPages(p) && isTsx(p),
     check: (c) => lineHits(c, /className="[^"]*\bp-4\b/, (line) => !line.includes("<Card")),
     samples: {
@@ -4962,7 +4962,7 @@ const confirmOptions = [
     id: "capped-embedded-list",
     invariant: "#32 / audit: embedded list paging",
     level: "error",
-    desc: "Detail-panel list read with a hardcoded page size and no pager — the rows past the cap are dropped with nothing on screen saying so, and a detail tab is exactly where a reader assumes they are seeing everything that points at the record. Drive the read with useCrudList and render CrudList.Pagination beside the rows",
+    desc: "Detail-panel list read with a hardcoded page size and no pager - the rows past the cap are dropped with nothing on screen saying so, and a detail tab is exactly where a reader assumes they are seeing everything that points at the record. Drive the read with useCrudList and render CrudList.Pagination beside the rows",
     appliesTo: (p) => isTsx(p) && /\/detail(?:-tabs)?\.tsx$/.test(p),
     check: (c) =>
       /CrudList\.Pagination/.test(c)
@@ -4996,7 +4996,7 @@ return (
 return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         },
         {
-          note: "a list screen is paged by its own chrome — this rule is about a panel that embeds one",
+          note: "a list screen is paged by its own chrome - this rule is about a panel that embeds one",
           file: "modules/site/src/widgets/area/list.tsx",
           source: `const { data } = useListAreaVisits({ areaId, page: 0, size: 20, sort: "startedAt,desc" });`,
         },
@@ -5007,7 +5007,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "card-drops-status",
     invariant: "#21 / audit: card parity",
     level: "error",
-    desc: "A column renders a status badge the card slots never show — below the card breakpoint, and inside every detail panel that embeds the list, a failed row reads exactly like one that succeeded and a handled row exactly like an untouched one. Repeat the badge in cardTitle or cardContent",
+    desc: "A column renders a status badge the card slots never show - below the card breakpoint, and inside every detail panel that embeds the list, a failed row reads exactly like one that succeeded and a handled row exactly like an untouched one. Repeat the badge in cardTitle or cardContent",
     appliesTo: isTsx,
     check: (c) => {
       const card = cardSlots(c);
@@ -5021,7 +5021,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         .filter(({ field }) => !card.includes(`row.${field}`))
         .map(({ field, line, source }) => ({
           line,
-          excerpt: `column "${field}" — ${source.replace(/\s+/g, " ").slice(0, 110)}`,
+          excerpt: `column "${field}" - ${source.replace(/\s+/g, " ").slice(0, 110)}`,
         }));
     },
     samples: {
@@ -5051,7 +5051,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
 </CrudList.Table>`,
       miss: [
         {
-          note: "a badge built from the whole row cannot be looked for by field name — left to the eye",
+          note: "a badge built from the whole row cannot be looked for by field name - left to the eye",
           source: `<CrudList.Table
   list={list}
   cardTitle={(row) => row.name}
@@ -5089,7 +5089,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "hand-typed-id",
     invariant: "#34 / census 4",
     level: "error",
-    desc: "Text input bound to an *Id value — entity references come from a picker, files from the file field",
+    desc: "Text input bound to an *Id value - entity references come from a picker, files from the file field",
     appliesTo: isTsx,
     // What the invariant is about is an id naming a record in THIS system: the user cannot know a
     // UUID, so typing one is a guess and the picker exists to stop it. An identifier issued by
@@ -5120,7 +5120,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
 />`,
       miss: [
         {
-          note: "an identifier issued outside this system — the operator reads it off the provider's console",
+          note: "an identifier issued outside this system - the operator reads it off the provider's console",
           source: `<FormFields.TextField
   label={fieldLabel("clientId")}
   value={draft.clientId}
@@ -5150,7 +5150,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "native-time-input",
     invariant: "#37",
     level: "error",
-    desc: 'Native time input or free-text HH:mm placeholder — use FormFields.TimeField',
+    desc: 'Native time input or free-text HH:mm placeholder - use FormFields.TimeField',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /type:\s*"time"|placeholder="HH:mm"/),
     samples: {
@@ -5188,7 +5188,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "local-time-helper-copy",
     invariant: "#37",
     level: "error",
-    desc: "Per-module copy of the LocalTime <-> TimeValue conversion — import the shared helper pair",
+    desc: "Per-module copy of the LocalTime <-> TimeValue conversion - import the shared helper pair",
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /function\s+\w*[Ll]ocalTime\s*\(|const\s+(parseLocalTime|formatLocalTime|displayLocalTime)\s*=\s*\(/),
@@ -5214,7 +5214,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     invariant: "#32 / #3",
     level: "error",
     desc:
-      "Forced narrowing (a tab, a chip row, a scope from the address) merged inside transformFilters — the list state machine only sends a `filters` object once the reader has committed one, so on the first view the transform never runs and the request goes out unnarrowed. Merge into the request params instead",
+      "Forced narrowing (a tab, a chip row, a scope from the address) merged inside transformFilters - the list state machine only sends a `filters` object once the reader has committed one, so on the first view the transform never runs and the request goes out unnarrowed. Merge into the request params instead",
     appliesTo: isSource,
     check: (c) =>
       // A transform that only rewrites what it was handed (date formats, operator names - the
@@ -5255,7 +5255,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
 }`,
       miss: [
         {
-          note: "the documented use — the transform rewrites what it was handed and adds nothing",
+          note: "the documented use - the transform rewrites what it was handed and adds nothing",
           source: `export function useAreaList() {
   return useCrudList(adaptOrvalList(useListAreas), {
     stateMode: "server",
@@ -5282,7 +5282,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "callback-prop-names",
     invariant: "#12",
     level: "error",
-    desc: "Ad-hoc save callback name onSaved — use onSuccess",
+    desc: "Ad-hoc save callback name onSaved - use onSuccess",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /\bonSaved\s*[=:{]/),
     samples: {
@@ -5301,7 +5301,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "callback-done-name",
     invariant: "#12",
     level: "review",
-    desc: "onDone callback — use onSuccess for save/submit completion (non-CRUD completions like animation ends are OK)",
+    desc: "onDone callback - use onSuccess for save/submit completion (non-CRUD completions like animation ends are OK)",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /\bonDone\s*[=:{]/),
     // No `miss` sample: the exception this rule names - a non-CRUD completion such as an
@@ -5317,7 +5317,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "wrap-string-prop",
     invariant: "#44",
     level: "error",
-    desc: 'wrap="wrap" on Flex/Stack — wrap is a boolean prop',
+    desc: 'wrap="wrap" on Flex/Stack - wrap is a boolean prop',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /wrap="wrap"/),
     samples: {
@@ -5340,7 +5340,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "size-shorthand",
     invariant: "anti-pattern table",
     level: "review",
-    desc: 'className "h-4 w-4" — use "size-4"',
+    desc: 'className "h-4 w-4" - use "size-4"',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /className="[^"]*\bh-4 w-4\b/),
     samples: {
@@ -5349,7 +5349,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       fixed: `<TrashIcon className="size-4" />`,
       miss: [
         {
-          note: "a box that is not square — the shorthand does not apply",
+          note: "a box that is not square - the shorthand does not apply",
           source: `<Sparkline className="h-4 w-40" />`,
         },
       ],
@@ -5359,7 +5359,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "command-primitives",
     invariant: "registry: SearchPopover",
     level: "error",
-    desc: "Command primitives imported in a module — use SearchPopover",
+    desc: "Command primitives imported in a module - use SearchPopover",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /import\s+\{[^}]*Command(Input|Item|List)/),
     samples: {
@@ -5379,7 +5379,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "raw-select-import",
     invariant: "registry: SelectField compact",
     level: "error",
-    desc: "Raw Select primitives imported in a module — use FormFields.SelectField",
+    desc: "Raw Select primitives imported in a module - use FormFields.SelectField",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /import\s+\{[^}]*Select(Trigger|Content|Item)\b/),
     samples: {
@@ -5403,7 +5403,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "loader-spinner",
     invariant: "registry: Button loading",
     level: "review",
-    desc: "Manual Loader2 / animate-spin — Button handles its own spinner (standalone overlays are OK)",
+    desc: "Manual Loader2 / animate-spin - Button handles its own spinner (standalone overlays are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => lineHits(c, /\bLoader2\b|animate-spin/),
     // No `miss` for the exception the description names - a standalone overlay spinner looks
@@ -5482,7 +5482,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "inline-dark-tone-map",
     invariant: "registry: tone maps",
     level: "review",
-    desc: "Inline Record<> map with dark: status colors — status/severity maps belong to the shared UI package (categorical palettes are OK)",
+    desc: "Inline Record<> map with dark: status colors - status/severity maps belong to the shared UI package (categorical palettes are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) =>
       /Record</.test(c) ? lineHits(c, /dark:bg-(red|green|emerald|amber|blue|orange|slate)-\d/) : [],
@@ -5609,7 +5609,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "uuid-audit-filters",
     invariant: "#39",
     level: "review",
-    desc: "Scaffold-emitted UUID / createdAt / updatedAt filters nobody searches by — prune, then add the persona's real axis",
+    desc: "Scaffold-emitted UUID / createdAt / updatedAt filters nobody searches by - prune, then add the persona's real axis",
     appliesTo: (p) => isListWidget(p),
     check: (c) =>
       lineHits(
@@ -5633,7 +5633,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
 ];`,
       miss: [
         {
-          note: "a foreign key offered as a dropdown — the sanctioned entity filter",
+          note: "a foreign key offered as a dropdown - the sanctioned entity filter",
           source: `const filters = [
   { type: "faceted", field: "ownerId", label: fieldLabel("owner"), options: userOptions },
 ];`,
@@ -5652,7 +5652,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "delete-confirm-id",
     invariant: "#46",
     level: "error",
-    desc: "Delete confirmation named with a raw id — name the record with a human-readable value",
+    desc: "Delete confirmation named with a raw id - name the record with a human-readable value",
     appliesTo: isTsx,
     check: (c) => {
       const hits = [];
@@ -5683,7 +5683,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "header-id-title",
     invariant: "census 3",
     level: "error",
-    desc: "detailHeader/editHeader interpolating an id — titles carry a name",
+    desc: "detailHeader/editHeader interpolating an id - titles carry a name",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /(detailHeader|editHeader)[^\n]*\bid:/),
     samples: {
@@ -5702,7 +5702,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "description-as-filter",
     invariant: "e2e: Search Is Part of the Product",
     level: "review",
-    desc: "A definition row's description offered as a list filter — the persona finds these by name or code, not by their prose (an event's 사유/목적/메모 is a different case and legitimately searchable)",
+    desc: "A definition row's description offered as a list filter - the persona finds these by name or code, not by their prose (an event's 사유/목적/메모 is a different case and legitimately searchable)",
     appliesTo: (p) => isTsx(p) && /list\.tsx$/.test(p),
     check: (c) => lineHits(c, /type:\s*"text",\s*field:\s*"description"/),
     samples: {
@@ -5715,7 +5715,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
 ];`,
       miss: [
         {
-          note: "an event's own prose — a reason is what the reader searches such a list by",
+          note: "an event's own prose - a reason is what the reader searches such a list by",
           source: `const filters = [
   { type: "text", field: "reason", label: fieldLabel("reason") },
 ];`,
@@ -5727,7 +5727,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "visible-native-file-input",
     invariant: "e2e census 4",
     level: "error",
-    desc: "Visible native file input — its label follows the browser's locale, not the app's; hide it and drive it from an app-owned button",
+    desc: "Visible native file input - its label follows the browser's locale, not the app's; hide it and drive it from an app-owned button",
     appliesTo: isTsx,
     // A file input is exempt only when it is hidden behind a trigger the app labels - by the
     // platform's own `hidden` attribute or by a utility class. **Both, because a project may
@@ -5759,7 +5759,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     invariant: "#3",
     level: "error",
     desc:
-      "A sort token written `field,direction` — the separator is a dot. The generated client types `sort` as `string[]`, so the comma form typechecks; the server's parser then splits the element on the comma and refuses the request with a sort-format error. The screen shows nothing: the list hook reads the error envelope as an empty page and draws its empty state, and the network tab shows 200 because the envelope carried one",
+      "A sort token written `field,direction` - the separator is a dot. The generated client types `sort` as `string[]`, so the comma form typechecks; the server's parser then splits the element on the comma and refuses the request with a sort-format error. The screen shows nothing: the list hook reads the error envelope as an empty page and draws its empty state, and the network tab shows 200 because the envelope carried one",
     appliesTo: isSource,
     // Anchored on `sort` so an ordinary array of two strings is not reported. Only the
     // one-string-two-fields shape is the defect; `sort: ["a.asc", "b.desc"]` is two tokens
@@ -5785,7 +5785,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "hand-written-endpoint-url",
     invariant: "#30 / #3",
     level: "review",
-    desc: "Endpoint path assembled by hand — the codegen emits a get<Op>Url helper, and a hand-written twin drifts silently the next time the route moves",
+    desc: "Endpoint path assembled by hand - the codegen emits a get<Op>Url helper, and a hand-written twin drifts silently the next time the route moves",
     appliesTo: isSource,
     // Cache-key prefixes are literal by contract (useInvalidateEntity takes the prefix, not a
     // URL), and a public asset endpoint with no generated operation has no helper to import.
@@ -5845,7 +5845,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "mock-seed-missing",
     invariant: "#30",
     level: "error",
-    desc: "A mock handler names a seed export that seeds.ts does not have — codegen rewrites the handlers but PRESERVES seeds.ts, so an entity added by a later regeneration arrives with a reference to a seed nobody wrote. Nothing in the codegen run says so; the package simply stops building, and with it every app that depends on it. Add the seed by hand after regenerating a domain that gained an entity",
+    desc: "A mock handler names a seed export that seeds.ts does not have - codegen rewrites the handlers but PRESERVES seeds.ts, so an entity added by a later regeneration arrives with a reference to a seed nobody wrote. Nothing in the codegen run says so; the package simply stops building, and with it every app that depends on it. Add the seed by hand after regenerating a domain that gained an entity",
     appliesTo: (p) => p.endsWith(`${path.sep}src${path.sep}mock${path.sep}index.ts`),
     check: (c, rel) => {
       const seedsPath = path.join(ROOT, path.dirname(rel), "seeds.ts");
@@ -5910,7 +5910,7 @@ import { areaSeeds } from "./seeds";
 export const handlers = [...makeHandlers("area", areaSeeds)];`,
         },
         {
-          note: "a domain whose seeds file has not been generated yet — nothing to check against",
+          note: "a domain whose seeds file has not been generated yet - nothing to check against",
           source: `import { areaSeeds } from "./seeds";
 
 export const handlers = [...makeHandlers("area", areaSeeds)];`,
@@ -5922,7 +5922,7 @@ export const handlers = [...makeHandlers("area", areaSeeds)];`,
     id: "silent-clipboard-copy",
     invariant: "#40 / e2e lens: persona",
     level: "review",
-    desc: "clipboard.writeText with no failure path — the clipboard is refused outside a secure context and pending while the tab is hidden, so a copy that never happened looks identical to one that did",
+    desc: "clipboard.writeText with no failure path - the clipboard is refused outside a secure context and pending while the tab is hidden, so a copy that never happened looks identical to one that did",
     appliesTo: isSource,
     // A file that already branches on failure is exempt; what this catches is the bare await.
     check: (c) =>
@@ -5959,7 +5959,7 @@ export function printAreaCode(code: string) {
     id: "ungated-create-button",
     invariant: "#52",
     level: "error",
-    desc: "Create button with no permission gate — a user without create sees it, fills the form, and gets a 403 on submit",
+    desc: "Create button with no permission gate - a user without create sees it, fills the form, and gets a 403 on submit",
     appliesTo: isTsx,
     // The gate is a `useCan("create", …)` result the file reads on or around the button, so a
     // file that owns one is exempt; what this catches is the button standing alone.
@@ -6005,7 +6005,7 @@ usePageHeader({
 <Button onClick={showNew}>{t("page.new")}</Button>`,
         },
         {
-          note: "the same sentence where it is actually written — at the start of a comment, capitalised",
+          note: "the same sentence where it is actually written - at the start of a comment, capitalised",
           source: `{/* No permission gates this create: every signed-in account sets its own
     delegation, and the server forces the caller as the delegator. */}
 <Button onClick={showNew}>{t("page.new")}</Button>`,
@@ -6017,7 +6017,7 @@ usePageHeader({
     id: "permission-blanked-tab",
     invariant: "#61",
     level: "review",
-    desc: "A tab's count is blanked by a permission flag while the tab itself still renders — the affordance survives the gate and opens onto a panel that can only say the read was refused, which reads as a screen that failed rather than as a permission this account does not hold. Gate the tab and its panel on the same flag and explain the absence once, where the figure it replaces would have been",
+    desc: "A tab's count is blanked by a permission flag while the tab itself still renders - the affordance survives the gate and opens onto a panel that can only say the read was refused, which reads as a screen that failed rather than as a permission this account does not hold. Gate the tab and its panel on the same flag and explain the absence once, where the figure it replaces would have been",
     appliesTo: isTsx,
     // Anchored on the tab, not on the ternary: a readout blanking its own value behind the same
     // flag (a tile drawing an em dash, a column cell left empty) is the right shape - a count
@@ -6039,7 +6039,7 @@ usePageHeader({
 )}`,
       miss: [
         {
-          note: "a readout blanking its own value behind the gate is right — the control is not the thing being kept",
+          note: "a readout blanking its own value behind the gate is right - the control is not the thing being kept",
           file: "modules/org/src/widgets/organization/tiles.tsx",
           source: `<StatCard label={t("tiles.accounts")} value={census.readable ? census.total : undefined} />`,
         },
@@ -6055,7 +6055,7 @@ usePageHeader({
     id: "inline-permission-group",
     invariant: "#52",
     level: "error",
-    desc: "useCan names its permission group as a string literal instead of reading it from the module's SUBJECTS map — the screen's gate and the server's rule then move separately, and a group renamed on the backend leaves this affordance gated on a name nothing grants any more",
+    desc: "useCan names its permission group as a string literal instead of reading it from the module's SUBJECTS map - the screen's gate and the server's rule then move separately, and a group renamed on the backend leaves this affordance gated on a name nothing grants any more",
     appliesTo: isTsx,
     // Only a module's own screens have a SUBJECTS map to read from; an app-level surface
     // outside `modules/` has no registry and is left to the reviewer.
@@ -6080,7 +6080,7 @@ usePageHeader({
     id: "unsubscribed-access-policy-read",
     invariant: "#52",
     level: "error",
-    desc: "A render decision reads a field off the object `useAccess()` returns — that object is the policy itself and is handed back unchanged on every render, so a component whose only subscription is `useCan` re-renders when its own answer flips and never when the grants merely arrive; for everyone the answer does not flip for, the field keeps the value it had before the policy resolved and the screen stays on that branch for ever. Subscribe with useSyncExternalStore(policy.subscribe, policy.getSnapshot, policy.getSnapshot) and decide from the snapshot",
+    desc: "A render decision reads a field off the object `useAccess()` returns - that object is the policy itself and is handed back unchanged on every render, so a component whose only subscription is `useCan` re-renders when its own answer flips and never when the grants merely arrive; for everyone the answer does not flip for, the field keeps the value it had before the policy resolved and the screen stays on that branch for ever. Subscribe with useSyncExternalStore(policy.subscribe, policy.getSnapshot, policy.getSnapshot) and decide from the snapshot",
     appliesTo: isTsx,
     check: (c) => {
       // A file that subscribes has made the value reactive, whichever way it then reads it.
@@ -6138,7 +6138,7 @@ return <Text>{policy.user.displayName}</Text>;`,
     id: "ungated-entity-action",
     invariant: "#52",
     level: "review",
-    desc: "Detail action footer fires a mutation and the file never calls useCan — an entity action (settle, charge, cancel, refund) is usually gated harder on the server than the read that opened the panel, so the button renders for an operator the call will refuse",
+    desc: "Detail action footer fires a mutation and the file never calls useCan - an entity action (settle, charge, cancel, refund) is usually gated harder on the server than the read that opened the panel, so the button renders for an operator the call will refuse",
     appliesTo: isTsx,
     // The read that opens a detail panel and the action that leaves it are different permissions
     // (view vs manage/edit). A file that consults useCan at all has made that distinction and is
@@ -6174,7 +6174,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "lowercase-enum-label",
     invariant: "#10",
     level: "error",
-    desc: "enumLabel called with a lower-case enum name — the backend registers enums by their PascalCase simple name, so the key never resolves and the raw key renders",
+    desc: "enumLabel called with a lower-case enum name - the backend registers enums by their PascalCase simple name, so the key never resolves and the raw key renders",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /enumLabel\(\s*"[a-z]/),
     samples: {
@@ -6193,7 +6193,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "single-line-free-text",
     invariant: "customize: form checklist",
     level: "error",
-    desc: "Free-form prose (note / description / memo / remark / bio) in a single-line TextField — it is written on more than one line, so it takes a TextareaField on a row of its own",
+    desc: "Free-form prose (note / description / memo / remark / bio) in a single-line TextField - it is written on more than one line, so it takes a TextareaField on a row of its own",
     appliesTo: isTsx,
     check: (c) =>
       blockHits(
@@ -6229,7 +6229,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "empty-slot-returns-nothing",
     invariant: "#22",
     level: "error",
-    desc: "A table `empty` slot returning null/undefined for some reasons — the slot REPLACES the framework's empty state, error card and paused card, so those reasons render a blank table. Answer every reason, or pass the slot only for the reason it handles",
+    desc: "A table `empty` slot returning null/undefined for some reasons - the slot REPLACES the framework's empty state, error card and paused card, so those reasons render a blank table. Answer every reason, or pass the slot only for the reason it handles",
     appliesTo: isTsx,
     check: (c) =>
       blockHits(
@@ -6300,7 +6300,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "enum-default-unresolved",
     invariant: "#10 / #36",
     level: "review",
-    desc: "Enum-looking field defaulted with ?? and no resolveBootEnum on the line — boot enums are objects, ?? never fires",
+    desc: "Enum-looking field defaulted with ?? and no resolveBootEnum on the line - boot enums are objects, ?? never fires",
     appliesTo: isTsx,
     check: (c) =>
       lineHits(
@@ -6328,7 +6328,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "enum-label-empty-fallback",
     invariant: "#36",
     level: "review",
-    desc: "enumLabel(..., resolveBootEnum(x) ?? \"\") — an absent enum resolves to the empty string and the resolver prints the message key itself (\"<Enum>.\"); confirm the field can never be null",
+    desc: "enumLabel(..., resolveBootEnum(x) ?? \"\") - an absent enum resolves to the empty string and the resolver prints the message key itself (\"<Enum>.\"); confirm the field can never be null",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /enumLabel\([^)]*resolveBootEnum\([^)]*\)\s*\?\?\s*""/),
     samples: {
@@ -6349,7 +6349,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "stringified-boot-enum",
     invariant: "#36",
     level: "error",
-    desc: "Enum-looking field turned into text by String() or template interpolation with no resolveBootEnum on the line — a boot enum is an object, so the cell renders `[object Object]`",
+    desc: "Enum-looking field turned into text by String() or template interpolation with no resolveBootEnum on the line - a boot enum is an object, so the cell renders `[object Object]`",
     appliesTo: isTsx,
     check: (c, rel) =>
       // A file holding no server data cannot be holding a boot enum, whatever it names its
@@ -6381,7 +6381,7 @@ const canManage = useCan("manage", SUBJECTS.area);
 </TableCell>`,
       miss: [
         {
-          note: "a local literal union in a file that reads no server data — no boot enum can be in scope",
+          note: "a local literal union in a file that reads no server data - no boot enum can be in scope",
           source: `type ImpactKind = "automatic" | "rejudge" | "retained";
 
 <Badge>{t(\`impact.\${group.kind}\`)}</Badge>`,
@@ -6390,7 +6390,7 @@ const canManage = useCan("manage", SUBJECTS.area);
           note: "a translation key that merely contains a dot inside its string",
           source: `import { useGetUserAccount } from "@acme/domain-user";
 
-<Text>{\`\${t("area.type")} — \${name}\`}</Text>`,
+<Text>{\`\${t("area.type")} - \${name}\`}</Text>`,
         },
         {
           note: "String() over a field that is not an enum",
@@ -6417,7 +6417,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
     id: "full-enum-options",
     invariant: "#38",
     level: "review",
-    desc: "Object.values(<Enum>).map as WRITE-surface select options — check whether the server narrows the set per record (filters over the full set are fine)",
+    desc: "Object.values(<Enum>).map as WRITE-surface select options - check whether the server narrows the set per record (filters over the full set are fine)",
     appliesTo: (p) => isTsx(p) && /form|dialog|editor|wizard/.test(p),
     check: (c) => lineHits(c, /Object\.values\([A-Z]\w+\)\.map/),
     samples: {
@@ -6432,7 +6432,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
 />`,
       miss: [
         {
-          note: "a filter over the full set is fine — the server narrows what may be WRITTEN, not what may be searched",
+          note: "a filter over the full set is fine - the server narrows what may be WRITTEN, not what may be searched",
           file: "modules/site/src/widgets/area/list.tsx",
           source: `const statusOptions = Object.values(AreaStatus).map((v) => ({ value: v, label: enumLabel("AreaStatus", v) }));`,
         },
@@ -6443,7 +6443,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
     id: "row-action-type-fixed-under-a-varying-label",
     invariant: "#36",
     level: "review",
-    desc: "A row action whose `type` is a literal while its `label` comes from the row — the icon is looked up by `type`, so every row wears one verb's glyph while the words say another",
+    desc: "A row action whose `type` is a literal while its `label` comes from the row - the icon is looked up by `type`, so every row wears one verb's glyph while the words say another",
     appliesTo: isTsx,
     check: (c) => {
       // `RowActionCell` resolves the glyph as `action.icon ?? ACTION_ICONS[action.type]`, so a
@@ -6510,7 +6510,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
     id: "unitless-rate-field",
     invariant: "#36",
     level: "review",
-    desc: "Rate/percent field rendered or edited with no unit — confirm whether it is a percentage, then mark it (suffix=\"%\" on the input, format=\"percent\" on the read) so a fraction cannot be typed where a percentage is stored",
+    desc: "Rate/percent field rendered or edited with no unit - confirm whether it is a percentage, then mark it (suffix=\"%\" on the input, format=\"percent\" on the read) so a fraction cannot be typed where a percentage is stored",
     appliesTo: isTsx,
     check: (c) => {
       // A percentage with no unit beside it is read as a fraction by half its readers and
@@ -6566,7 +6566,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
     id: "two-state-branching",
     invariant: "#38",
     level: "review",
-    desc: "Two-state ternary on a status/presence value — the third state falls into the wrong arm",
+    desc: "Two-state ternary on a status/presence value - the third state falls into the wrong arm",
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /\b(presence|status)\s*===\s*"[A-Z_]+"\s*\?/, (line) => !line.includes("switch")),
@@ -6595,7 +6595,7 @@ value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\$
     id: "refusal-told-twice",
     invariant: "#40",
     level: "review",
-    desc: "A screen catches a mutation's refusal and renders it itself, but its hook does not carry `meta.suppressErrorDialog` — so the app's global error dialog lands on top saying the same thing. The reader dismisses a modal to reach the sentence underneath it, and where the screen's own report IS the content (a bulk run's failed rows), the modal covers exactly what they opened it for",
+    desc: "A screen catches a mutation's refusal and renders it itself, but its hook does not carry `meta.suppressErrorDialog` - so the app's global error dialog lands on top saying the same thing. The reader dismisses a modal to reach the sentence underneath it, and where the screen's own report IS the content (a bulk run's failed rows), the modal covers exactly what they opened it for",
     appliesTo: isTsx,
     check: (c, rel) => {
       // An app with no such dialog cannot tell anybody twice.
@@ -6699,7 +6699,7 @@ async function run() {
     id: "one-message-for-several-states",
     invariant: "#55",
     level: "review",
-    desc: "One user-facing message serves a branch guarded on several statuses — the sentence names a cause only one of them had, so it is false for the rest (an order the buyer cancelled told 'the deadline passed and the account was withdrawn'). Split the key per cause and pick between them, or write a sentence true of every status in the guard",
+    desc: "One user-facing message serves a branch guarded on several statuses - the sentence names a cause only one of them had, so it is false for the rest (an order the buyer cancelled told 'the deadline passed and the account was withdrawn'). Split the key per cause and pick between them, or write a sentence true of every status in the guard",
     appliesTo: isTsx,
     check: (c) => {
       const hits = [];
@@ -6738,7 +6738,7 @@ async function run() {
     id: "long-value-in-a-label-row",
     invariant: "#36",
     level: "error",
-    desc: "A label-and-trailing row (DetailListRow / LabeledField) is handed a value that wraps on its own — `break-all`, `whitespace-pre`, or a `font-mono` URL or key. The row gives the width to the trailing slot and truncates the label away, leaving values with nothing saying which is which. Stack the pair instead: a caption for the label, the value under it",
+    desc: "A label-and-trailing row (DetailListRow / LabeledField) is handed a value that wraps on its own - `break-all`, `whitespace-pre`, or a `font-mono` URL or key. The row gives the width to the trailing slot and truncates the label away, leaving values with nothing saying which is which. Stack the pair instead: a caption for the label, the value under it",
     appliesTo: isTsx,
     check: (c) => {
       const hits = [];
@@ -6776,7 +6776,7 @@ async function run() {
     id: "read-failure-reads-as-loading",
     invariant: "#33",
     level: "error",
-    desc: "A screen's only not-ready branch is `isLoading || !data` returning a skeleton, with no branch on that read failing — the read fails, `data` stays absent, and the screen holds the skeleton for as long as the reader waits, naming no reason and offering nothing to press",
+    desc: "A screen's only not-ready branch is `isLoading || !data` returning a skeleton, with no branch on that read failing - the read fails, `data` stays absent, and the screen holds the skeleton for as long as the reader waits, naming no reason and offering nothing to press",
     appliesTo: isTsx,
     check: (c) => {
       // Only the shape that traps. `isLoading || !data` is correct wherever the falling-through
@@ -6844,7 +6844,7 @@ if (area.isLoading || !area.data) {
 return <QueryFallback query={area}><AreaPanel area={area.data} /></QueryFallback>;`,
         },
         {
-          note: "a single-condition guard falls THROUGH rather than trapping — the next rule's business",
+          note: "a single-condition guard falls THROUGH rather than trapping - the next rule's business",
           source: `const area = useGetArea(areaId);
 
 if (area.isLoading) {
@@ -6860,7 +6860,7 @@ return <AreaPanel area={area.data} />;`,
     id: "read-failure-falls-through-loading-guard",
     invariant: "#33",
     level: "error",
-    desc: "A screen guards only on ONE query's `isLoading` and never branches on THAT query's failure — the read fails, `isLoading` goes false, and the screen falls straight through into its loaded layout built from undefined, stating as fact whatever absent data spells out",
+    desc: "A screen guards only on ONE query's `isLoading` and never branches on THAT query's failure - the read fails, `isLoading` goes false, and the screen falls straight through into its loaded layout built from undefined, stating as fact whatever absent data spells out",
     appliesTo: isTsx,
     check: (c) => {
       // The single-condition guard specifically. `isLoading || !data` traps in the skeleton and
@@ -6971,7 +6971,7 @@ return (
     id: "read-failure-reads-as-empty",
     invariant: "#33",
     level: "review",
-    desc: "Component reads a query's data and draws an emptiness without ever branching on failure — a read that failed renders the empty state, and the reader concludes they own nothing rather than that nothing was fetched",
+    desc: "Component reads a query's data and draws an emptiness without ever branching on failure - a read that failed renders the empty state, and the reader concludes they own nothing rather than that nothing was fetched",
     appliesTo: isTsx,
     check: (c) => {
       // Only components that actually draw an emptiness. A widget that renders whatever it got
@@ -7029,7 +7029,7 @@ return (
     id: "form-seeded-from-read-without-error-branch",
     invariant: "#33",
     level: "error",
-    desc: "A form copies a query's data into its own state and offers a save, with no branch on that read failing — the read fails, the form stands holding its initial values, and saving writes those over what was stored",
+    desc: "A form copies a query's data into its own state and offers a save, with no branch on that read failing - the read fails, the form stands holding its initial values, and saving writes those over what was stored",
     appliesTo: isTsx,
     check: (c) => {
       // Only a form that seeds itself. An effect that copies a read into local state is the
@@ -7120,7 +7120,7 @@ return (
     id: "link-acts-before-it-reads",
     invariant: "#33",
     level: "review",
-    desc: "Screen acts on a one-time link token without reading the link first — a spent, expired or unknown link is offered as live, the visitor agrees to something, and the refusal only arrives after the click; the same read is what lets the screen name whose record it is about instead of asking about \"this address\"",
+    desc: "Screen acts on a one-time link token without reading the link first - a spent, expired or unknown link is offered as live, the visitor agrees to something, and the refusal only arrives after the click; the same read is what lets the screen name whose record it is about instead of asking about \"this address\"",
     appliesTo: isTsx,
     check: (c) => {
       // Only a screen whose whole authority is a token that arrived from outside - in the
@@ -7192,7 +7192,7 @@ return (
 );`,
       miss: [
         {
-          note: "a route handing the token down — reading the link is the component below's job",
+          note: "a route handing the token down - reading the link is the component below's job",
           source: `const search = Route.useSearch();
 
 return (
@@ -7235,7 +7235,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     id: "silent-mutation-outcome",
     invariant: "#33",
     level: "review",
-    desc: "Action handler awaits a mutation and only invalidates — nothing tells the operator what happened, and a call that succeeded is not an operation that worked (a gateway charge the card refused returns 200 with false)",
+    desc: "Action handler awaits a mutation and only invalidates - nothing tells the operator what happened, and a call that succeeded is not an operation that worked (a gateway charge the card refused returns 200 with false)",
     appliesTo: isTsx,
     check: (c) => {
       // The handler body from the awaited mutation to the end of the arrow function. A handler
@@ -7305,7 +7305,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     id: "create-and-update-share-one-body",
     invariant: "#34",
     level: "error",
-    desc: "One payload object is handed to both the create and the update, and it carries a create-time constant — a status, an order, an `active: true`. Editing an existing record therefore writes that constant over what the record had: the operator changes a name and the row silently goes back to its opening state. Nothing fails, and the damage is only visible in the database",
+    desc: "One payload object is handed to both the create and the update, and it carries a create-time constant - a status, an order, an `active: true`. Editing an existing record therefore writes that constant over what the record had: the operator changes a name and the row silently goes back to its opening state. Nothing fails, and the damage is only visible in the database",
     appliesTo: isSource,
     check: (c) => {
       // Every identifier the `data:` of one call is built out of: a bare `data: body`, or each
@@ -7425,7 +7425,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     id: "update-body-enumerated",
     invariant: "#34",
     level: "error",
-    desc: "An update body names fewer fields than the endpoint's own DTO declares and never spreads the record the edit read answered with — spreading the form's own values is not the same thing, because those are the fields the screen shows and the missing ones are exactly the fields it does not — the endpoint takes the whole record, so every field the body leaves out is absent from the request and the server writes it away. A hand-kept list always falls behind the DTO, and what falls off first is the translations, which no screen displays. Spread the record the edit read answered with and put the edited fields on top of it",
+    desc: "An update body names fewer fields than the endpoint's own DTO declares and never spreads the record the edit read answered with - spreading the form's own values is not the same thing, because those are the fields the screen shows and the missing ones are exactly the fields it does not - the endpoint takes the whole record, so every field the body leaves out is absent from the request and the server writes it away. A hand-kept list always falls behind the DTO, and what falls off first is the translations, which no screen displays. Spread the record the edit read answered with and put the edited fields on top of it",
     appliesTo: isSource,
     check: (c) => {
       // The contract, read from the generated model the update hook names. An endpoint whose DTO
@@ -7729,7 +7729,7 @@ const setActive = async (active: boolean) => {
 };`,
         },
         {
-          note: "a second update endpoint over the same record, whose own DTO is not on hand — the body is complete for the endpoint it is sent to, and measuring it against the neighbour's DTO reports a defect that is not there",
+          note: "a second update endpoint over the same record, whose own DTO is not on hand - the body is complete for the endpoint it is sent to, and measuring it against the neighbour's DTO reports a defect that is not there",
           files: {
             "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
   orgId: string;
@@ -7756,7 +7756,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
 };`,
         },
         {
-          note: "an endpoint whose DTO is not on hand — an unknown contract is not evidence of a defect",
+          note: "an endpoint whose DTO is not on hand - an unknown contract is not evidence of a defect",
         files: {
           "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
   orgId: string;
@@ -7792,7 +7792,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "panel-record-from-list-page",
     invariant: "#36",
     level: "review",
-    desc: "A panel's value is looked up in the rows the list happens to have loaded — a record opened by address, or one on another page, is not among them, so the field renders empty, the dialog names a UUID, or the lookup falls through to the first row on the page and the panel describes a different record. Resolve it from the record the panel itself fetched",
+    desc: "A panel's value is looked up in the rows the list happens to have loaded - a record opened by address, or one on another page, is not among them, so the field renders empty, the dialog names a UUID, or the lookup falls through to the first row on the page and the panel describes a different record. Resolve it from the record the panel itself fetched",
     appliesTo: isTsx,
     check: (c) => {
       if (!/renderDetail|ListDetail/.test(c)) return [];
@@ -7830,7 +7830,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
 />`,
       miss: [
         {
-          note: "a row action already holds its row — the lookup is not over the loaded page",
+          note: "a row action already holds its row - the lookup is not over the loaded page",
           source: `<ListDetail.ViewSwitch
   state={state}
   renderDetail={(id) => <JobPositionDetail positionId={id} onRequestDelete={requestDelete} />}
@@ -7906,7 +7906,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "screen-picks-action-variant",
     invariant: "#67",
     level: "error",
-    desc: "A screen names actionVariant as a literal — how dense a row action reads is one decision for the whole product, and it is already made: the shape the scaffold emits. A product that departs from it says so once on UIProvider's `defaults`; neither answer is repeated per screen, where the next screen forgets it",
+    desc: "A screen names actionVariant as a literal - how dense a row action reads is one decision for the whole product, and it is already made: the shape the scaffold emits. A product that departs from it says so once on UIProvider's `defaults`; neither answer is repeated per screen, where the next screen forgets it",
     appliesTo: isTsx,
     // Only a literal is a decision being made here. `actionVariant={actionVariant}` is a widget
     // forwarding its own prop, which is the escape hatch a list with no width to spare uses.
@@ -7925,12 +7925,12 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
       fixed: `<AreaList list={list} />`,
       miss: [
         {
-          note: "a widget forwarding the prop it was handed — the escape hatch, not a decision",
+          note: "a widget forwarding the prop it was handed - the escape hatch, not a decision",
           source: `<CrudList.Table list={list} actions={actions} actionVariant={actionVariant} />`,
         },
         {
           note: "an exception the file states in place, and then owns",
-          source: `{/* actionVariant: deliberate — eleven columns, and the labels push the last one off */}
+          source: `{/* actionVariant: deliberate - eleven columns, and the labels push the last one off */}
 <AreaList list={list} actionVariant="icon" />`,
         },
       ],
@@ -7940,7 +7940,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "screen-picks-detail-presentation",
     invariant: "#69",
     level: "error",
-    desc: "A screen names ListDetail's `variant` as a literal — whether a record opens in a panel beside the list or in a drawer over it is one decision for the installation, declared once on UIProvider's `defaults.detailPresentation`. A screen that hardcodes it takes the choice away from every installation, and seventeen screens hardcoding it mean the setting does nothing at all",
+    desc: "A screen names ListDetail's `variant` as a literal - whether a record opens in a panel beside the list or in a drawer over it is one decision for the installation, declared once on UIProvider's `defaults.detailPresentation`. A screen that hardcodes it takes the choice away from every installation, and seventeen screens hardcoding it mean the setting does nothing at all",
     appliesTo: isTsx,
     // `variant={variant}` is a widget forwarding what it was handed, and `"dialog"` is a real
     // per-screen decision - a centred modal claims the record is an interruption rather than the
@@ -7968,7 +7968,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
         },
         {
           note: "an exception the file states in place, and then owns",
-          source: `{/* detailPresentation: deliberate — the map fills the viewport and a drawer would cover it */}
+          source: `{/* detailPresentation: deliberate - the map fills the viewport and a drawer would cover it */}
 <ListDetail variant="panel" activePanel={view} onClose={showList}>`,
         },
       ],
@@ -7978,7 +7978,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "gated-callback-wrapped-in-an-always-truthy-arrow",
     invariant: "#52",
     level: "error",
-    desc: "An optional callback handed to a prop as `() => onX?.(…)` — the arrow is a value whether or not the callback behind it is one, so the component that decides by presence always renders the affordance, and a reader who may not act presses a live-looking button and nothing happens. Build the arrow only when the callback is there: `onX ? () => onX(record) : undefined`",
+    desc: "An optional callback handed to a prop as `() => onX?.(…)` - the arrow is a value whether or not the callback behind it is one, so the component that decides by presence always renders the affordance, and a reader who may not act presses a live-looking button and nothing happens. Build the arrow only when the callback is there: `onX ? () => onX(record) : undefined`",
     appliesTo: isTsx,
     // The prop is the component's own switch: CrudDetail.ActionFooter draws 삭제 when `onDelete`
     // is defined, a verb row draws a button when its handler is. Optional chaining inside a
@@ -8013,7 +8013,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
           source: `<CrudDetail.ActionFooter onDelete={() => onDelete(area)} />`,
         },
         {
-          note: "a lifecycle notification — nothing on screen is decided by whether anyone listens",
+          note: "a lifecycle notification - nothing on screen is decided by whether anyone listens",
           source: `const save = adaptOrvalUpdate(update, "areaId", { onSuccess: () => onSaved?.() });`,
         },
         {
@@ -8027,11 +8027,11 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "list-detail-page-root-hands-down-no-height",
     invariant: "#31",
     level: "error",
-    desc: "A page whose root is a `Stack` without `flex`, holding a `ListDetail`. `flex` is `flex-1 min-h-0`, and it is the only thing that caps the screen at the viewport \u2014 without it the page is content-sized all the way down, the detail panel takes its own natural height, and its footer lands below the fold. Reaching the buttons then means scrolling the page, which carries the list and the tabs away with it. The list state looks perfect either way, so this is only ever found by opening a record on a screen with tall chrome above it. Add `flex`; the list is not capped by it, because `ListDetail` drops the cap from its own section while the detail is closed",
+    desc: "A page whose root is a `Stack` without `flex`, holding a `ListDetail`. `flex` is `flex-1 min-h-0`, and it is the only thing that caps the screen at the viewport - without it the page is content-sized all the way down, the detail panel takes its own natural height, and its footer lands below the fold. Reaching the buttons then means scrolling the page, which carries the list and the tabs away with it. The list state looks perfect either way, so this is only ever found by opening a record on a screen with tall chrome above it. Add `flex`; the list is not capped by it, because `ListDetail` drops the cap from its own section while the detail is closed",
     appliesTo: isTsx,
     // The root only. A `Stack` further in is laying out a section, and a page that caps its chain
-    // some other way \u2014 a fragment whose children are the shell's own flex items, a div carrying
-    // `flex-1 min-h-0` \u2014 never reaches this rule, which is correct: the rule is about a `Stack`
+    // some other way - a fragment whose children are the shell's own flex items, a div carrying
+    // `flex-1 min-h-0` - never reaches this rule, which is correct: the rule is about a `Stack`
     // that was asked to be the page and was not told to fill it.
     check: (c) => {
       const hits = [];
@@ -8044,7 +8044,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
         if (/\/>$/.test(tag)) continue;
         const attrs = tagAttrs(tag);
         // The prop, bare or conditional. A page whose chrome would crush the list while it is
-        // alone caps only while a record is open \u2014 `flex={view !== "list"}` \u2014 and that is the
+        // alone caps only while a record is open - `flex={view !== "list"}` - and that is the
         // same answer written more precisely, not a page missing the cap.
         if (/(?:^|\s)flex\s*=\s*\{\s*false\s*\}/.test(attrs)) {
           hits.push({ line: lineOfIndex(c, found.index), excerpt: tagAttrs(tag).trim() });
@@ -8150,7 +8150,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "split-row-without-a-width",
     invariant: "#68",
     level: "review",
-    desc: "A row asked to sit as two groups — `justify=\"between\"` or `\"around\"` — with `fill` and no width. `fill` on a Stack/Flex is `h-full`, never `w-full`, so the row is only as wide as its children and the split has nothing to divide: both ends land together at whichever end the parent aligns to. It reads as a deliberate group of three, and it is invisible to everything except the pixels — the source says `between`, the props type-check, and the screenshot shows a plausible button row. Give the row a width (`className=\"w-full\"`), or drop the `justify` if the ends were never meant to separate",
+    desc: "A row asked to sit as two groups - `justify=\"between\"` or `\"around\"` - with `fill` and no width. `fill` on a Stack/Flex is `h-full`, never `w-full`, so the row is only as wide as its children and the split has nothing to divide: both ends land together at whichever end the parent aligns to. It reads as a deliberate group of three, and it is invisible to everything except the pixels - the source says `between`, the props type-check, and the screenshot shows a plausible button row. Give the row a width (`className=\"w-full\"`), or drop the `justify` if the ends were never meant to separate",
     appliesTo: isTsx,
     check: (c) =>
       blockHits(c, /<(?:Flex|Stack)\b[^>]*>/g).filter(
@@ -8199,7 +8199,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "row-actions-as-nameless-column",
     invariant: "#31",
     level: "error",
-    desc: "Row actions declared as a CrudList.Column with an empty header — a nameless entry joins the column-visibility menu, and unchecking it silently removes every action on the list. Render them through the table's rowActions slot (slots={{ ...., rowActions }} + actionColumnWidth) so the framework's own _actions column carries them",
+    desc: "Row actions declared as a CrudList.Column with an empty header - a nameless entry joins the column-visibility menu, and unchecking it silently removes every action on the list. Render them through the table's rowActions slot (slots={{ ...., rowActions }} + actionColumnWidth) so the framework's own _actions column carries them",
     appliesTo: isTsx,
     // The framework registers a declared column in the FilterBar's Columns dropdown by its
     // header text; an empty header therefore reaches that menu as a blank checkbox. Its own
@@ -8232,7 +8232,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "spinner-beside-mark",
     invariant: "#9 / audit: framework components",
     level: "error",
-    desc: "Waiting button leads with an icon and names no loadingText — Button composes the spinner ahead of its children, so pressing it draws a spinner and the icon side by side and widens the button mid-click, shifting a segmented row-action group out from under the pointer. Pass the label as loadingText so the spinner takes the icon's seat",
+    desc: "Waiting button leads with an icon and names no loadingText - Button composes the spinner ahead of its children, so pressing it draws a spinner and the icon side by side and widens the button mid-click, shifting a segmented row-action group out from under the pointer. Pass the label as loadingText so the spinner takes the icon's seat",
     appliesTo: isTsx,
     check: spinnerBesideMark,
     samples: {
@@ -8247,7 +8247,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
 </Button>`,
       miss: [
         {
-          note: "an icon-size button — the framework drops the children, so the spinner already stands alone",
+          note: "an icon-size button - the framework drops the children, so the spinner already stands alone",
           source: `<Button size="icon" variant="ghost" loading={del.isPending} onClick={onDelete}>
   <TrashIcon className="size-4" />
 </Button>`,
@@ -8348,7 +8348,7 @@ function packageExportFindings() {
         if (!("source" in entry)) {
           findings.push({
             file: path.relative(ROOT, manifest),
-            excerpt: `"${subpath}" resolves to ${entry.import ?? entry.default ?? "dist"} in dev — add "source"`,
+            excerpt: `"${subpath}" resolves to ${entry.import ?? entry.default ?? "dist"} in dev - add "source"`,
           });
           continue;
         }
@@ -8357,7 +8357,7 @@ function packageExportFindings() {
         if (published.some((dir) => target === dir || target.startsWith(`${dir}/`))) continue;
         findings.push({
           file: path.relative(ROOT, manifest),
-          excerpt: `"${subpath}" names source ${entry.source}, which "files" does not publish — `
+          excerpt: `"${subpath}" names source ${entry.source}, which "files" does not publish - `
             + `add "${target.split("/")[0]}" to files`,
         });
       }
@@ -8391,7 +8391,7 @@ function packageTypesFindings() {
         if (entry.types === entry.source) continue;
         findings.push({
           file: path.relative(ROOT, manifest),
-          excerpt: `"${subpath}" types ${entry.types} is not its source ${entry.source} — `
+          excerpt: `"${subpath}" types ${entry.types} is not its source ${entry.source} - `
             + "run simplix validate --fix (CLI 0.3.11+)",
         });
       }
@@ -8657,7 +8657,7 @@ function emptyLocaleValueFindings() {
           findings.push({
             file: rel,
             line: at < 0 ? 0 : at + 1,
-            excerpt: `${keyPath} = ${JSON.stringify(obj)} — falls through to the fallback locale`,
+            excerpt: `${keyPath} = ${JSON.stringify(obj)} - falls through to the fallback locale`,
           });
         } else if (obj && typeof obj === "object") {
           for (const [k, v] of Object.entries(obj)) walkJson(v, keyPath ? `${keyPath}.${k}` : k, k);
@@ -8682,7 +8682,7 @@ const COLLECTION_RULES = [
     id: "empty-locale-value",
     invariant: "audit: locale fallback",
     level: "error",
-    desc: "A locale entry is an empty string. The adapter does not return empty strings, so the key resolves against the fallback locale and the other language's words render in the middle of this one's screen — with every catalogue reporting the key as present. Put the word inside the counted string, one per language, so no entry is empty to fall back from; a space is not the repair, it satisfies every check and renders a stray gap",
+    desc: "A locale entry is an empty string. The adapter does not return empty strings, so the key resolves against the fallback locale and the other language's words render in the middle of this one's screen - with every catalogue reporting the key as present. Put the word inside the counted string, one per language, so no entry is empty to fall back from; a space is not the repair, it satisfies every check and renders a stray gap",
     collect: emptyLocaleValueFindings,
     samples: {
       broken: {
@@ -8699,7 +8699,7 @@ const COLLECTION_RULES = [
       },
       miss: [
         {
-          note: "a word English does have — nothing falls through, so nothing is reported",
+          note: "a word English does have - nothing falls through, so nothing is reported",
           files: {
             "modules/site/src/locales/widgets/ko.json": `{ "unit": { "days": "일" } }`,
             "modules/site/src/locales/widgets/en.json": `{ "unit": { "days": " days" } }`,
@@ -8746,7 +8746,7 @@ const COLLECTION_RULES = [
           },
         },
         {
-          note: "a key missing inside a section — top-level sections are what this rule compares, and the keys under them are missing-translation-key's business",
+          note: "a key missing inside a section - top-level sections are what this rule compares, and the keys under them are missing-translation-key's business",
           files: {
             "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area", "status": "Status" } }`,
             "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
@@ -8793,7 +8793,7 @@ const COLLECTION_RULES = [
     id: "ko-particle-after-placeholder",
     invariant: "audit: locale wording",
     level: "review",
-    desc: "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
+    desc: "Korean particle written straight after an interpolated value - 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
     collect: koParticleFindings,
     samples: {
       broken: {
@@ -8832,7 +8832,7 @@ const COLLECTION_RULES = [
     id: "package-export-without-source",
     invariant: "#5",
     level: "error",
-    desc: "A package's export entry carries no `source` condition — the dev server then serves that subpath from `dist/`, every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build (`simplix scaffold` before 0.3.11 wrote the `./pages` entry this way) — or it names a `source` file that `files` does not publish, which resolves in this checkout and throws ERR_MODULE_NOT_FOUND for anyone who installs the package from a registry",
+    desc: "A package's export entry carries no `source` condition - the dev server then serves that subpath from `dist/`, every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build (`simplix scaffold` before 0.3.11 wrote the `./pages` entry this way) - or it names a `source` file that `files` does not publish, which resolves in this checkout and throws ERR_MODULE_NOT_FOUND for anyone who installs the package from a registry",
     collect: packageExportFindings,
     samples: {
       broken: {
@@ -8900,7 +8900,7 @@ const COLLECTION_RULES = [
           },
         },
         {
-          note: "a string entry names one file for every condition — there is nothing to fall through to",
+          note: "a string entry names one file for every condition - there is nothing to fall through to",
           files: {
             "modules/site/package.json": `{
   "name": "@acme/site",
@@ -8926,7 +8926,7 @@ const COLLECTION_RULES = [
     id: "package-types-not-source",
     invariant: "#5",
     level: "review",
-    desc: "An export entry's `types` names a file other than its `source`, so tsc and the editor read the package's build output and a type change reaches its consumers only after that package is rebuilt — run `simplix validate --fix` (CLI 0.3.11+), which points `types` at the source",
+    desc: "An export entry's `types` names a file other than its `source`, so tsc and the editor read the package's build output and a type change reaches its consumers only after that package is rebuilt - run `simplix validate --fix` (CLI 0.3.11+), which points `types` at the source",
     collect: packageTypesFindings,
     samples: {
       broken: {
@@ -8984,7 +8984,7 @@ const COLLECTION_RULES = [
     id: "scaffold-header-placeholder",
     invariant: "audit: scaffold locale",
     level: "review",
-    desc: "Screen wording still carries the scaffold's placeholder — a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
+    desc: "Screen wording still carries the scaffold's placeholder - a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
     collect: scaffoldHeaderFindings,
     samples: {
       broken: {
@@ -9005,7 +9005,7 @@ const COLLECTION_RULES = [
       },
       miss: [
         {
-          note: "the scaffold's detailHeader is usually left unreferenced — an id that really renders is caught in the code by header-id-title",
+          note: "the scaffold's detailHeader is usually left unreferenced - an id that really renders is caught in the code by header-id-title",
           files: {
             "modules/site/src/locales/widgets/ko.json": `{
   "area": { "newHeader": "구역 추가", "detailHeader": "{{id}}" }
@@ -9307,7 +9307,7 @@ function selftest() {
     // second kind be quietly replaced by the first, which is a proof of nothing.
     const excluded = [];
     if (!s || s.broken === undefined || s.fixed === undefined) {
-      console.log(`✖ ${rule.id}: no broken/fixed samples — a rule proved in one direction is not proved`);
+      console.log(`✖ ${rule.id}: no broken/fixed samples - a rule proved in one direction is not proved`);
       failed++;
       continue;
     }
@@ -9316,15 +9316,15 @@ function selftest() {
     const onBroken = runSample(rule, broken);
     const onFixed = runSample(rule, fixed);
     if (!onBroken.applies) {
-      problems.push(`appliesTo() rejects ${broken.file} — the rule could never run on the broken form`);
+      problems.push(`appliesTo() rejects ${broken.file} - the rule could never run on the broken form`);
     } else if (!onBroken.hits.length) {
       problems.push("did NOT fire on the broken form");
     }
     if (!onBroken.reachable) {
-      problems.push(`the scan never reaches ${broken.file} — collectSources() hands this file to no rule`);
+      problems.push(`the scan never reaches ${broken.file} - collectSources() hands this file to no rule`);
     }
     if (!onFixed.applies) {
-      problems.push(`appliesTo() rejects ${fixed.file} — silence on the fixed form would prove nothing`);
+      problems.push(`appliesTo() rejects ${fixed.file} - silence on the fixed form would prove nothing`);
     } else if (onFixed.hits.length) {
       problems.push(`fired on the fixed form (${onFixed.hits.map((h) => h.excerpt).join("; ").slice(0, 140)})`);
     }
@@ -9332,7 +9332,7 @@ function selftest() {
       const miss = normalizeSample(raw, rule);
       const out = runSample(rule, miss);
       if (out.hits.length) {
-        problems.push(`fired on a near-neighbour — ${miss.note || miss.file} (${out.hits[0].excerpt.slice(0, 110)})`);
+        problems.push(`fired on a near-neighbour - ${miss.note || miss.file} (${out.hits[0].excerpt.slice(0, 110)})`);
       } else if (out.applies) {
         notes.push(miss.note || miss.file);
       } else {
@@ -9416,7 +9416,7 @@ let reviewCount = 0;
 function printBucket(id, level, invariant, desc, hits) {
   if (errorsOnly && level !== "error") return;
   const mark = level === "error" ? "✖" : "◐";
-  console.log(`\n${mark} [${level}] ${id} (${invariant}) — ${desc}`);
+  console.log(`\n${mark} [${level}] ${id} (${invariant}) - ${desc}`);
   for (const h of hits) console.log(`  ${h.file}${h.line ? `:${h.line}` : ""}  ${h.excerpt}`);
 }
 
@@ -9426,8 +9426,8 @@ for (const { rule, hits } of results.values()) {
   else reviewCount += hits.length;
 }
 
-console.log(`\n${files.length} source files scanned — ${errorCount} error hit(s), ${reviewCount} review candidate(s).`);
+console.log(`\n${files.length} source files scanned - ${errorCount} error hit(s), ${reviewCount} review candidate(s).`);
 if (reviewCount && !errorsOnly) {
-  console.log("Review candidates need human judgment against the invariant's stated exceptions — fix or justify, do not bulk-rewrite.");
+  console.log("Review candidates need human judgment against the invariant's stated exceptions - fix or justify, do not bulk-rewrite.");
 }
 process.exit(errorCount > 0 ? 1 : 0);

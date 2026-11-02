@@ -307,7 +307,7 @@ derived label, a split list - is `@Transient` and belongs on the DTO as its own 
 An entity-level `@JsonIncludeProperties` on an association is the default for **every** DTO that
 nests that entity, so a field one screen renders and the projection omits is absent on all of them.
 A reference label that composes more than a name (a period, a code, a status) needs those fields in
-the entity-level list - otherwise the label renders its fallback (`— ~ —`) rather than saying
+the entity-level list - otherwise the label renders its fallback (`- ~ -`) rather than saying
 anything, and a DTO that re-declares a wider list only fixes its own surface.
 
 ---

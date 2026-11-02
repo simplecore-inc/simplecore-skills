@@ -118,12 +118,12 @@ for (const r of rows) {
   byShape.get(r.shape).push(r);
 }
 
-console.log(`# Screen inventory — ${rows.length} screen file(s), shapes per customize/precedent-check.md\n`);
+console.log(`# Screen inventory - ${rows.length} screen file(s), shapes per customize/precedent-check.md\n`);
 for (const s of SHAPES) {
   const group = byShape.get(s.id);
   if (!group) continue;
   group.sort((a, b) => (a.date < b.date ? 1 : -1));
-  console.log(`## ${s.label} (${s.id}) — ${group.length}\n`);
+  console.log(`## ${s.label} (${s.id}) - ${group.length}\n`);
   console.log(`| Last commit | Module | File |`);
   console.log(`| --- | --- | --- |`);
   for (const r of group) console.log(`| ${r.date} | ${r.module} | ${r.rel} |`);

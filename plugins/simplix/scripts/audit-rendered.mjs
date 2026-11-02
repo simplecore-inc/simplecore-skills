@@ -110,7 +110,7 @@ const DEFAULTS = {
 
   /**
    * How tall a region has to be before the page's inability to move is the reader's problem. Under
-   * this it is a panel inside a screen \u2014 a note, a picker, a log tail \u2014 and scrolling it
+   * this it is a panel inside a screen - a note, a picker, a log tail - and scrolling it
    * where it stands is what the reader expects. This is a floor and its neighbour
    * `minRegionHeightPx` is a ceiling; they measure the same dimension for opposite questions.
    */
@@ -568,7 +568,7 @@ const countedListDrawsNoRows = {
   id: "countedListDrawsNoRows",
   grade: "error",
   title:
-    "a list total stating N rows over a column that draws none — the numbers are right and the rows never arrived",
+    "a list total stating N rows over a column that draws none - the numbers are right and the rows never arrived",
   page: (o) => {
     const findings = [];
     const totals = o.totalPatterns.map((p) => new RegExp(p));
@@ -680,9 +680,9 @@ const countedListDrawsNoRows = {
       );
       findings.push(
         emptyState
-          ? `「${text}」 states ${n} rows while its column shows the empty state 「${own(emptyState)}」 — ` +
+          ? `「${text}」 states ${n} rows while its column shows the empty state 「${own(emptyState)}」 - ` +
             `the total and the screen disagree (${where(el)})`
-          : `「${text}」 states ${n} rows and its column draws none — no row element inside ` +
+          : `「${text}」 states ${n} rows and its column draws none - no row element inside ` +
             `${where(column)} below it, and no empty state either (${where(el)})`,
       );
       if (findings.length >= o.maxFindings) break;
@@ -711,7 +711,7 @@ const textBoxesOverlap = {
   id: "textBoxesOverlap",
   grade: "error",
   title:
-    "two pieces of text painted into one rectangle — every string is right and the screen cannot be read",
+    "two pieces of text painted into one rectangle - every string is right and the screen cannot be read",
   page: (o) => {
     const findings = [];
 
@@ -837,7 +837,7 @@ const textBoxesOverlap = {
         reported.add(pair);
 
         findings.push(
-          `「${clip(a.t)}」 and 「${clip(b.t)}」 are painted into the same box — they overlap by ` +
+          `「${clip(a.t)}」 and 「${clip(b.t)}」 are painted into the same box - they overlap by ` +
             `${Math.round(w)}×${Math.round(h)}px at (${Math.round(Math.max(a.r.left, b.r.left))}, ` +
             `${Math.round(Math.max(a.r.top, b.r.top))})`,
         );
@@ -873,7 +873,7 @@ const blockInsideParagraph = {
   id: "blockInsideParagraph",
   grade: "error",
   title:
-    "a block element nested inside a paragraph — the paragraph splits, and the width, weight and truncation written on it stop governing the content",
+    "a block element nested inside a paragraph - the paragraph splits, and the width, weight and truncation written on it stop governing the content",
   page: (o) => {
     const findings = [];
     const blocks = o.blockTags.map((t) => t.toUpperCase());
@@ -905,7 +905,7 @@ const blockInsideParagraph = {
       const offender = [...p.querySelectorAll("*")].find((el) => blocks.includes(el.tagName));
       if (!offender) continue;
       findings.push(
-        `<${offender.tagName.toLowerCase()}> inside <p> — 「${clip(p.textContent)}」 ` +
+        `<${offender.tagName.toLowerCase()}> inside <p> - 「${clip(p.textContent)}」 ` +
           `(${where(offender)})`,
       );
       if (findings.length >= o.maxFindings) break;
@@ -943,7 +943,7 @@ const pressableControlsTakeThePress = {
   id: "pressableControlsTakeThePress",
   grade: "error",
   title:
-    "a control something transparent is lying on top of — it is drawn, it is labelled, and a press lands elsewhere",
+    "a control something transparent is lying on top of - it is drawn, it is labelled, and a press lands elsewhere",
   page: (o) => {
     const findings = [];
 
@@ -1061,7 +1061,7 @@ const pressableControlsTakeThePress = {
       findings.push(
         `「${label(el)}」 does not take a press` +
           (centreLost ? " at the middle of itself" : " across most of itself") +
-          ` — ${reached} of ${points.length} points on it reach it, and ` +
+          ` - ${reached} of ${points.length} points on it reach it, and ` +
           `${blocker ? describe(blocker) : "something else"} is what catches the press at ` +
           `(${Math.round(r.left + r.width / 2)}, ${Math.round(r.top + r.height / 2)}). ` +
           `Nothing shows this: the control is drawn where it belongs and whatever covers it is ` +
@@ -1098,7 +1098,7 @@ const openPaneDrawsNothing = {
   id: "openPaneDrawsNothing",
   grade: "error",
   title:
-    "an open pane painting nothing — the reader pressed a tab and the region under it is a blank rectangle",
+    "an open pane painting nothing - the reader pressed a tab and the region under it is a blank rectangle",
   page: (o) => {
     const findings = [];
 
@@ -1154,7 +1154,7 @@ const openPaneDrawsNothing = {
 
       const r = pane.getBoundingClientRect();
       findings.push(
-        `the pane behind 「${openedBy(pane)}」 is open and paints nothing — ` +
+        `the pane behind 「${openedBy(pane)}」 is open and paints nothing - ` +
           `${Math.round(r.width)}×${Math.round(r.height)}px of its own padding, no text and no ` +
           `content of any other kind. Whatever renders it answers this state with nothing, so the ` +
           `reader pressed a tab and got a gap; the pane owes a title and a sentence saying what it ` +
@@ -1188,7 +1188,7 @@ const regionCrushedToASliver = {
   id: "regionCrushedToASliver",
   grade: "error",
   title:
-    "a region painted as a sliver of what it holds — the content is there and the reader can reach almost none of it",
+    "a region painted as a sliver of what it holds - the content is there and the reader can reach almost none of it",
   page: (o) => {
     const findings = [];
     const seen = [];
@@ -1232,7 +1232,7 @@ const regionCrushedToASliver = {
       findings.push(
         `${name} is ${Math.round(rect.width)}\u00d7${Math.round(shown)}px and holds ` +
           `${Math.round(held)}px, so the reader reaches about ` +
-          `${Math.round((shown / held) * 100)}% of what is in it and no scrollbar says so — ` +
+          `${Math.round((shown / held) * 100)}% of what is in it and no scrollbar says so - ` +
           `the region did not overflow, it shrank. A column told to fit the fold hands its ` +
           `flexible child whatever the fixed content above it left over, and \`min-h-0\` lets ` +
           `that be almost nothing: let the page own the scroll, or give the region a floor`,
@@ -1272,7 +1272,7 @@ const pageFrozenAroundAScrollingRegion = {
   id: "pageFrozenAroundAScrollingRegion",
   grade: "error",
   title:
-    "a region scrolling its own content while the page around it cannot move \u2014 the reader works a strip inside a frozen screen",
+    "a region scrolling its own content while the page around it cannot move - the reader works a strip inside a frozen screen",
   page: (o) => {
     const findings = [];
     let compared = 0;
@@ -1326,10 +1326,10 @@ const pageFrozenAroundAScrollingRegion = {
 
       // Something standing beside it makes this one track of a two-track layout, and a track
       // scrolls in its own box. Beside means sharing the vertical band and sitting clear of it
-      // horizontally \u2014 a toolbar crossing the top edge is above, not beside.
+      // horizontally - a toolbar crossing the top edge is above, not beside.
       //
       // <b>The column it is in counts, not only the box it is in.</b> A detail panel is a strip of
-      // chrome, a scrolling body and a footer, and the body's own siblings are that chrome \u2014 so
+      // chrome, a scrolling body and a footer, and the body's own siblings are that chrome - so
       // a test that stops at the parent finds nothing beside it and reports the panel, on every
       // list-and-detail screen the moment the detail is long enough to scroll. The list standing
       // next to that panel is four boxes further out, and it is what makes the body a track.
@@ -1353,8 +1353,8 @@ const pageFrozenAroundAScrollingRegion = {
       if (beside) continue;
 
       // **The box that was supposed to scroll.** Walking out, the first ancestor that CAN scroll is
-      // either already scrolling \u2014 in which case the page moves after all, one box further out,
-      // and the reader is not stuck \u2014 or it is not, in which case that is the box the region was
+      // either already scrolling - in which case the page moves after all, one box further out,
+      // and the reader is not stuck - or it is not, in which case that is the box the region was
       // fitted into and the box a fix changes.
       //
       // <b>Quiet when no ancestor could ever have scrolled.</b> A shell clipping with
@@ -1376,13 +1376,13 @@ const pageFrozenAroundAScrollingRegion = {
 
       // **Something has to be standing still for the reader to be stuck.** A region that fills its
       // scrollport with nothing above it is the page scrolling, whatever element the scrollbar
-      // happens to hang off \u2014 and an app shell whose content area owns the scroll looks exactly
+      // happens to hang off - and an app shell whose content area owns the scroll looks exactly
       // like this. What makes the defect is chrome INSIDE the same scrollport that the region's
       // scroll leaves behind: the page's own header, its tiles, its tab strip. Nothing above the
       // region is not a milder version of the defect, it is a different screen.
       //
       // It is looked for inside that box and nowhere else, which is what keeps a top bar and a
-      // side navigation out of it \u2014 they sit outside the scroller and are meant to stay.
+      // side navigation out of it - they sit outside the scroller and are meant to stay.
       let frozen = null;
       for (const other of port.querySelectorAll("*")) {
         if (other === el || el.contains(other) || other.contains(el)) continue;
@@ -1390,7 +1390,7 @@ const pageFrozenAroundAScrollingRegion = {
         if (cs.display === "none" || cs.visibility === "hidden") continue;
         const r = other.getBoundingClientRect();
         if (r.height < o.frozenChromeMinHeightPx) continue;
-        // Entirely above it, and over the same columns \u2014 a strip off to one side is beside the
+        // Entirely above it, and over the same columns - a strip off to one side is beside the
         // region rather than over it, and stays in view either way.
         if (r.bottom > rect.top + 1) continue;
         if (r.right <= rect.left || r.left >= rect.right) continue;
@@ -1413,7 +1413,7 @@ const pageFrozenAroundAScrollingRegion = {
       findings.push(
         `${name} is ${Math.round(rect.width)}\u00d7${Math.round(rect.height)}px, holds `
           + `${Math.round(el.scrollHeight)}px and is the only thing on this page that moves. `
-          + `The document does not scroll, no ancestor of it scrolls, and nothing stands beside it \u2014 `
+          + `The document does not scroll, no ancestor of it scrolls, and nothing stands beside it - `
           + `while ${frozenName} sits above it inside the same scrollport and stays where it is. `
           + `So the reader works down a strip through a frozen screen, and no scrollbar anywhere `
           + `says the rest of the page was never the part that was stuck. A region with nothing beside it is the page's content: let the `
@@ -1602,13 +1602,13 @@ const standingMessageDrawsNoClose = {
       if (!missesClose && glyph) continue;
       const said = prose(el).replace(/\s+/g, " ").slice(0, 40);
       findings.push(
-        `「${said}」 — `
+        `「${said}」 - `
           + (!missesClose
             ? "this message draws no glyph of its own, so which kind it is reaches only a reader who "
               + "can separate the two tints. A message carried by colour alone has reached half of them"
             : "this message has no close. It is standing in the page's own column on a screen whose "
               + "header brings a closed message back, so putting it away MOVES it rather than losing "
-              + "it — the control for its kind is tinted and pulses while one of that kind is hidden. "
+              + "it - the control for its kind is tinted and pulses while one of that kind is hidden. "
               + "What does not close is the answer to something the reader just did, and that is gone "
               + "before a page anybody merely opened is read")
           + (glyph || !missesClose ? "" : ", and it draws no glyph either")
@@ -1651,7 +1651,7 @@ const theFigureRowSitsAgainstTheHeader = {
   id: "theFigureRowSitsAgainstTheHeader",
   grade: "error",
   title:
-    "a standing message drawn above a row of figures — the row folds behind the header's rule, and a card between them severs the fold",
+    "a standing message drawn above a row of figures - the row folds behind the header's rule, and a card between them severs the fold",
   page: (o) => {
     const findings = [];
     const main = document.querySelector("main, [role=main]");
@@ -1797,7 +1797,7 @@ const theFigureRowSitsAgainstTheHeader = {
       findings.push(
         `「${said}」 is drawn ${Math.round(below.top - r.bottom)}px ABOVE a row of `
           + `${below.count} figures. The 상태카드 sits against the page header because that is where `
-          + "it folds — the row collapses into a strip that reads as sitting behind the header's "
+          + "it folds - the row collapses into a strip that reads as sitting behind the header's "
           + "rule, and anything wedged between the two severs the fold from the thing it folds "
           + "behind. This is a mechanism rather than a preference: the row and the rule have to be "
           + "adjacent for the fold to land anywhere. Move the message under the row; the period "
@@ -1883,7 +1883,7 @@ const theCardRegionReadsLoudestFirst = {
   id: "theCardRegionReadsLoudestFirst",
   grade: "error",
   title:
-    "a card region that does not read loudest first — the reader meets the second thing to deal with before the first",
+    "a card region that does not read loudest first - the reader meets the second thing to deal with before the first",
   page: (o) => {
     const findings = [];
     const main = document.querySelector("main, [role=main]");
@@ -2030,7 +2030,7 @@ const theCardRegionReadsLoudestFirst = {
         `「${prose(here.el).replace(/\s+/g, " ").slice(0, 34)}」 is a ${here.kind.name} message drawn `
           + `${Math.round(here.rect.top - above.rect.bottom)}px BELOW a ${above.kind.name} one `
           + `(「${prose(above.el).replace(/\s+/g, " ").slice(0, 26)}」). The card region reads in the `
-          + "order the header control lists its kinds — 위험 · 경고 · 알림 · 도움말 — so whoever has "
+          + "order the header control lists its kinds - 위험 · 경고 · 알림 · 도움말 - so whoever has "
           + "something to deal with today meets the loudest of it on the first line. Read down this "
           + "page the reader meets the second thing before the first"
           + (unread ? `. ${unread} message(s) on this page draw a glyph this vocabulary does not carry, and were not judged` : ""),
@@ -2079,7 +2079,7 @@ const unresolvedKeyOnTheScreen = {
   id: "unresolvedKeyOnTheScreen",
   grade: "error",
   title:
-    "a translation key painted where a sentence belongs — the lookup missed and i18next rendered the key at the reader",
+    "a translation key painted where a sentence belongs - the lookup missed and i18next rendered the key at the reader",
   page: (o) => {
     const findings = [];
     let compared = 0;
@@ -2136,7 +2136,7 @@ const unresolvedKeyOnTheScreen = {
 
       findings.push(
         `「${text}」 is painted as the whole of a text node, and it is a lookup key rather than a ` +
-          `sentence — whatever asked for it got no entry back and i18next returned the key. The ` +
+          `sentence - whatever asked for it got no entry back and i18next returned the key. The ` +
           `reader has an internal path where a name or a message belongs (${where(el)})`,
       );
       if (findings.length >= o.maxFindings) break;
@@ -3097,7 +3097,7 @@ const FIXTURES = {
         .pill{display:inline-flex;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:2px 10px;background:#f4f4f5}
         table{width:100%;border-collapse:collapse}td{padding:10px;border-bottom:1px solid #eee}
         .badge{display:inline-flex;align-items:center;border:1px solid #fecaca;border-radius:10px;padding:2px 8px;background:#fef2f2}</style>
-        <main><div class=bar><span class=pill>2026. 08. 01. 00:00 — 2026. 09. 01. 00:00</span></div>
+        <main><div class=bar><span class=pill>2026. 08. 01. 00:00 - 2026. 09. 01. 00:00</span></div>
         <table><tbody>
         <tr><td>2026-08-01 반입</td><td><span class=badge>가져올 수 없음</span></td></tr>
         <tr><td>2026-08-02 반입</td><td><span class=badge>가져올 수 없음</span></td></tr>
@@ -3271,7 +3271,7 @@ const FIXTURES = {
       // The shape every list-and-detail screen takes once the detail is long enough to scroll: a
       // panel of tab strip, scrolling body and footer, standing beside the list. The body's own
       // siblings are that chrome, so a beside-test that stops at the parent finds nothing next to
-      // it and reports the panel \u2014 while the list making it one track of two is four boxes out.
+      // it and reports the panel - while the list making it one track of two is four boxes out.
       "a detail panel's body scrolling between its tab strip and its footer, beside a list":
         `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
         .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:hidden}
@@ -3617,7 +3617,7 @@ const FIXTURES = {
     // inside another block is ordinary layout. A check that read either as a finding would fire
     // on every screen and be switched off within a day.
     quiet: {
-      "a paragraph of inline content — spans, a link, an icon and a button":
+      "a paragraph of inline content - spans, a link, an icon and a button":
         `<style>body{margin:0;font:14px sans-serif}</style>
         <p><span>토목부</span> <a href="#">보기</a>
         <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 3h10"/></svg>
@@ -4129,7 +4129,7 @@ function selfTest(session, options, selected = checks) {
     for (const check of selected) {
       const pages = FIXTURES[check.id];
       if (!pages?.broken || !pages?.quiet) {
-        rows.push([check.id, "—", "no fixture pair — a check proved in one direction has not been added", false]);
+        rows.push([check.id, "-", "no fixture pair - a check proved in one direction has not been added", false]);
         continue;
       }
       for (const direction of ["broken", "quiet"]) {
@@ -4148,7 +4148,7 @@ function selfTest(session, options, selected = checks) {
             name,
             `compared ${out.compared}, ${out.findings.length} findings` +
               (retried ? " (the first reading compared 0 and found nothing, so the page was measured again)" : "") +
-              (fired ? ` — ${out.findings[0]}` : ""),
+              (fired ? ` - ${out.findings[0]}` : ""),
             fired === (direction === "broken"),
           ]);
         }
@@ -4163,7 +4163,7 @@ function selfTest(session, options, selected = checks) {
   let failed = 0;
   for (const [id, name, detail, ok] of rows) {
     if (!ok) failed += 1;
-    console.log(`${ok ? "✔" : "✖"} ${id} — ${name}\n   ${detail}`);
+    console.log(`${ok ? "✔" : "✖"} ${id} - ${name}\n   ${detail}`);
   }
   const again =
     measuredAgain > 0 ? `, ${measuredAgain} measured again after an empty first reading` : "";
@@ -4216,7 +4216,7 @@ function main() {
   const session = arg("session") ?? "simplix-audit-rendered";
 
   if (OPTIONS.flags.has("--list")) {
-    for (const c of checks) console.log(`${c.id} [${c.grade}] — ${c.title}`);
+    for (const c of checks) console.log(`${c.id} [${c.grade}] - ${c.title}`);
     return 0;
   }
   if (OPTIONS.flags.has("--print-all")) {
@@ -4266,7 +4266,7 @@ function run(session, options, selected) {
   if (!url) {
     console.error(
       "audit-rendered needs a page: --url <address>, or --print <id> to evaluate the snippet\n" +
-        "through whatever driver the session already has open. There is no source-only mode —\n" +
+        "through whatever driver the session already has open. There is no source-only mode -\n" +
         "every check here is a question about boxes on a painted page, and a run that could not\n" +
         "reach a browser has told you nothing.",
     );
@@ -4279,7 +4279,7 @@ function run(session, options, selected) {
     try {
       out = evaluate(session, url, check, options);
     } catch (e) {
-      console.error(`✖ ${check.id} — could not be run: ${e.message}`);
+      console.error(`✖ ${check.id} - could not be run: ${e.message}`);
       return 2;
     }
     // A check that compared nothing is not a check that passed. It reaches nothing on a screen
@@ -4295,8 +4295,8 @@ function run(session, options, selected) {
           ? "✖"
           : "⚠";
     console.log(
-      `${marker} ${check.id} — ${check.title}\n   compared ${out.compared}` +
-        (reachedNothing ? " — reached nothing on this screen, so it proves nothing" : "") +
+      `${marker} ${check.id} - ${check.title}\n   compared ${out.compared}` +
+        (reachedNothing ? " - reached nothing on this screen, so it proves nothing" : "") +
         (out.sampled ? ` (sampled the first ${options.maxLeaves})` : ""),
     );
     for (const f of out.findings) console.log(`   ${f}`);

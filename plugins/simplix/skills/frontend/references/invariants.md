@@ -671,7 +671,7 @@ script, and prove it on the broken form and the fixed form there.
 
 ## #70 A sentence holding a value that can be absent is judged by the value, not by the record
 
-`t("closure.confirmTitle", { site: site?.siteName ?? "" })` against `사업장 종료 — {{site}}`
+`t("closure.confirmTitle", { site: site?.siteName ?? "" })` against `사업장 종료 - {{site}}`
 renders an em dash with nothing after it. Nothing throws, the type is satisfied, and the build is
 green - `?? ""` is what makes it typecheck and it is also what makes the hole. **Everybody meets
 it, not only a reader whose scope withholds the value**: the value arrives with a fetch, so the
@@ -986,9 +986,9 @@ request DTO extend it with what only a submit needs - the same shape the backend
 `UpdateDTO extends CreateDTO` already uses (`simplix:backend` → `references/review/dto-type-reference.md` § 3. UpdateDTO).
 
 **The tell, when you are looking for it rather than at it: a required field whose requirement is
-stated by a sentence the screen has not been able to render yet.** 「개인정보가 포함되므로 받는
-사람을 반드시 지정합니다」 is a warning the preview produces, and 받는 사람 was the gate on the
-preview - the rule stood behind the field it makes mandatory. Any time a form explains why a field
+stated by a sentence the screen has not been able to render yet.** "The recipient is required
+because the message contains personal data" is a warning the preview produces, and the recipient
+field was the gate on the preview - the rule stood behind the field it makes mandatory. Any time a form explains why a field
 is required, ask where that explanation comes from, and whether the field gates it.
 
 **No script rule.** A builder returning `undefined` and feeding two callers is the ordinary shape of

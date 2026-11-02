@@ -11,8 +11,8 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **EmptyState** - Shared empty-state block (icon + title + description + action) for every no-data area - never an inline icon-in-circle hand-roll
 - **DetailFields Fallback Standardization** - All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted dashed-outline "No value" pill
 - **Loading Indicator Standardization (Button `loading` prop)** - Button carries `loading` / `loadingText` built in - no manual `disabled={isPending}` + ternary text + spinner icon
-- **EmptyValue (em-dash placeholder for non-field cells)** - Muted em-dash placeholder (`children` default `—`) for "no value" in COMPACT contexts where neither a `DetailF
-- **EmptyValueBadge (no-value pill for detail-style displays)** - Muted dashed "No value" pill for empty detail-style values (standard label: 값 없음 / No value / 値なし)
+- **EmptyValue (em-dash placeholder for non-field cells)** - Muted em-dash placeholder (`children` default `-`) for "no value" in COMPACT contexts where neither a `DetailF
+- **EmptyValueBadge (no-value pill for detail-style displays)** - Muted dashed "No value" pill for empty detail-style values (standard label: `값 없음` / `No value` / `値なし`)
 
 ## Identity, detail fields & user labels → `registry/identity-and-detail-fields.md`
 
