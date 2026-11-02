@@ -114,6 +114,12 @@ Practical rules that save an entire session:
    each reset invalidates the other's copy - a loop that looks from inside like a system corrupting
    credentials on its own. Whoever holds that authority says so once, and the others report failures
    instead of fixing them.
+6. **A run closes its pages before it deletes its account.** A page left open keeps the token of an
+   account that no longer exists and keeps saving to it (the language is written on every switch),
+   and the identity provider answers 404. The product must say "identity missing" there, not
+   "outage"; an outage message at that moment points at the run's own cleanup order. A run that
+   signs in first clears tokens that name another account (a deleted account's or another agent's),
+   because the shell draws for any stored session.
 
 ---
 
