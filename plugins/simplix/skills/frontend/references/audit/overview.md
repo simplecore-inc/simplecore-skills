@@ -52,6 +52,30 @@ skill's `references/browser-driving.md` § The checks that need the browser, and
 carries them. **Read `compared` as well as `findings`** - zero findings out of zero comparisons
 is a check that reached nothing, and it prints the same exit status as a clean screen.
 
+## A decision needs a reader, and a finding needs an item
+
+- **A design decision with no reader is not a check.** An entry in the design manifest that no check
+  reads (a `reason`, a `filters` list, a list presentation, a pending verb) passes unread, and a
+  value that is only checked to be a string says nothing about the screen. A decision is written
+  into the manifest together with its reader: a check that names the file that must carry it (the
+  list file, the detail file, the board frame) and compares it. The decisions that need one are
+  the list and detail reasons, the list presentation and the filter count against the filters the
+  list and the frame declare, a pending verb (listed as pending until the build has it), and the
+  catalog keys a frame reads (a frame whose keys no longer exist is refused). Adding a manifest
+  field without its reader is the defect, not the missing check.
+- **A rendered check reads whatever the list painted, and the card fallback paints a list too.** A list
+  designed as a table is first confirmed to draw table rows at the laptop and the narrow width; a run
+  that passes on cards says nothing about the table.
+- **A finding names the item it judges** (the message, its glyph, the column, the text node). A finding
+  that does not is resolved to its item before it is attributed to the screen or dismissed as old.
+- **An identifier painted alone is drawn in the code face.** A provider's event name or a dotted
+  lowercase code painted as the whole of a text node reads as a missing catalog key to
+  `unresolvedKeyOnTheScreen` unless it is in the monospaced face (a contract field with `code`; the
+  record title when the record is named by an identifier).
+
+Enforcement: review - which file must carry a decision, and what an unnamed finding refers to, are
+facts about the product's manifest and its painted page, and the check itself is the thing under review.
+
 ## Registered Patterns
 
 See [registry.md](registry.md) - the index of all commonized components; full contracts live in the `registry/` detail files it points to. Scan the index first, then Read only the matching detail file.

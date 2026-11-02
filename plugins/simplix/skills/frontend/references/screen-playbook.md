@@ -27,8 +27,9 @@ in the project's `CLAUDE.md`, never here.
 | A status badge draws neutral on the screen and in its tone on the board frame | the screen has no tone map for its enum; compare the computed badge colours of both under the same label (screen-workflow rule 6) |
 | A text field with a long contract is drawn on one line | the kind follows the contract's length (500 and up); where the live Meta states none, refresh the snapshot after the backend rebuilds before writing the kind by hand |
 | A list can only be filtered by a user's id | a reference key gets the entity-facet filter (`facet` in `scaffold.referencePickers`), leading the filters; without a configured facet the id filter is left out, not offered |
-| A conflict between a template change and a screen's own content | read the printed diff; where the screen is the intended one, `simplix generated --rebase -y --adopt <path>` records the base; where the template change is wanted, take the hunk by hand first |
+| A conflict between a template change and a screen's own content | read the printed diff; where the screen is the intended one, `simplix generated --rebase -y --adopt <path>` records the base; where the template change is wanted, take the hunk by hand first; a hunk that differs from the backend's current contract comes from committed Meta older than the running server, so refresh Meta and run `generated` again instead of adopting (`scaffold/overview.md`) |
 | The screen draws no description line | the scaffold writes no description key; add `screen.<entity>.description` to the module's `widgets` catalog in every language before the scaffold runs (screen-workflow rule 0), and let the board's design check confirm it |
+| A board frame is the scaffold's output as generated: placeholder rows (`name 1`, `name 2`), every row in one standing, every optional value filled | the frame's sample rows are part of the design: one record for every standing the screen words, one with every optional value empty, and one for each notice the screen draws; a row reading `<field> 1` is a frame not yet drawn, and the frame is drawn by hand from the step-0 entry (screen-workflow rule 0) |
 | A probe that finds nothing reports a clean 0 | prove every counting check on a known hit before trusting a 0; a command whose failure is swallowed reports 0 for the wrong reason |
 
 ## Regions, figures and filters
@@ -36,6 +37,11 @@ in the project's `CLAUDE.md`, never here.
 - A figure tile that counts rows presses a filter; the list must carry a filter for that field (the
   template adds a faceted one) so the press shows as an active badge and clears from the bar. A
   value a tab forces beats a filter-bar value over the same field: link such a tile to the tab.
+  A folded figure chip does what its card does (narrows the list with the pressed state shown,
+  leads to its list, or stays a figure) and never unfolds the row; the handle at the end of the
+  strip is the one control for that. A card or chip that does nothing when pressed is drawn with a
+  not-allowed cursor and no press reaction (the `pressable` variant of the kit's tile and chip
+  slots), so a figure that leads nowhere does not teach the reader to stop trying the others.
 - Status counts are the census over every row; sum cards follow the list's committed filters, its
   search text and its forced scope. Both are computed under the parameters the caller sends, so
   "today", "last 24 hours", "granted only" and "held above zero" are parameters the screen adds,
@@ -51,7 +57,43 @@ in the project's `CLAUDE.md`, never here.
 - A label in the backend bundle never names a unit the kind draws itself (cents, ms): the kind
   owns the unit, the label names the quantity.
 - A verb the backend has and no type names takes its own kind and glyph in the kit; a borrowed
-  type or a labelled-button flag per screen is a second way to draw one region.
+  type or a labelled-button flag per screen is a second way to draw one region. The kit names
+  `retry`, `reset`, `test`, `reprocess`, `enable`, `disable`, `suspend`, `reinstate`, `cancel`,
+  `revoke` and `upload` (`RecordVerbType`); a screen picks one of them and never borrows an
+  unrelated type (`duplicate` for a retry), and a verb outside that set is added to the kit.
+- A verb pair that flips with the row (enable or disable, suspend or reinstate) is one row action
+  whose `type` and `label` are functions of the row, with one confirmation whose words follow the
+  record (screen-workflow rule 31); two actions of which one is always disabled is the form to
+  leave. A status with more than two values keeps one disabled reason for the states outside the
+  pair.
+- A verb the record panel offers is reachable from the row and the card with the same availability
+  rule and the same disabled reason, or the entry says why not. A verb the record's state refuses
+  is disabled with its reason, never hidden.
+- A head figure and a column take their label from the field they draw (`contract.headFigures(fields,
+  row)` and the column's own header); a figure or column that is not a field of the record (a share
+  of two fields, a value computed from several) carries its own key. A new catalog key for a field
+  that already has a label gives one value two names. One state is worded by one key: the badge,
+  the notice title, the timeline step and the field read the same word, spelled as the Meta label
+  spells it.
+- A filter on a key the page or the service forces answers one value: a forced value wins over a
+  filter on the same key, so choosing another value changes nothing on screen. The filter is
+  dropped with its detail field, and the measurement is stated in the entry. A list over a bounded
+  set (a handful of cards, one row per month) carries no range filters. An axis the persona's
+  question names ("per provider") gets its filter, a text filter where the field is text
+  (`--text-filter <field,field>`, `scaffold/overview.md`).
+- A list designed as cards offers the switch to the table, and the reader's choice is remembered
+  (`list.viewToggle` in the entry, `--view-toggle` in the scaffold; the kit stores the last view
+  under the list's `viewKey`). The columns follow the list's own width and the one
+  `--card-min-width` layout token, so every card of every card list has the same column width, a
+  detail panel opening beside the list reflows the cards, and cards stand side by side from the
+  left with no gap between them. A screen sets no card width, maximum width or column count of its
+  own; a different width is a change to the token or the grid (`customize/framework-components.md`).
+- A card's labelled lines are read in both languages at the narrow and the wide width. A label that
+  wraps (the label column is as wide as the longest label up to the `--console-card-label-max`
+  token), a line drawn as a dash on most cards (`cardKeep: false` draws it only on the cards that
+  have a value) and a figure row that pushes the list below the fold are findings.
+- A holder tab (a list inside a record's detail) draws the columns of the holder's own list, never
+  every field of the DTO.
 
 ## Rendered checks
 
@@ -59,9 +101,21 @@ in the project's `CLAUDE.md`, never here.
   type and every rendered audit check (`audit-rendered.mjs --print-all` prints them as JSON for a driver that holds
   a signed-in page), and prints a short result; an agent that writes its own loop per screen re-derives the
   sign-in, the root selector and the board frame's story id each time. The region signature is compared without
-  the row count, and a list that draws no rows is reported as not judged.
+  the row count, and a list that draws no rows is reported as not judged. The runner resolves the frame's story
+  id from the board's story index and, on a miss, prints the stories that exist (a story id comes from the
+  file's id and export name, not from the entity); it opens a route behind a tab at the tab's URL; and it asserts
+  the screen's root slot or the document title before a capture is read, because a sign-in page or an overlay
+  measures like a screen.
 - The board frame and the live page differ in content (a row count sets a list's height, a record sets a badge's
   variant): control metrics between them are read, the region signature and the audit checks gate.
+- A region-signature difference that follows the data (a notice or figure the live data does not
+  raise, a page-button count, a section hidden when empty, a status tone under a different label) is
+  reported as data and not changed on the screen. The comparison runs against the frame state the
+  live record is in; where the frame draws one state only, the difference is named and the state
+  the live data lacks is listed as not verified live.
+- A state the product cannot create (a read-only entity, rows a provider writes, a sum derived from
+  other events) is drawn in the frame and reported as not verified live; it is never reached by
+  writing rows into the database.
 
 ## Several agents in one checkout
 
@@ -72,6 +126,17 @@ in the project's `CLAUDE.md`, never here.
 - A browser sign-in of a test account replaces the stored session of whoever is signed in at that
   origin in the same browser profile, and the identity provider returns a sign-in only to the origin
   its client registers; the project's reference names that origin and the account script.
+- A scripted run that moves state restores it in a `finally`. It re-reads the token before cleanup,
+  closes every page before it deletes its account (a page left open keeps saving to a deleted
+  identity, and the API answers an outage), names its browser space by its account (a name shared
+  between runs ends the other run's task), deletes only names and prefixes it owns, and prints one
+  real response of a create call before it builds on the response's shape. A language switched
+  through the app's menu is followed by in-app navigation only, since a reload resets the language
+  to the account's setting.
+- A root typecheck stops at the first failing package of a shared tree, so the module that changed
+  is checked on its own; a board check that stops at its first failing step hides the later ones, so
+  its steps run one by one when the first fails (screen-workflow Cases, "A checks chain stopped at
+  a known failure").
 - A shared test-account sign-in helper that resets the password on expiry signs other agents out:
   every agent creates and deletes its own account. A deleted identity's username cannot be reused,
   so pick a fresh name.

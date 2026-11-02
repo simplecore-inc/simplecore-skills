@@ -69,6 +69,24 @@ Read this before planning a screen or dispatching agents for screen work.
      and token-only, with its Storybook template and tests, so the next screen can reuse it.
    - Misreading: "most screens are a list and a detail, so the screens are finished" while the
      description, cards and notices were never decided.
+   - **A detail draws each value once, and its notices above its body.** A value that stands in the
+     head badge, a head figure, the title, the subtitle or the timeline is not also a section field.
+     A section is named for what it adds to the head: one titled with its only field's label, or with
+     the entity's own name, adds nothing and is merged into a neighbour or renamed. A head figure
+     takes its label from the field it draws (`screen-playbook.md` § Regions, figures and filters).
+     Notices stand between the head and the body whether the detail has tabs or not, because a notice
+     explains the fields beneath it. The rendered outline compare (head figure labels, section titles
+     and field labels, on the screen and on its frame) reports a repeated value as a difference.
+   - **A reason in the entry is a checked fact.** A presentation reason that names a framework limit
+     ("the list cannot sort by two keys") is verified against the framework source before it is
+     written, and a sentence that states product behaviour ("the oldest credits are used first")
+     names the code that does it; a claim with neither is rewritten as what the screen shows. A
+     default sort over a column that is null for some rows is tried on the live data: the database
+     orders nulls first on a descending sort, so the rows with no value sit above the ones the
+     persona came for. Where no sort option places nulls last, the sort names the state column the
+     question asks about. A triage list opens on the state its question names (a list of jobs opens
+     on the failed ones, not on the routine runs that outnumber them); where the kit has no option
+     for it, that is a gap to raise in the kit, not a reason to open on every row.
 1. **The steps run in order after step 0.** Template on the kit, then scaffold (which lays down
    the screen and the board frame as starting points), then draw the board frame as the design
    from the step-0 entry, then customise the screen to the frame's design direction. The board is
@@ -102,6 +120,11 @@ Read this before planning a screen or dispatching agents for screen work.
      also takes a file that already has a base, keeping its content as the intended one and
      declining a template change that conflicts with it. A file with no recorded origin gets one
      where it can be inferred.
+   - Every scaffold option that changes the render (`--list-presentation`, `--view-toggle`,
+     `--card-title`, `--text-filter`) is recorded in the file's origin, and a regeneration renders
+     from the origin alone. A decision made by hand without its flag is invisible to the CLI: an
+     untouched file regenerated from the origin (the board story) is drawn without it, and a template
+     change over the same lines conflicts with the edited file. Scaffold with the flag.
    - `simplix generated --share` reports per screen the lines in blocks and edited files against
      the generated lines, and lists each customisation a second screen repeats (rule 6).
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
@@ -136,6 +159,10 @@ Read this before planning a screen or dispatching agents for screen work.
    - behaviour independent of product and design (data, state, accessibility) in the framework
    - contract information the template lacks (field types, enums, permissions, labels) in the
      backend's SimpliX Meta. Start with screens whose backend is ready.
+   - Whatever is fixed for one screen is lifted to one of these layers, or to a check, in the same
+     change, so a screen created later gets it without a hand edit. The test: scaffold a throwaway
+     screen of the same kind (delete it with its generated records, rule 22) and look for the fix
+     on it. A fix that appears only after a hand edit has not been lifted.
 5. **A requested change is lifted, then swept.** Once it works on the screen it was asked for,
    apply it at the first layer of 4 that owns it, census every screen it reaches, fix each, and
    check each before calling the request done.
@@ -203,6 +230,9 @@ Read this before planning a screen or dispatching agents for screen work.
     exist" until the framework package is rebuilt; rebuild it before a kit typecheck. A framework
     worktree has no `dist`, and an app config that loads a framework plugin from `dist` fails to
     start there: copy `dist` from the main checkout.
+    A kit render test resolves the same `dist`, so a test of a framework change that is not built
+    proves nothing about it (a label function reached `aria-label` as a function and was dropped);
+    the proof of that behaviour goes in the framework package's own tests.
 14. **A slot override is checked in the generated rule, not in the style file.** The merge keeps
     every base utility the override does not name, so an override that adds only a colour keeps
     the base `opacity-30` and its hover state; name both states. A slot that styles its direct
@@ -235,6 +265,12 @@ Read this before planning a screen or dispatching agents for screen work.
     a record's tab is `adaptForcedList` on that record's generated detail.
     `paged-list-in-a-page-not-generated-as-a-list` in `audit-frontend.mjs` flags a page directory
     with no generated list page that draws a paged read.
+    A customer-facing screen is written for its reader. It words its enums, field labels and
+    headings from its own catalog (an enum label written for staff, such as a billing state's
+    internal name, is not customer wording), draws no control that serves an operator, and drops what
+    the generated detail adds for one: the audit strip (id, created, updated) and the edit and delete
+    props. A page that both surfaces share draws staff wording to customers; it is split per
+    audience or takes the audience as an input.
 22. **A screen is removed with its generated record.** `simplix generated` re-renders every file
     its `.simplix/generated/` record names, so a page or story deleted without its record comes
     back on the next run (`pnpm lint` runs it), with its barrel export. Delete the record in the
@@ -280,7 +316,9 @@ Read this before planning a screen or dispatching agents for screen work.
     Example: tag `Orders` produced `useGetAllOrderss`.
 31. **A command that confirms uses the kit's confirm, one per direction.** Panels in an app use the
     kit's `useActionConfirm` (the board refuses framework imports, so a framework dialog has no
-    frame); its label is fixed per confirm, so a grant/revoke pair takes two.
+    frame). Its title, description and button words are text or functions of the record the
+    question is about, so a verb that flips with the record (grant and revoke, suspend and
+    reinstate) takes one confirmation whose words follow the record, not one per direction.
     **An entity verb listed under `actions` in `simplix meta-info <Entity>` is written once, as the
     widget file `actions.tsx`.** It exports `use<Entity>Actions(canAct)` returning
     `{ rowActions, verbs, dialogs }`. A verb whose request carries a required reason opens the

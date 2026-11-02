@@ -103,6 +103,13 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   over a key of that entity by the record's name. Both come from the framework's `createEntitySearch` and
   `createEntityFacet`. A required field that is a list of records or a nested record has no generated control: the
   scaffold prints a warning naming it, and the form builds it in its submit.
+- **A field is drawn by the kind its Meta `format` names.** A number whose format is `credits`, `bytes` or
+  `duration`, a text whose format is `excerpt`, and a `money` field with its currency and scale take that
+  contract kind, and the kit draws the same kind in the list, the detail, the figure tiles and the board frame,
+  so a value reads "80 credits" in every place instead of "80" in one and "80 credits" in another. A `number`
+  where a typed kind exists is a defect. A rate between two counts is written with the kit's `ratioText`.
+  Where Meta states no format for an amount of credits or bytes, the missing format is a backend gap to raise
+  (`format` on the field); the screen sets the kind by hand meanwhile, in all four places.
 - **`simplix check-screen [entity...]`** reads the written files against the committed Meta and exits 1 on an error
   (a missing or unmarked required field, a required list of records or nested record that the form never names, long
   text on one line, a reference form field with no picker, a name path other than the settled one, a flat key in a
@@ -114,6 +121,11 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   `simplix generated --rebase -y --adopt <path...>` (the options go before `--adopt`): it prints each diff, then
   records the current render as the file's base. `-y` / `--yes` records without asking once the diffs are printed;
   a run with no terminal (an agent, CI) needs it, and an adoption is only as good as the diff someone read before it.
+  A conflict whose hunk differs from the backend's current contract (a figure or aggregate the controller
+  declares and the template does not draw, a field the server has and the snapshot lacks) comes from committed
+  Meta older than the running server: refresh Meta (`simplix meta -d <domain>` while the server built from the
+  tree answers, `../screen-workflow.md` rule 35) and run `generated` again. Adopting it would record the stale
+  render as the base.
 
 ## The commands beside the numbered steps
 
@@ -130,6 +142,11 @@ and when an author runs it; `pnpm exec simplix <command> --help` lists the flags
   recorded origin carries the directory, so `generated --all` reproduces it. A screen has a module in the standard
   flow; use this only for a directory no module owns.
 - `--menu-group` and `--menu-icon` place the screen's menu entry (see "Which steps this project runs").
+- `--list-presentation <table|cards>`, `--view-toggle` and `--card-title <column>` carry the list decisions of the
+  screen's design entry: how the list draws its rows, whether the reader may switch between the table and the
+  cards, and the column that titles a card. `--text-filter <field,field>` gives each named text field a filter
+  the reader types a part of (the generator otherwise leaves text fields to the keyword search). These flags
+  are recorded in the file's origin, so a regeneration renders the same list (`../screen-workflow.md` rule 2).
 - `--native` and `--app` write the mobile screen set; this document does not cover mobile.
 
 **`simplix add-page <kind> <name>`** writes a page that is not an entity list. The kind is `record-page`, `dashboard-page`,

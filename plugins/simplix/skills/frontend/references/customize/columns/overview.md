@@ -514,6 +514,14 @@ Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). D
 | **Action buttons** | actions | `center` or `right` | Visual balance / prevent layout shift |
 | **All other fields** | badges, status, enum, boolean, UUID | `center` | Visual balance |
 
+### Column Width
+
+A column is as wide as its header, its face and its longest option label, in both languages. The kit gives each contract kind a width (an enum column is 120px whatever its option labels are), so a column whose header, code face or longest label is wider declares its own `width` in the list and in the board frame, or the text is clipped with an ellipsis. The heads a list draws at its default width are read from the page, and a column the entry lists that the page does not draw is a finding.
+
+A column set written by hand has no width ladder: `contract.columns` gives every column after the fourth a `minTableWidth`, and a list whose columns carry none falls to cards below the sum of their widths, a width a laptop's pane can fall under. Pass the drawn fields to `contract.columns` (`../../screen-workflow.md` rule 33).
+
+Enforcement: review - a clipped header shows only in a painted list, in each language, and no source scan reads it.
+
 ### Empty Value Display (MANDATORY)
 
 **Rule**: An empty or null cell renders the shared `EmptyValue` (`../../audit/registry/states-and-fallbacks.md`), with consistent alignment per column type - never a hand-written dash literal.

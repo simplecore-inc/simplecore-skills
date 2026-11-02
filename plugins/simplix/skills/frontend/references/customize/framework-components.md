@@ -329,6 +329,10 @@ Rules that follow from how the picker behaves:
 
 `actionVariant` (`"outline"` / `"ghost"` / `"icon"`) is how the row actions draw, and it is the product's default, set once on `UIProvider`'s `defaults` - a screen does not name it (invariant #67; the audit's `screen-picks-action-variant` fails a literal).
 
+**A view mode's name is not evidence of its layout: read the render branch.** `gridView` declares the grid as a view the reader may select, and `CrudList.ViewToggle` draws the switch, inside the `FilterBar` or alone in the list's toolbar when the list has no filters. In grid view the cards sit in a fit grid, `repeat(auto-fill, minmax(min(100%, var(--card-min-width, 20rem)), 1fr))`: as many equal columns as hold a card no narrower than `--card-min-width`, so the count follows the list's own width and every card of every grid has the same column width. A grid is judged by measuring its columns with fewer cards than tracks, not by the prop that names it.
+
+**A control revealed on hover, and a frame rule, are keyed to the container shape.** The framework marks a card with `data-slot="crud-card"` and a row is a `tr`; a reveal rule written for `tr:hover` shows nothing on a card, and a frame rule written for one slot leaves the next container shape unframed. A new container shape (a card beside a table row) gets its own rule for each, and the compiled stylesheet is read for both the card rule and the row rule.
+
 ### CrudForm
 
 ```tsx
