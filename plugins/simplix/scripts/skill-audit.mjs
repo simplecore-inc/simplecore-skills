@@ -96,7 +96,7 @@ const PROJECT_TOKENS =
 const HISTORY =
   /\b(used to be|used to (?:be|have|read|say|call)|previously|formerly|was renamed|has been renamed|we (?:fixed|added|removed|changed|moved)|in this (?:change|round|pass)|round \d|(?:fixed|added|removed|introduced) (?:in|by|on) (?:v?\d|20\d\d)|as of 20\d\d|20\d\d-\d\d-\d\d|since v?\d+\.\d+)/i;
 const COUNTED =
-  /\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+)\s+(?:steps|rules|invariants|pillars|phases|checks|screens|chapters|kinds|ways|lenses|personas|censuses|categories|layers|principles|stages|items)\b/i;
+  /(?<!#)\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+)\s+(?:steps|rules|invariants|pillars|phases|checks|screens|chapters|kinds|ways|lenses|personas|censuses|categories|layers|principles|stages|items)\b/i;
 
 /** Each class judges one line (or the file text) and returns a finding string or null. */
 const FILE_CLASSES = [
@@ -193,7 +193,7 @@ const FILE_CLASSES = [
       return found;
     },
     hit: "The audit has five steps.\n",
-    miss: "The audit runs the steps below.\n",
+    miss: "The audit runs the steps below, and invariant #32 rules out the old form.\n",
   },
 ];
 

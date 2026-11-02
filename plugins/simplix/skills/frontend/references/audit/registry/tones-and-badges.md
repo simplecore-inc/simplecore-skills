@@ -66,7 +66,7 @@ Tone-tinted inline notice box (icon + title/subtitle/children + optional trailin
   <AlertTriangleIcon className="text-red-500" /> <span className="text-red-700 dark:text-red-400">{msg}</span>
 </Flex>
 // REQUIRED
-<AlertBanner tone="danger" density="sm" icon={AlertTriangleIcon} title={msg} />
+<AlertBanner tone="danger" density="sm" title={msg} />
 ```
 
 ## StatCard tone / highlighted
