@@ -447,6 +447,18 @@ const SHARED_CONSTANT_DECLARATION = JSON.stringify({
 const EDGE_HANDLE_DECLARATION = JSON.stringify({
   audit: { cursorColResize: { component: "EdgeHandle", importFrom: "@acme/site-ui" } },
 });
+const PAGED_LIST_COMPONENT_DECLARATION = JSON.stringify({
+  audit: { pagedLists: { allowComponents: ["@acme/site-ui/account#TableCard"] } },
+});
+const PAGED_LIST_PATH_DECLARATION = JSON.stringify({
+  audit: { pagedLists: { allowPaths: ["apps/site/src/pages/account*/**"] } },
+});
+const PAGED_LIST_SITE_PAGE = `import { TableCard } from "@acme/site-ui/account";
+
+export function History() {
+  const read = useListMyEntries({ page: 0, size: shown });
+  return <TableCard rows={(read.data?.content ?? []).map(toRow)} columns={columns} />;
+}`;
 
 // ---------------------------------------------------------------------------
 // Rules - { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
@@ -1167,6 +1179,117 @@ function settings() {
     settingsCache = {};
   }
   return settingsCache;
+}
+
+
+/**
+ * Hits a project's own declaration kept out of the report, by rule id.
+ *
+ * @remarks
+ * A rule that a project can switch off for a place must say how much it switched off, because an
+ * error-grade rule that goes quiet reads exactly like a clean tree. The runner prints one line per
+ * rule that allowed anything; the self-test reads the same map to prove the count.
+ */
+const allowedByConfig = new Map();
+function noteAllowed(ruleId, count) {
+  if (count > 0) allowedByConfig.set(ruleId, (allowedByConfig.get(ruleId) ?? 0) + count);
+}
+
+/** @returns a RegExp for a project-relative glob: `**` crosses directories, `*` and `?` stay in one */
+function globToRegExp(glob) {
+  let out = "";
+  for (let i = 0; i < glob.length; i += 1) {
+    const ch = glob[i];
+    if (ch === "*") {
+      if (glob[i + 1] === "*") {
+        const slash = glob[i + 2] === "/";
+        out += slash ? "(?:.*/)?" : ".*";
+        i += slash ? 2 : 1;
+      } else {
+        out += "[^/]*";
+      }
+    } else if (ch === "?") {
+      out += "[^/]";
+    } else {
+      out += ch.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    }
+  }
+  return new RegExp(`^${out}$`);
+}
+
+/**
+ * The `audit.pagedLists` declaration: where a hand-drawn paged list is deliberate.
+ *
+ * @remarks
+ * `paged-list-in-a-page-not-generated-as-a-list` exists for the operator surfaces, where every
+ * paged list is a generated list page. A customer-facing site app is a different product surface:
+ * its pages are not generated lists, and its growing sets (a history, a feed) are drawn by a kit
+ * component that carries its own pager. The project names that component or that app directory
+ * here, and the report counts what the declaration kept out. A declaration of the wrong shape is
+ * ignored with a warning, so the rule stays on.
+ *
+ * @example
+ * { "audit": { "pagedLists": {
+ *   "allowComponents": ["@acme/site-ui/account#TableCard", "FeedList"],
+ *   "allowPaths": ["apps/site/src/pages/account*\/**"]
+ * } } }
+ *
+ * - `allowComponents` entries: `Name` (a JSX element of that name), `<specifier>#Name` (that name
+ *   imported from that specifier, which a same-named local component does not satisfy), or a bare
+ *   `<specifier>` (every element imported from it).
+ * - `allowPaths` entries: project-root-relative globs of the files whose hits are kept out.
+ *
+ * @returns `{ components, paths }`, both empty by default
+ */
+function pagedListsDeclaration() {
+  const empty = { components: [], paths: [] };
+  const raw = settings().pagedLists;
+  if (raw === undefined) return empty;
+  const strings = (v) => v === undefined || (Array.isArray(v) && v.every((x) => typeof x === "string" && x.length > 0));
+  if (typeof raw !== "object" || raw === null || !strings(raw.allowComponents) || !strings(raw.allowPaths)) {
+    if (!warnedDeclarations.has("pagedLists")) {
+      warnedDeclarations.add("pagedLists");
+      console.error(`⚠ .claude/simplix.json audit.pagedLists is not { "allowComponents": ["<Name | specifier#Name | specifier>"], "allowPaths": ["<glob>"] }, so nothing is allowed.`);
+    }
+    return empty;
+  }
+  return {
+    components: raw.allowComponents ?? [],
+    paths: (raw.allowPaths ?? []).map(globToRegExp),
+  };
+}
+
+/**
+ * The JSX element names in this file that a declaration marks as deliberate paged list parts.
+ *
+ * @param source the file's content
+ * @param entries the `allowComponents` entries
+ * @returns the local names, alias included
+ */
+function allowedElementNames(source, entries) {
+  const names = new Set();
+  const imports = [];
+  const importPattern = /import\s+(?:type\s+)?(?:[\w$]+\s*,\s*)?\{([^}]*)\}\s*from\s*["']([^"']+)["']/g;
+  let m;
+  while ((m = importPattern.exec(source)) !== null) {
+    for (const part of m[1].split(",")) {
+      const [imported, local] = part.trim().replace(/^type\s+/, "").split(/\s+as\s+/);
+      if (imported) imports.push({ imported, local: local ?? imported, specifier: m[2] });
+    }
+  }
+  for (const entry of entries) {
+    const hash = entry.indexOf("#");
+    if (hash > 0) {
+      const specifier = entry.slice(0, hash);
+      const imported = entry.slice(hash + 1);
+      for (const i of imports) if (i.specifier === specifier && i.imported === imported) names.add(i.local);
+    } else if (/^[@.]|\//.test(entry)) {
+      for (const i of imports) if (i.specifier === entry) names.add(i.local);
+    } else {
+      names.add(entry);
+    }
+  }
+  return names;
 }
 
 
@@ -2769,7 +2892,7 @@ return useCrudList<Row>(adaptOrvalList<Row>(useListEntities, options), { stateMo
     id: "paged-list-in-a-page-not-generated-as-a-list",
     invariant: "#32 / #79",
     level: "error",
-    desc: "A page that was not generated as a list page (no `@simplix-generated page/*crud-page` file beside it) holds a list fed by a paged or cursor read. Every paged list screen is generated from the kit list template with `simplix scaffold` and then customised; a list placed by hand inside a static or record page has no filter bar, no sort, no page size and no total, and none of the fixes later made to the template reach it. Generate the list screen (behind a paged searchable endpoint, forced to the caller's scope server-side where it is a self surface) and move what the page said around the list into its blocks; a growing set inside a record's tab is `adaptForcedList` on the record's generated detail, not a page",
+    desc: "A page that was not generated as a list page (no `@simplix-generated page/*crud-page` file beside it) holds a list fed by a paged or cursor read. Every paged list screen is generated from the kit list template with `simplix scaffold` and then customised; a list placed by hand inside a static or record page has no filter bar, no sort, no page size and no total, and none of the fixes later made to the template reach it. Generate the list screen (behind a paged searchable endpoint, forced to the caller's scope server-side where it is a self surface) and move what the page said around the list into its blocks; a growing set inside a record's tab is `adaptForcedList` on the record's generated detail, not a page. A customer-site app whose pages are not generated lists declares its deliberate paged list parts in `.claude/simplix.json` `audit.pagedLists`; the report counts what that kept out",
     appliesTo: (p) => (isTsx(p) || /\.ts$/.test(p)) && /(^|\/)pages\//.test(p),
     check: (c, rel) => {
       // The page directory decides, not this file: a generated list page keeps its customisation
@@ -2782,9 +2905,21 @@ return useCrudList<Row>(adaptOrvalList<Row>(useListEntities, options), { stateMo
       if (generatedAsList || GENERATED_LIST.test(c.slice(0, 600))) return [];
 
       // A list sink: rows handed to a table, or a list component drawn here. A read with no sink
-      // (a count, a total in a tile) is not a list, whatever page size it asks for.
-      const SINK = /\brows\s*:|<(?:CrudList|DataTable|Table|TableCard)\b|\buseCrudList\s*\(/;
-      if (!SINK.test(c)) return [];
+      // (a count, a total in a tile) is not a list, whatever page size it asks for. `rows:` is a
+      // sink only as a VALUE handed on (`rows: history.items`): the same word as a type
+      // annotation (`rows: Row[]`, `rows: readonly Row[]`), a literal (`rows: [`) or a constant
+      // names a presentational component's prop, which no paged read feeds.
+      const SINK_JSX = ["CrudList", "DataTable", "Table", "TableCard"];
+      // The lookahead sits before the whitespace is consumed: after it, `\s*` could give a space back
+      // and let the lookahead judge the space instead of the value.
+      const ROWS_VALUE = /\brows\s*:(?!\s*(?:\[|\{|\(|typeof\b|readonly\b|string\b|number\b|boolean\b|unknown\b|any\b|never\b|object\b|null\b|undefined\b|[A-Z]))\s*\S/;
+      const hasSink = (kept) => {
+        const names = SINK_JSX.filter((name) => !kept.has(name));
+        return (names.length > 0 && new RegExp(String.raw`<(?:${names.join("|")})\b`).test(c))
+          || ROWS_VALUE.test(c)
+          || /\buseCrudList\s*\(/.test(c);
+      };
+      if (!hasSink(new Set())) return [];
 
       // The paged read: a cursor, the list adapters, or a list/search hook asked for a page.
       // Type arguments may sit between the name and the call: `useCursorPages<Page, Row>(`.
@@ -2802,6 +2937,19 @@ return useCrudList<Row>(adaptOrvalList<Row>(useListEntities, options), { stateMo
           const line = c.slice(0, m.index).split("\n").length;
           hits.push({ line, excerpt: (lines[line - 1] ?? "").trim() });
         }
+      }
+      if (!hits.length) return hits;
+
+      // The project's declaration (`audit.pagedLists`): a file under an allowed path, or one whose
+      // only list sink is a component it marks as a deliberate paged list part, is kept out of the
+      // report and counted. A sink the declaration does not name (a hand-built `rows:` beside the
+      // allowed component) still reports.
+      const declared = pagedListsDeclaration();
+      const allowedPath = declared.paths.some((re) => re.test(rel.split(path.sep).join("/")));
+      const allowedSink = !hasSink(allowedElementNames(c, declared.components));
+      if (allowedPath || allowedSink) {
+        noteAllowed("paged-list-in-a-page-not-generated-as-a-list", hits.length);
+        return [];
       }
       return hits;
     },
@@ -2865,6 +3013,38 @@ export function SettingCrudPage() { return null; }`,
           source: `export function usePageBlocks() {
   const catalogue = useListSettings({ page: 0, size: 500 });
   return { tabs: [{ list: { rows: catalogue.data, columns } }] };
+}`,
+        },
+        {
+          note: "a presentational component's `rows` prop type next to a total read",
+          source: `type TileProps = { rows: Row[]; hint: string };
+function Tile({ rows, hint }: TileProps) { return <Box data-hint={hint}>{rows.length}</Box>; }
+export function usePageBlocks() {
+  const total = useListThings({ page: 0, size: 1 }).data?.totalElements;
+  return { body: <Tile rows={SAMPLE_ROWS} hint={format({ count: String(total) })} /> };
+}`,
+        },
+        {
+          note: "a `rows:` literal and a `count:` given a formatted string, beside a total read",
+          source: `export function usePageBlocks() {
+  const total = useListThings({ page: 0, size: 1 }).data?.totalElements ?? 0;
+  const summary = t("things.summary", { count: formatNumber(total) });
+  return { body: <Panel summary={summary} content={{ rows: [], columns }} /> };
+}`,
+        },
+        {
+          note: "a kit table the project's audit.pagedLists names by import, on a site page",
+          file: "apps/site/src/pages/account-history/page.tsx",
+          files: { ".claude/simplix.json": PAGED_LIST_COMPONENT_DECLARATION },
+          source: PAGED_LIST_SITE_PAGE,
+        },
+        {
+          note: "a paged list under a path the project's audit.pagedLists allows",
+          file: "apps/site/src/pages/account-history/page.tsx",
+          files: { ".claude/simplix.json": PAGED_LIST_PATH_DECLARATION },
+          source: `export function History() {
+  const read = useListMyEntries({ page: 0, size: shown });
+  return <CrudList rows={read.data?.content} />;
 }`,
         },
       ],
@@ -9680,6 +9860,66 @@ function selftestMechanisms() {
         ].every((text) => !IMPORTANT_OUTLINE_REMOVAL.test(text)),
     },
     {
+      name: "audit.pagedLists: without a declaration the site page's paged list fires; allowComponents and allowPaths keep it out and count it",
+      pass: () => {
+        const rule = ALL_RULES.find((r) => r.id === "paged-list-in-a-page-not-generated-as-a-list");
+        const file = "apps/site/src/pages/account-history/page.tsx";
+        const run = (source, declaration) => {
+          const before = allowedByConfig.get(rule.id) ?? 0;
+          const out = runSample(rule, {
+            file,
+            source,
+            files: declaration ? { ".claude/simplix.json": declaration } : {},
+          });
+          return { hits: out.hits.length, allowed: (allowedByConfig.get(rule.id) ?? 0) - before };
+        };
+        const bare = run(PAGED_LIST_SITE_PAGE, undefined);
+        const byComponent = run(PAGED_LIST_SITE_PAGE, PAGED_LIST_COMPONENT_DECLARATION);
+        const byPath = run(PAGED_LIST_SITE_PAGE, PAGED_LIST_PATH_DECLARATION);
+        const outsidePath = runSample(rule, {
+          file: "apps/site/src/pages/checkout-history/page.tsx",
+          source: PAGED_LIST_SITE_PAGE,
+          files: { ".claude/simplix.json": PAGED_LIST_PATH_DECLARATION },
+        }).hits.length;
+        return bare.hits === 1 && bare.allowed === 0
+          && byComponent.hits === 0 && byComponent.allowed === 1
+          && byPath.hits === 0 && byPath.allowed === 1
+          && outsidePath === 1;
+      },
+    },
+    {
+      name: "audit.pagedLists: a same-named component from another module and a hand-built `rows:` beside the allowed one still fire",
+      pass: () => {
+        const rule = ALL_RULES.find((r) => r.id === "paged-list-in-a-page-not-generated-as-a-list");
+        const file = "apps/site/src/pages/account-history/page.tsx";
+        const fire = (source) => runSample(rule, {
+          file,
+          source,
+          files: { ".claude/simplix.json": PAGED_LIST_COMPONENT_DECLARATION },
+        }).hits.length;
+        const local = fire(PAGED_LIST_SITE_PAGE.replace("@acme/site-ui/account", "./local-table"));
+        const beside = fire(`${PAGED_LIST_SITE_PAGE}\nconst body = { list: { rows: read.data?.content, columns } };`);
+        return local === 1 && beside === 1;
+      },
+    },
+    {
+      name: "audit.pagedLists: a declaration of the wrong shape allows nothing",
+      pass: () => {
+        const rule = ALL_RULES.find((r) => r.id === "paged-list-in-a-page-not-generated-as-a-list");
+        const previousError = console.error;
+        console.error = () => {};
+        try {
+          return runSample(rule, {
+            file: "apps/site/src/pages/account-history/page.tsx",
+            source: PAGED_LIST_SITE_PAGE,
+            files: { ".claude/simplix.json": JSON.stringify({ audit: { pagedLists: { allowPaths: "apps/**" } } }) },
+          }).hits.length === 1;
+        } finally {
+          console.error = previousError;
+        }
+      },
+    },
+    {
       name: "readsServerData: a domain import puts server data in scope, a bare file does not",
       pass: () =>
         readsServerData(`import { useListAreas } from "@acme/domain-site";`)
@@ -9830,6 +10070,10 @@ for (const { rule, hits } of results.values()) {
   printBucket(rule.id, rule.level, rule.invariant, rule.desc, hits);
   if (rule.level === "error") errorCount += hits.length;
   else reviewCount += hits.length;
+}
+
+for (const [ruleId, count] of allowedByConfig) {
+  console.log(`\nℹ ${ruleId}: ${count} hit(s) allowed by .claude/simplix.json audit (not reported)`);
 }
 
 console.log(`\n${files.length} source files scanned - ${errorCount} error hit(s), ${reviewCount} review candidate(s).`);

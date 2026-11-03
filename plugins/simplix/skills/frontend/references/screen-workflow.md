@@ -291,6 +291,18 @@ Read this before planning a screen or dispatching agents for screen work.
     a record's tab is `adaptForcedList` on that record's generated detail.
     `paged-list-in-a-page-not-generated-as-a-list` in `audit-frontend.mjs` flags a page directory
     with no generated list page that draws a paged read.
+    A customer-facing site app is the exception the audit lets a project declare: its pages are
+    account or content pages, not generated lists, and a growing set there (a history, a feed) is
+    drawn by a kit component that carries its own pager over a paged endpoint. The project names
+    those places in `.claude/simplix.json`:
+    `{ "audit": { "pagedLists": { "allowComponents": ["<specifier>#<Component>"], "allowPaths": ["apps/<site>/src/pages/<area>*/**"] } } }`.
+    `allowComponents` takes `Name`, `<specifier>#Name` (the name imported from that specifier, which
+    a same-named local component does not satisfy) or a bare `<specifier>`; `allowPaths` takes
+    project-root-relative globs. Both default to empty. A file whose only list sink is an allowed
+    component, or that sits under an allowed path, is not reported; the audit prints how many hits
+    the declaration kept out (`allowed by .claude/simplix.json audit`), so the exception stays
+    visible. A hand-built `rows` value beside the allowed component still reports. Keep the
+    declaration as narrow as the app that needs it; an operator module never appears in it.
     A customer-facing screen is written for its reader. It words its enums, field labels and
     headings from its own catalog (an enum label written for staff, such as a billing state's
     internal name, is not customer wording), draws no control that serves an operator, and drops what
