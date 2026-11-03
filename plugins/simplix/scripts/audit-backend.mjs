@@ -339,6 +339,23 @@ function braceBody(src, from) {
   return src.slice(i);
 }
 
+/**
+ * True when the method whose signature sits on line `lineIndex` (0-based) of `src` is a fire-and-poll
+ * command: its body answers 202 Accepted AND sets a Location header. That is the one shape in which
+ * a controller may return `ResponseEntity<SimpliXApiResponse<T>>` (handbook invariant #1).
+ *
+ * `src` keeps string contents (comments blanked) so a literal "Location" header name still reads.
+ */
+function answersAcceptedWithLocation(src, lineIndex) {
+  const lines = src.split("\n");
+  let from = 0;
+  for (let k = 0; k < lineIndex; k++) from += lines[k].length + 1;
+  const body = braceBody(src, from);
+  const accepted = /ResponseEntity\s*\.\s*accepted\s*\(|\.\s*status\s*\(\s*(?:HttpStatus(?:Code)?\s*\.\s*ACCEPTED|202)\s*\)|new\s+ResponseEntity\s*<[^>]*>?\s*\([^;]*HttpStatus\s*\.\s*ACCEPTED/.test(body);
+  const location = /\.\s*location\s*\(|\.\s*setLocation\s*\(|HttpHeaders\s*\.\s*LOCATION|["']Location["']/i.test(body);
+  return accepted && location;
+}
+
 // --- Project-wide indexes, built once and cached -----------------------------
 
 let _entityIdIndex = null;
@@ -2395,14 +2412,23 @@ public class Subscription extends BaseEntity<String> {
     level: "error",
     desc: "A @SchedulerLock method returns a primitive - ShedLock's proxy refuses to lock it (LockingNotSupportedException) when the tick fires, so the job fails on every run while it compiles, starts and passes any test that calls the method directly. Return void, or an object or Optional the proxy can answer null for when another server holds the lock",
     appliesTo: (p) => p.endsWith(".java"),
-    check: (c) =>
-      lineHits(stripCommentsAndStrings(c), /^\s*@SchedulerLock\b/, (_line, lines, i) => {
-        let j = i + 1;
-        while (j < lines.length && /^\s*(@|$)/.test(lines[j])) j++;
-        const declaration = lines[j] ?? "";
-        const m = declaration.match(/^\s*(?:(?:public|protected|private|static|final|synchronized)\s+)*([\w.]+)\s+\w+\s*\(/);
-        return Boolean(m) && /^(?:int|long|boolean|double|float|short|byte|char)$/.test(m[1]);
-      }),
+    // Read as text, not as lines: the annotation's arguments may wrap, further annotations may sit
+    // between it and the signature, and the whole declaration may share one line.
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const args = "(?:\\s*\\((?:[^()]|\\([^()]*\\))*\\))?";
+      const re = new RegExp(
+        `@SchedulerLock\\b${args}(?:\\s*@[\\w.]+${args})*\\s*(?:(?:public|protected|private|static|final|synchronized)\\s+)*`
+          + "(?:int|long|boolean|double|float|short|byte|char)\\s+\\w+\\s*\\(",
+        "g",
+      );
+      const hits = [];
+      for (const m of clean.matchAll(re)) {
+        const line = clean.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: clean.split("\n")[line - 1].trim().slice(0, 150) });
+      }
+      return hits;
+    },
     samples: {
       file: "modules/common/worker/src/main/java/app/web/common/worker/scheduler/TickScheduler.java",
       broken: `    @Scheduled(cron = "30 * * * * *")
@@ -2417,9 +2443,14 @@ public class Subscription extends BaseEntity<String> {
     }`,
       hit: [
         { note: "a boolean return with a further annotation between", source: `    @SchedulerLock(name = "TickScheduler_sweep")\n    @SchedulerName("sweep")\n    public boolean sweep() {\n        return true;\n    }` },
+        { note: "annotation arguments wrapping onto a second line", source: `    @SchedulerLock(name = "TickScheduler_sweep",\n            lockAtMostFor = "50s")\n    public int sweep() {\n        return queue.sweep();\n    }` },
+        { note: "annotation and declaration on one line", source: `    @SchedulerLock(name = "TickScheduler_sweep") public long sweep() { return 1L; }` },
+        { note: "a further annotation with wrapped arguments between", source: `    @SchedulerLock(name = "TickScheduler_sweep")\n    @Scheduled(cron = "0 * * * * *",\n            zone = "UTC")\n    protected final int sweep() {\n        return 1;\n    }` },
       ],
       miss: [
         { note: "an Optional return, which the proxy answers with null when the lock is held elsewhere", source: `    @SchedulerLock(name = "TickScheduler_enqueue")\n    public Optional<String> enqueue() {\n        return queue.enqueue();\n    }` },
+        { note: "a boxed Integer return, which the proxy answers with null when the lock is held elsewhere", source: `    @SchedulerLock(name = "TickScheduler_count")\n    public Integer count() {\n        return 0;\n    }` },
+        { note: "a void method locked next to an unlocked primitive one", source: `    @SchedulerLock(name = "TickScheduler_sweep")\n    public void sweep() {\n    }\n\n    public int size() {\n        return 0;\n    }` },
         { note: "a primitive return on a method without a lock", source: `    @Scheduled(cron = "0 * * * * *")\n    public int count() {\n        return 0;\n    }` },
       ],
     },
@@ -3153,11 +3184,45 @@ public class ApprovalInboxService {
     level: "error",
     desc: "Endpoint returns ResponseEntity<SimpliXApiResponse<...>> - the envelope is already the response, so this wraps it twice and the client reads a body whose fields are one level deeper than the contract says. Legitimate only for a 202-Accepted async command returning a Location header",
     appliesTo: isController,
-    check: (c) => lineHits(stripCommentsAndStrings(c), /ResponseEntity<\s*SimpliXApiResponse\s*</),
+    // The documented async command (invariant #1) is exempt: 202 Accepted plus a Location header
+    // naming the polling endpoint. A 202 without the header, or a header on another status, is not.
+    check: (c) => {
+      const keep = stripComments(c);
+      return lineHits(stripCommentsAndStrings(c), /ResponseEntity<\s*SimpliXApiResponse\s*</,
+        (_line, _lines, i) => !answersAcceptedWithLocation(keep, i));
+    },
     samples: {
       file: "modules/site/src/main/java/app/web/site/controller/AreaRestController.java",
       broken: `    public ResponseEntity<SimpliXApiResponse<AreaDetailDTO>> get(@PathVariable String areaId) { return null; }`,
       fixed: `    public SimpliXApiResponse<AreaDetailDTO> get(@PathVariable String areaId) { return null; }`,
+      hit: [
+        { note: "a 202 without a Location header is not the fire-and-poll shape", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        return ResponseEntity.accepted().body(SimpliXApiResponse.success(service.start(body)));
+    }` },
+        { note: "a Location header on a 200 is not the fire-and-poll shape", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        return ResponseEntity.ok().location(URI.create("/jobs/1")).body(SimpliXApiResponse.success(service.start(body)));
+    }` },
+        { note: "the exemption stops at the method: a second wrapped method after an async one still fires", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        return ResponseEntity.accepted().location(URI.create("/jobs/1")).body(SimpliXApiResponse.success(service.start(body)));
+    }
+
+    public ResponseEntity<SimpliXApiResponse<JobDTO>> get(@PathVariable String id) {
+        return ResponseEntity.ok(SimpliXApiResponse.success(service.get(id)));
+    }` },
+      ],
+      miss: [
+        { note: "fire-and-poll command: ResponseEntity.accepted() with a Location header", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        JobDTO job = service.start(body);
+        return ResponseEntity.accepted().location(URI.create("/jobs/" + job.getId())).body(SimpliXApiResponse.success(job));
+    }` },
+        { note: "fire-and-poll command: status(HttpStatus.ACCEPTED) with the header set through HttpHeaders.LOCATION", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        JobDTO job = service.start(body);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).header(HttpHeaders.LOCATION, "/jobs/" + job.getId()).body(SimpliXApiResponse.success(job));
+    }` },
+        { note: "fire-and-poll command: status(202) with a literal Location header name", source: `    public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@RequestBody StartDTO body) {
+        return ResponseEntity.status(202).header("Location", "/jobs/1").body(SimpliXApiResponse.success(service.start(body)));
+    }` },
+      ],
     },
   },
   {
@@ -3699,6 +3764,28 @@ function selftestMechanisms() {
         withTree({ ".claude/simplix.json": `{ "audit": { "scopeForcingCalls": ["requireVisible"] } }` },
           (dir) => auditSettings(dir).scopeForcingCalls?.[0] === "requireVisible")
         && withTree({}, (dir) => Object.keys(auditSettings(dir)).length === 0),
+    },
+    {
+      name: "scheduler-lock-on-primitive-return: over a scratch tree it reports the int sweep, not the void one, and a marker with a reason mutes it",
+      pass: () => {
+        const rule = RULES.find((r) => r.id === "scheduler-lock-on-primitive-return");
+        const hitsIn = (files) => withTree(files, (dir) => {
+          const out = [];
+          for (const abs of collectSources(dir)) {
+            const rel = path.relative(dir, abs);
+            const content = fs.readFileSync(abs, "utf8");
+            const muted = suppressedLines(content, rule.id);
+            if (rule.appliesTo(rel)) out.push(...rule.check(content, rel, {}).filter((h) => !muted.has(h.line)));
+          }
+          return out;
+        });
+        const job = (declaration, marker = "") => ({
+          "modules/common/worker/src/main/java/app/Job.java": `package app;\nclass Job {\n${marker}    @Scheduled(cron = "0 * * * * *")\n    @SchedulerLock(name = "Job_sweep", lockAtMostFor = "50s")\n    ${declaration} {\n    }\n}\n`,
+        });
+        return hitsIn(job("public int sweep()")).length === 1
+          && hitsIn(job("public void sweep()")).length === 0
+          && hitsIn(job("public int sweep()", "    // simplix-audit-ignore[scheduler-lock-on-primitive-return]: invoked by hand only, never by the tick\n")).length === 0;
+      },
     },
   ];
   let bad = 0;

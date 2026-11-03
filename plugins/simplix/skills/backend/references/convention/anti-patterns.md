@@ -1164,3 +1164,62 @@ Enforcement: audit - `duplicate-dto-simple-name` (a duplicated DTO-shaped name t
 reaches, error) and `duplicate-dto-simple-name-unreached` (review). The audit reads identifiers rather
 than resolving types, so a duplicate it cannot tie to a controller is a review candidate to rename or
 justify.
+
+---
+
+## AP-47: A Wrapped Response on an Endpoint That Is Not a Fire-and-Poll Command
+
+`ResponseEntity<SimpliXApiResponse<T>>` wraps the envelope a second time: the client reads a body whose
+fields sit one level deeper than the contract says. The one shape that needs the `ResponseEntity` is a
+command that starts work and answers `202 Accepted` with a `Location` header naming the polling
+endpoint (invariant #1). Both halves are required in the same method: a `202` without the header
+leaves the client nothing to poll, and a `Location` on a `200` is a redirect hint the envelope already
+covers.
+
+```java
+// WRONG - a plain read wrapped twice
+public ResponseEntity<SimpliXApiResponse<JobDTO>> get(@PathVariable String id) { ... }
+
+// CORRECT - fire-and-poll: 202 plus Location
+public ResponseEntity<SimpliXApiResponse<JobDTO>> start(@Validated @RequestBody StartDTO body) {
+    JobDTO job = service.start(body);
+    return ResponseEntity.accepted().location(URI.create("/jobs/" + job.getId()))
+        .body(SimpliXApiResponse.success(job));
+}
+```
+
+Enforcement: audit - `double-wrapped-response` (error). A method whose body answers 202 through
+`ResponseEntity.accepted()` or `status(HttpStatus.ACCEPTED)` / `status(202)` and sets the header
+through `.location(`, `HttpHeaders.LOCATION` or a `"Location"` literal is exempt; the exemption ends
+at the method's closing brace.
+
+---
+
+## AP-48: A Locked Scheduler Method That Returns a Primitive
+
+ShedLock locks a `@SchedulerLock` method through a proxy, and the proxy refuses a method whose return
+type is a primitive (`LockingNotSupportedException: Can not lock method returning primitive value`),
+because it has no value to answer when another server holds the lock. The refusal comes when the tick
+fires, so the job compiles, the application starts and a unit test that calls the method directly
+passes, while the scheduled run fails every time. `void`, an object, a boxed type and `Optional` are
+accepted (the proxy answers `null` when the lock is held elsewhere); only `int`, `long`, `boolean`,
+`double`, `float`, `short`, `byte` and `char` are refused.
+
+```java
+// WRONG - fails at the first tick
+@Scheduled(cron = "0 */15 * * * *")
+@SchedulerLock(name = "ExpiryScheduler_sweep", lockAtMostFor = "10m")
+public int sweep() { return expiry.removeExpired(); }
+
+// CORRECT - the scheduled entry returns nothing; the counting helper stays callable from tests
+@Scheduled(cron = "0 */15 * * * *")
+@SchedulerLock(name = "ExpiryScheduler_sweep", lockAtMostFor = "10m")
+public void sweep() { removeExpired(); }
+
+int removeExpired() { return expiry.removeExpired(); }
+```
+
+Enforcement: audit - `scheduler-lock-on-primitive-return` (error). It reads the annotation as text, so
+wrapped annotation arguments, further annotations in between and a single-line declaration are all
+seen. A reflection test over every `@SchedulerLock` method of the application covers return types the
+audit cannot resolve.
