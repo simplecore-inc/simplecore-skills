@@ -289,6 +289,15 @@ const DEFAULTS = {
    */
   requireButtonFill: true,
   buttonFillDesigns: [],
+  /**
+   * A selector the page must contain for `buttonWithoutBackground` to apply, empty for every page.
+   *
+   * <p>`buttonFillDesigns` is keyed on the design's name, and two kits can share one name (a
+   * console kit and a site kit both drawn as `clarity`), so the name cannot say whose rule this is.
+   * The kit's own shell can: name a slot only that kit's shell draws, such as `[data-slot^=console-]`,
+   * and a page drawn by another kit under the same design name is left alone.
+   */
+  buttonFillScope: "",
   buttonFillExemptSelector: "",
   buttonSelector: 'button:not([role="tab"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not([aria-expanded]:not([aria-haspopup])), [role="button"]:not([aria-expanded]:not([aria-haspopup]))',
 
@@ -475,11 +484,14 @@ const DEFAULTS = {
    *
    * <p>A card holding content holds structure - a heading, fields, a table, a list. A message
    * holds a sentence. This is what stops the un-roled recogniser reporting every `Card` on a
-   * settings screen.
+   * settings screen. A control that sets a value (a switch, a checkbox, a radio, a combobox) is
+   * structure as well: a tinted card that explains a setting and holds its switch is a setting,
+   * and a message's own action is a button or a link.
    */
   messageStructureSelector:
     'h1, h2, h3, h4, h5, h6, [role="heading"], input, select, textarea, table,'
-    + ' ul, ol, [role="table"], [role="grid"], [role="list"], [role="tablist"]',
+    + ' ul, ol, dl, [role="table"], [role="grid"], [role="list"], [role="tablist"],'
+    + ' [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"]',
 
   /** How short a box can be and still be a figure rather than a line of a table. */
   minFigureTileHeightPx: 56,
@@ -1583,6 +1595,20 @@ const standingMessageDrawsNoClose = {
     // reader, so it is found by its shape instead: a band the width of its column, rounded and
     // tinted apart from the ground behind it, holding a sentence and no structure. A card that
     // holds content holds a heading, fields, a table; a message holds a sentence.
+    // **A role sits on the sentence, not always on the band.** A banner whose glyph is a sibling of
+    // the title paragraph that carries `role` has its glyph outside the element the role found, so
+    // reading the glyph and the close inside that element reports a banner that draws both as
+    // drawing neither. The message is the tinted band around the role element: the nearest ancestor
+    // painted apart from its parent, rounded, no taller than a message and holding no second one.
+    const bandOf = (el) => {
+      const roleSelector = o.messageRoles.map((r) => `[role="${r}"]`).join(",");
+      for (let n = el; n && n !== main && n.parentElement; n = n.parentElement) {
+        if (n !== el && (n.querySelectorAll(roleSelector).length > 1 || n.getBoundingClientRect().height > o.messageMaxHeightPx)) break;
+        const s = getComputedStyle(n);
+        if (!clear(s.backgroundColor) && painted(n.parentElement) !== s.backgroundColor && Number.parseFloat(s.borderTopLeftRadius) > 0) return n;
+      }
+      return el;
+    };
     const messages = [];
     const add = (el, how) => {
       if (messages.some((m) => m.el === el || m.el.contains(el) || el.contains(m.el))) return;
@@ -1590,7 +1616,7 @@ const standingMessageDrawsNoClose = {
     };
     const column = main.getBoundingClientRect();
     for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(el, "role");
+      if (eligible(el)) add(bandOf(el), "role");
     }
     for (const el of main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
@@ -1761,6 +1787,20 @@ const theFigureRowSitsAgainstTheHeader = {
       && !el.closest('[role="tabpanel"]')
       && !insideAnOpenedRegion(el);
 
+    // **A role sits on the sentence, not always on the band.** A banner whose glyph is a sibling of
+    // the title paragraph that carries `role` has its glyph outside the element the role found, so
+    // reading the glyph and the close inside that element reports a banner that draws both as
+    // drawing neither. The message is the tinted band around the role element: the nearest ancestor
+    // painted apart from its parent, rounded, no taller than a message and holding no second one.
+    const bandOf = (el) => {
+      const roleSelector = o.messageRoles.map((r) => `[role="${r}"]`).join(",");
+      for (let n = el; n && n !== main && n.parentElement; n = n.parentElement) {
+        if (n !== el && (n.querySelectorAll(roleSelector).length > 1 || n.getBoundingClientRect().height > o.messageMaxHeightPx)) break;
+        const s = getComputedStyle(n);
+        if (!clear(s.backgroundColor) && painted(n.parentElement) !== s.backgroundColor && Number.parseFloat(s.borderTopLeftRadius) > 0) return n;
+      }
+      return el;
+    };
     const messages = [];
     const add = (el) => {
       if (messages.some((m) => m === el || m.contains(el) || el.contains(m))) return;
@@ -1768,7 +1808,7 @@ const theFigureRowSitsAgainstTheHeader = {
     };
     const column = main.getBoundingClientRect();
     for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(el);
+      if (eligible(el)) add(bandOf(el));
     }
     for (const el of main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
@@ -1995,13 +2035,27 @@ const theCardRegionReadsLoudestFirst = {
       && !el.closest(o.openedSurfaceSelector);
 
     const column = main.getBoundingClientRect();
+    // **A role sits on the sentence, not always on the band.** A banner whose glyph is a sibling of
+    // the title paragraph that carries `role` has its glyph outside the element the role found, so
+    // reading the glyph and the close inside that element reports a banner that draws both as
+    // drawing neither. The message is the tinted band around the role element: the nearest ancestor
+    // painted apart from its parent, rounded, no taller than a message and holding no second one.
+    const bandOf = (el) => {
+      const roleSelector = o.messageRoles.map((r) => `[role="${r}"]`).join(",");
+      for (let n = el; n && n !== main && n.parentElement; n = n.parentElement) {
+        if (n !== el && (n.querySelectorAll(roleSelector).length > 1 || n.getBoundingClientRect().height > o.messageMaxHeightPx)) break;
+        const s = getComputedStyle(n);
+        if (!clear(s.backgroundColor) && painted(n.parentElement) !== s.backgroundColor && Number.parseFloat(s.borderTopLeftRadius) > 0) return n;
+      }
+      return el;
+    };
     const messages = [];
     const add = (el) => {
       if (messages.some((m) => m === el || m.contains(el) || el.contains(m))) return;
       messages.push(el);
     };
     for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(el);
+      if (eligible(el)) add(bandOf(el));
     }
     for (const el of main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
@@ -2027,6 +2081,10 @@ const theCardRegionReadsLoudestFirst = {
 
     // What the message draws, as the two things that separate one kind from another: the glyph it
     // leads with, and whether it announces itself as an interruption.
+    // The role the message announces itself with: its own, or its title's when the band is the
+    // element around the sentence that carries it.
+    const roleOf = (el) =>
+      el.getAttribute("role") ?? el.querySelector(o.messageRoles.map((r) => `[role="${r}"]`).join(","))?.getAttribute("role") ?? null;
     const kindOf = (el) => {
       const g = [...el.querySelectorAll("svg, [role=img]")].find(
         (s) => !s.closest('button, [role="button"], a[href]'),
@@ -2037,7 +2095,7 @@ const theCardRegionReadsLoudestFirst = {
         + [...g.querySelectorAll("path, circle, line, rect, polygon")]
           .map((p) => p.getAttribute("d") || p.tagName)
           .join(" ");
-      const role = el.getAttribute("role");
+      const role = roleOf(el);
       for (let rank = 0; rank < o.noticeKinds.length; rank += 1) {
         const kind = o.noticeKinds[rank];
         if (!kind.glyph.some((sig) => drawn.includes(sig))) continue;
@@ -2065,7 +2123,7 @@ const theCardRegionReadsLoudestFirst = {
     };
     const unreadNames = unreadMessages
       .slice(0, 3)
-      .map((m) => `「${prose(m.el).replace(/\s+/g, " ").slice(0, 34)}」 (${glyphName(m.el)}, role ${m.el.getAttribute("role") ?? "none"})`)
+      .map((m) => `「${prose(m.el).replace(/\s+/g, " ").slice(0, 34)}」 (${glyphName(m.el)}, role ${roleOf(m.el) ?? "none"})`)
       .join(", ");
     const unreadMore = unread > 3 ? ` and ${unread - 3} more` : "";
 
@@ -2465,6 +2523,7 @@ const buttonWithoutBackground = {
     if (!o.requireButtonFill) return { compared: 0, findings };
     const design = document.documentElement.dataset.design ?? "";
     if (o.buttonFillDesigns.length > 0 && !o.buttonFillDesigns.includes(design)) return { compared: 0, findings };
+    if (o.buttonFillScope && !document.querySelector(o.buttonFillScope)) return { compared: 0, findings };
     const visible = (el) => {
       for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
         const s = getComputedStyle(n);
@@ -3022,6 +3081,16 @@ const FIXTURES = {
         </div></main>`,
       // The screen this was written from: amber above red, so the first thing the reader meets is
       // the second thing they have to deal with.
+      // The site kit's banners: the role is on each title paragraph and the glyph beside it, both
+      // inside the band, so the band is the message and its glyph and role are read together.
+      "a warning banner above a danger one, each with its role on the title":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .band{border:1px solid transparent;border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+        .body{flex:1}.body p{margin:0}.danger{background:#fef2f2}.warn{background:#fffbeb}</style>
+        <main>
+        <div class="band warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>들어가지 못한 행이 112행 남아 있습니다</p></div></div>
+        <div class="band danger"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=note>원본 파일이 없는 회차가 2건 있습니다</p></div></div>
+        </main>`,
       "a warning drawn above a danger":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
@@ -3069,6 +3138,16 @@ const FIXTURES = {
         <main><div><div class=tile><div>Roles</div><div class=n>2</div><div>Default catalogue for every installation</div></div>
         <div class=tile><div>Feature areas</div><div class=n>4</div><div>The groups permissions are granted in</div></div></div></main>`,
       // The order the header control lists them in.
+      // The site kit's banners in the right order, the role on each title and the glyph beside it.
+      // Read inside the role element they draw no glyph at all, and the page reports itself unread.
+      "a danger banner above a warning one, each with its role on the title":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .band{border:1px solid transparent;border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+        .body{flex:1}.body p{margin:0}.danger{background:#fef2f2}.warn{background:#fffbeb}</style>
+        <main>
+        <div class="band danger"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=note>원본 파일이 없는 회차가 2건 있습니다</p></div></div>
+        <div class="band warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>들어가지 못한 행이 112행 남아 있습니다</p></div></div>
+        </main>`,
       "danger, warning, info, help in that order":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
@@ -3165,6 +3244,13 @@ const FIXTURES = {
         .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}</style>
         <main><div role=alert class=msg><span class=body>수신하지 못한 사람이 2명 있습니다</span>
         <button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+      // The role sits on the title paragraph, inside the band, and the band draws no glyph at all:
+      // the role element and its band are different elements, and the band is the message.
+      "a banner whose title carries the role and whose band draws no glyph":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .band{border:1px solid transparent;border-radius:8px;padding:10px 12px;background:#fef2f2;display:flex;gap:8px;align-items:flex-start}
+        .body{flex:1}.body p{margin:0}</style>
+        <main><div class=band><div class=body><p role=alert>수신하지 못한 사람이 2명 있습니다</p><div>주소를 확인한 뒤 다시 보내 주세요</div></div></div></main>`,
       // The glyph is owed on every page. A confirmation page with no restore control asks for no
       // close, and a warning there that is carried by its tint alone is still half-read.
       "a warning with no glyph on a page with no restore control":
@@ -3189,6 +3275,22 @@ const FIXTURES = {
         <div role=alert class=msg style="background:#fef2f2"><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg><span class=body>원본 파일이 없는 회차가 2건 있습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>이력은 회차마다 남습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         </main>`,
+      // The site kit's banner: the glyph is a sibling of the title paragraph that carries the role,
+      // both inside the tinted band. The band draws its glyph, and reading only inside the role
+      // element reported it as drawing none.
+      "a banner whose glyph sits beside the title that carries the role":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .band{border:1px solid transparent;border-radius:8px;padding:10px 12px;background:#fef2f2;display:flex;gap:8px;align-items:flex-start}
+        .body{flex:1}.body p{margin:0}</style>
+        <main><div class=band><span aria-hidden=true><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg></span>
+        <div class=body><p role=alert>수신하지 못한 사람이 2명 있습니다</p><div>주소를 확인한 뒤 다시 보내 주세요</div></div></div></main>`,
+      // A tinted settings card that explains one setting and holds its switch. It is a setting,
+      // not a message: the switch is a control that sets a value, which a message never holds.
+      "a tinted settings card holding a switch":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .card{border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;background:#f4f4f5;display:flex;gap:12px;align-items:center}
+        .card span{flex:1}.sw{width:36px;height:20px;border-radius:10px;border:0;background:#0f766e}</style>
+        <main><div class=card><span>이 기기에서 로그인 알림 메일을 받습니다</span><button role=switch aria-checked=true class=sw></button></div></main>`,
       // A sign-in panel. It has a message with no close and it is right: there is no shell around
       // it, so nothing would bring a closed message back and closing would delete it. The `main`
       // landmark is what says so, and the panel draws none.
@@ -3879,34 +3981,42 @@ const FIXTURES = {
     },
   },
   buttonWithoutBackground: {
+    // Every page below draws the console shell's marker: the rule is scoped to it, because two kits
+    // can share one design name and only the shell says which kit drew the page.
+    options: { buttonFillScope: "[data-slot^=console-]" },
     broken: {
       // The footer this was written from: a tinted verb, a filled verb, and a bare red one.
       "a footer whose delete is bare red text":
-        `<style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
         button{padding:8px 14px;border:0}.tint{background:#fde8e8;color:#b42318}.fill{background:#2563eb;color:#fff}
         .bare{background:transparent;color:#b42318}</style>
         <div class=foot><button class=tint>사용 중지</button><button class=bare>삭제</button><button class=fill>편집</button></div>`,
       // Expanded state alone does not spare a control that opens a menu.
       "a bare menu trigger that opens a popup":
-        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
         <div><button aria-expanded=false aria-haspopup=menu>더 보기</button></div>`,
     },
     quiet: {
+      // The same bare button on a page another kit drew under the same design name: not this
+      // kit's rule, so it is not judged.
+      "a bare button on a page without the console shell":
+        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
+        <div><button>삭제</button></div>`,
       "the same footer with delete tinted":
-        `<style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
         button{padding:8px 14px;border:0}.tint{background:#fde8e8;color:#b42318}.fill{background:#2563eb;color:#fff}</style>
         <div class=foot><button class=tint>사용 중지</button><button class=tint>삭제</button><button class=fill>편집</button></div>`,
       // A control hidden until its row is pointed at is not on the screen to be judged.
       "a row action strip hidden at rest":
-        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}
         .strip{opacity:0}</style><div class=strip><button aria-label="편집">E</button></div>`,
       // A menu branch folds the rows under it; it is drawn as bare as the links beside it.
       "a navigation branch drawn as a bare row":
-        `<style>body{margin:0;font:14px sans-serif}button,a{display:block;padding:8px 14px;border:0;background:transparent}</style>
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}button,a{display:block;padding:8px 14px;border:0;background:transparent}</style>
         <div><button aria-expanded=true>운영</button><a href="/jobs">작업</a></div>`,
       // A tab is not a button, however it is drawn.
       "a tab strip of bare tabs":
-        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
+        `<i data-slot=console-window></i><style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
         <div role=tablist><button role=tab>전체</button><button role=tab>활성</button></div>`,
     },
   },
