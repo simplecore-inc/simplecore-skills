@@ -619,6 +619,41 @@ function stringifiedPathsArePlainStrings(line, stringProps) {
   return paths.length > 0 && paths.every((p) => stringProps.has(p.slice(p.lastIndexOf(".") + 1)));
 }
 
+
+/**
+ * Whether `source` declares `prop` as a string-literal union (`kind: "grant" | "spend"`, a literal
+ * `as const`, or a named alias of such a union), which makes the property a catalog key and not a
+ * boot enum object. A bare `kind: "grant"` is a value in an object literal and proves nothing
+ * about the type, so only the union and the `as const` forms count.
+ */
+function declaresLiteralKey(source, prop) {
+  const literal = String.raw`(?:"[^"\n]*"|'[^'\n]*')`;
+  if (new RegExp(String.raw`\b${prop}\??\s*:\s*${literal}\s*(?:\||as\s+const\b)`).test(source)) return true;
+  const alias = new RegExp(String.raw`\b${prop}\??\s*:\s*([A-Z]\w*)\s*[;,}\n)|]`).exec(source);
+  return alias !== null
+    && new RegExp(String.raw`\btype\s+${alias[1]}\s*=\s*\|?\s*${literal}\s*\|`).test(source);
+}
+
+/**
+ * Whether every enum-looking path a line stringifies ends in a property that is already a catalog
+ * key: declared a string-literal union in this file, or in the function the path's head variable
+ * was built by (`const words = entryWords(row)`, with `entryWords` exported from a sibling).
+ *
+ * @param line the source line
+ * @param content the whole file
+ */
+function stringifiedPathsAreLiteralKeys(line, content) {
+  const paths = [...line.matchAll(/(?:String\(\s*|\$\{\s*)((?:[A-Za-z_$][\w$]*\.)+\w+)/g)].map((m) => m[1]);
+  return paths.length > 0 && paths.every((p) => {
+    const prop = p.slice(p.lastIndexOf(".") + 1);
+    if (declaresLiteralKey(content, prop)) return true;
+    const head = p.split(".")[0];
+    const built = new RegExp(String.raw`\b(?:const|let)\s+${head.replace(/\$/g, "\\$")}\s*=\s*(?:await\s+)?([A-Za-z_$][\w$]*)\s*\(`).exec(content);
+    const source = built ? exportedFunctionSources().get(built[1]) : undefined;
+    return source !== undefined && declaresLiteralKey(source, prop);
+  });
+}
+
 /**
  * The source of every exported function in the project, keyed by name.
  *
@@ -6606,7 +6641,8 @@ const canManage = useCan("manage", SUBJECTS.area);
             // property access.
             /(?:String\(\s*|\$\{\s*)(?:[A-Za-z_$][\w$]*\.)+(?!is[A-Z])\w*(?:[Ss]tatus|[Tt]ype|[Kk]ind|[Mm]ode|[Cc]hannel)\b/,
             (line) => !line.includes("resolveBootEnum") && !stringifiedPathsAreKeyTested(line)
-              && !stringifiedPathsArePlainStrings(line, projectionStringProps(rel)),
+              && !stringifiedPathsArePlainStrings(line, projectionStringProps(rel))
+              && !stringifiedPathsAreLiteralKeys(line, c),
           )
         : [],
     samples: {
@@ -6649,6 +6685,24 @@ const canManage = useCan("manage", SUBJECTS.area);
           source: `import { useGetLedger } from "@acme/domain-billing";
 
 value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\${entry.kind}\`) } : undefined,`,
+        },
+        {
+          note: "a property this file declares as a string-literal union is a catalog key, not a boot enum",
+          source: `import { useGetLedger } from "@acme/domain-billing";
+
+type Words = { kind: "grant" | "spend" | "expire" };
+const label = (words: Words) => t(\`ledger.kind.\${words.kind}\`);`,
+        },
+        {
+          note: "a key built by a sibling helper whose result type declares the property as a literal union",
+          files: {
+            "modules/user-admin/src/widgets/user-account/words.ts": `export function entryWords(row: Row): { kind: "grant" | "spend" } { return { kind: "grant" }; }`,
+          },
+          source: `import { useGetLedger } from "@acme/domain-billing";
+import { entryWords } from "./words";
+
+const words = entryWords(row);
+const label = t(\`ledger.kind.\${words.kind}\`);`,
         },
       ],
     },
