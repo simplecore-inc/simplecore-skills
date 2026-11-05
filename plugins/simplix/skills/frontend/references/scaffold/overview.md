@@ -843,6 +843,48 @@ Server enum translations flow into the domain package's `locales/*.json` via cod
 
 **Fix**: set the label in the BACKEND `messages/enums/*.properties` (every locale; the backend's enum message test, which fails on an enum value with no message, gates this), then regenerate - the label lands in the frontend locale automatically. Symmetrically, after any regeneration spot-check that the enum count in `locales/en.json` did not shrink (an overlay failure can pass typecheck while dropping enums - see Notes & Gotchas).
 
+### One entity's field labels stay in the base language while a sibling entity has them translated
+
+The shape: `packages/domain-<name>/src/locales/ko.json` holds `<entityA>.fields.ipAddress: "IP 주소"`
+and `<entityB>.fields.ipAddress: "Ip Address"`, and SimpliX Meta carries the field's keyed label in
+both languages. Every key is present, so no missing-key check sees it.
+
+**A DTO several entities return belongs to each of them.** A sign-in activity two surfaces return,
+or a status-count row every list's figures share, is labelled once into every reaching entity's
+catalog. A CLI that recorded one owner per declaration (the first entity tag to reach it) labelled
+the first entity only, and every later entity kept the humanised base-locale words some earlier
+writer left, in every locale. The resolver records `reachedBy` for each declaration, and the
+catalogs, the locale skeleton and the server-translation filter read it. Where a shared DTO and the
+entity's own DTO name the same field, the entity's own DTO decides the label.
+
+**Two causes give the same shape. Tell them apart by reading the DTO behind the untranslated entity
+in `openapi/meta.json`.**
+
+| What the DTO carries | Cause | Fix |
+| --- | --- | --- |
+| the field has `labels` in every locale | the CLI labelled the shared DTO for one entity only | rebuild the CLI (`pnpm build` in the framework's `packages/cli`) and run `simplix meta` |
+| the field has no `labels`, and the translated sibling's words come from its own DTOs | backend label gap | give the backend DTO field a keyed `@FieldLabel`, then regenerate |
+
+**Find every instance with one command, and run it after each regeneration:**
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --rule=domain-field-label-left-in-one-language`.
+It reads every domain catalog. It lists a field key whose value is identical in every locale under
+one entity while a sibling entity holds it translated. An acronym (`ID`) is the expected review case.
+
+**Check that a CLI change kept both languages without writing into the shared tree.**
+1. Copy `simplix.config.ts`, `package.json`, `openapi/` and the affected `packages/domain-<name>/`
+   (without `node_modules` and `dist`) into a scratch directory, with `node_modules` symlinked.
+   Keep the scratch directory at the same depth as the project, so relative paths in the config
+   resolve inside it.
+2. Build the previous CLI from `git archive HEAD packages/cli` beside the new one.
+3. Run `node <cli>/dist/bin.js meta --offline -d <name>` with each CLI on its own copy.
+4. Diff the two copies. Expect the previous CLI to reproduce the committed files byte for byte; any
+   difference that run shows is the input, not the CLI.
+5. Run the rule above on both copies.
+
+**An offline run writes the base locale's humanised words into every locale for a field with no
+keyed label.** Widening a set of types adds such keys for the newly reaching entities. Run online,
+so the server-translation overlay can supply them, or label the field on the backend.
+
 ## File Map
 
 | Purpose | Location |

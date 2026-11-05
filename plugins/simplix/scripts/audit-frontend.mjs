@@ -9300,6 +9300,87 @@ function emptyLocaleValueFindings() {
   return findings;
 }
 
+/**
+ * A field label a domain catalogue holds in one language for every locale, under one entity, while
+ * a sibling entity of the same catalogue holds the same field key translated.
+ *
+ * <p>The domain catalogues (`packages/<domain>/src/locales/<locale>.json`, one `<entity>.fields`
+ * block per entity) are written by the generator, which labels a field from SimpliX Meta in every
+ * entity that reaches the DTO declaring it. A DTO two entities return (a sign-in activity, a
+ * status-count row) is the usual case: a generator that labelled it for the first entity only left
+ * every later entity with the humanised words the base locale got (`Ip Address`, `Value`), in every
+ * locale, beside a sibling reading 「IP 주소」 and 「값」. Every key is present, so no
+ * missing-translation check sees it, and the screen prints the base language in the middle of the
+ * other. The repair is a regeneration with a CLI that labels shared DTOs per entity, or a keyed
+ * label on the backend DTO field where the sibling's words came from a hand edit or a server
+ * overlay; never a hand edit of the generated catalogue, which the next regeneration reverts.
+ *
+ * <p>Read per catalogue and per field key, with no language assumed: the finding is a key whose
+ * value is the same in every locale for one entity and differs between locales for another.
+ */
+function domainFieldLeftInOneLanguageFindings() {
+  const findings = [];
+  for (const unit of workspaceUnitDirs("packages")) {
+    const dir = path.join(unit, "src", "locales");
+    if (!fs.existsSync(dir)) continue;
+    const catalogs = new Map();
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith(".json")) continue;
+      const full = path.join(dir, file);
+      try {
+        catalogs.set(file.replace(/\.json$/, ""), { full, raw: fs.readFileSync(full, "utf8"), data: JSON.parse(fs.readFileSync(full, "utf8")) });
+      } catch {
+        continue;
+      }
+    }
+    if (catalogs.size < 2) continue;
+    const locales = [...catalogs.keys()].sort();
+    const fieldsOf = (locale, entity) => {
+      const block = catalogs.get(locale).data[entity];
+      const fields = block && typeof block === "object" ? block.fields : undefined;
+      return fields && typeof fields === "object" && !Array.isArray(fields) ? fields : {};
+    };
+    const entities = new Set();
+    for (const { data } of catalogs.values()) {
+      for (const [key, value] of Object.entries(data)) {
+        if (value && typeof value === "object" && value.fields && typeof value.fields === "object") entities.add(key);
+      }
+    }
+    // field key -> entity -> the value in each locale, where every locale holds a string
+    const byKey = new Map();
+    for (const entity of entities) {
+      const keys = new Set(locales.flatMap((locale) => Object.keys(fieldsOf(locale, entity))));
+      for (const key of keys) {
+        const values = locales.map((locale) => fieldsOf(locale, entity)[key]);
+        if (!values.every((one) => typeof one === "string" && one.trim() !== "")) continue;
+        if (!byKey.has(key)) byKey.set(key, new Map());
+        byKey.get(key).set(entity, values);
+      }
+    }
+    for (const [key, perEntity] of byKey) {
+      const translated = [...perEntity].filter(([, values]) => new Set(values).size > 1);
+      if (translated.length === 0) continue;
+      for (const [entity, values] of perEntity) {
+        if (new Set(values).size !== 1) continue;
+        const [sibling, siblingValues] = translated[0];
+        // Reported in the first locale where the sibling's words differ from this entity's.
+        const at = locales.findIndex((locale, i) => siblingValues[i] !== values[0]);
+        const locale = locales[at < 0 ? 0 : at];
+        const { full, raw } = catalogs.get(locale);
+        const lines = raw.split("\n");
+        const entityLine = lines.findIndex((l) => l.includes(`"${entity}"`));
+        const keyLine = lines.findIndex((l, i) => i > entityLine && l.includes(`"${key}"`));
+        findings.push({
+          file: path.relative(ROOT, full),
+          line: keyLine < 0 ? 0 : keyLine + 1,
+          excerpt: `${entity}.fields.${key} reads ${JSON.stringify(values[0])} in every locale (${locales.join(", ")}) while ${sibling}.fields.${key} is translated (${siblingValues.map((one) => JSON.stringify(one)).join(" / ")})`,
+        });
+      }
+    }
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Collection rules - the ones that read a tree rather than a file
 //
@@ -9402,6 +9483,43 @@ const COLLECTION_RULES = [
           files: {
             "modules/site/src/locales/widgets/ko.json": `{ "unit": { "days": "일" } }`,
             "modules/site/src/locales/widgets/en.json": `{ "unit": { "days": " days" } }`,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "domain-field-label-left-in-one-language",
+    invariant: "audit: locale fallback",
+    level: "review",
+    desc: "A domain catalogue's field label reads the same in every locale under one entity while a sibling entity of the same catalogue has that field key translated. It is the trace of a shared DTO labelled for the first entity that reaches it only: every later entity keeps the humanised base-locale words (`Ip Address`, `Value`) in every locale, every key is present, and the screen prints the base language inside the other one. Regenerate with a CLI that labels a shared DTO per entity (`simplix meta`), and where the sibling's words did not come from SimpliX Meta, give the backend DTO field a keyed label; a hand edit of the generated catalogue is reverted by the next regeneration. An acronym that is the same word in every language is the expected review case",
+    collect: domainFieldLeftInOneLanguageFindings,
+    samples: {
+      broken: {
+        files: {
+          "packages/domain-<domain>/src/locales/en.json": `{ "currentSignIn": { "fields": { "ipAddress": "IP address" } }, "userAccount": { "fields": { "ipAddress": "Ip Address" } } }`,
+          "packages/domain-<domain>/src/locales/ko.json": `{ "currentSignIn": { "fields": { "ipAddress": "IP 주소" } }, "userAccount": { "fields": { "ipAddress": "Ip Address" } } }`,
+        },
+      },
+      fixed: {
+        files: {
+          "packages/domain-<domain>/src/locales/en.json": `{ "currentSignIn": { "fields": { "ipAddress": "IP address" } }, "userAccount": { "fields": { "ipAddress": "IP address" } } }`,
+          "packages/domain-<domain>/src/locales/ko.json": `{ "currentSignIn": { "fields": { "ipAddress": "IP 주소" } }, "userAccount": { "fields": { "ipAddress": "IP 주소" } } }`,
+        },
+      },
+      miss: [
+        {
+          note: "a label the same in every language for every entity, such as an acronym, has no translated sibling",
+          files: {
+            "packages/domain-<domain>/src/locales/en.json": `{ "a": { "fields": { "id": "ID" } }, "b": { "fields": { "id": "ID" } } }`,
+            "packages/domain-<domain>/src/locales/ko.json": `{ "a": { "fields": { "id": "ID" } }, "b": { "fields": { "id": "ID" } } }`,
+          },
+        },
+        {
+          note: "a module's widget catalogue is not a domain catalogue: the rule reads packages only",
+          files: {
+            "modules/<domain>/src/locales/widgets/en.json": `{ "a": { "fields": { "x": "Value" } }, "b": { "fields": { "x": "Value" } } }`,
+            "modules/<domain>/src/locales/widgets/ko.json": `{ "a": { "fields": { "x": "값" } }, "b": { "fields": { "x": "Value" } } }`,
           },
         },
       ],
