@@ -1251,6 +1251,10 @@ const regionCrushedToASliver = {
       // Only a region that clips can hide what it holds. An `overflow: visible` element paints
       // its content past its own box, so the reader sees it whatever the box measures.
       if (style.overflowY === "visible") continue;
+      // A region made inert was closed on purpose: no pointer, key or reader reaches it, and the
+      // control that closed it is the way back. A figure row folded away while a record is open is
+      // the case: its fold keeps a few pixels of its gutter and holds the whole row.
+      if (el.closest("[inert]")) continue;
 
       const rect = el.getBoundingClientRect();
       // A region, not a control or a rule: something wide enough to have been holding a screen.
@@ -4267,6 +4271,13 @@ const FIXTURES = {
         <div class=fold><p>사흘 이상 이어진 당직이 둘 있습니다.</p><p>휴일이 끼어 있어 실제 부담은 더 큽니다.</p>
         <p>한도를 넘지는 않았습니다.</p><p>사업장 설정이 정합니다.</p><p>박관리 · 한설비</p>
         <p>금·토·일</p><p>이레 내내</p><p>연속 당직 한도 3일</p><p>토요일 야간</p><p>보건 당직</p></div>`,
+      // A row folded away on purpose and made inert, which keeps eight pixels of its gutter. The
+      // fold is closed and the reader cannot reach into it; the control above it opens it again.
+      "an inert fold keeping eight pixels of a figure row":
+        `<style>body{margin:0;font:14px sans-serif}
+        .gutter{width:900px;height:8px;overflow:hidden}.tile{height:120px;margin:4px;border:1px solid #ccc}</style>
+        <button aria-expanded="false">펼치기</button>
+        <div inert aria-hidden="true"><div class=gutter><div class=tile>수신 3</div><div class=tile>실패 1</div></div></div>`,
       // A chip row that scrolls sideways. It is short because chips are short, and it holds
       // exactly its own height - the overflow is on the other axis.
       "a chip row scrolling sideways at its own height":
