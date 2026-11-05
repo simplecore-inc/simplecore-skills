@@ -2797,6 +2797,90 @@ export function useFormBlocks() { return { sections: formSections }; }`,
     },
   },
   {
+    id: "search-validator-leaves-a-key-out",
+    invariant: "#3",
+    level: "error",
+    desc: "A route's search validator that answers an invalid or absent value by leaving its key out (`...(x ? { x } : {})`, `cond ? { q } : {}`). TanStack Router builds a route's search as the parent's search with the validated one laid over it, and the root's search is the raw address, so a key the validator does not write keeps whatever the address held: `?version=9.9` reaches the page as \"9.9\", a select whose value matches no option draws an empty trigger, and `?q=7` reaches a string field as a number. Write every key the validator owns, `undefined` where the address gave nothing valid (`{ version: valid ? version : undefined }`); the router drops an undefined value when it writes the address back",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      const hits = [];
+      // The text of an expression or block that starts at `from`: a parenthesised or braced group is
+      // matched to its close, anything else runs to the end of its line.
+      const group = (from) => {
+        let i = from;
+        while (i < c.length && /\s/.test(c[i])) i++;
+        const open = c[i];
+        if (open !== "(" && open !== "{") return { start: i, text: c.slice(i, c.indexOf("\n", i) < 0 ? c.length : c.indexOf("\n", i)) };
+        const close = open === "(" ? ")" : "}";
+        let depth = 0;
+        let quote = null;
+        for (let j = i; j < c.length; j++) {
+          const ch = c[j];
+          if (quote) {
+            if (ch === "\\") j++;
+            else if (ch === quote) quote = null;
+          } else if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+          else if (ch === open) depth++;
+          else if (ch === close && --depth === 0) return { start: i, text: c.slice(i, j + 1) };
+        }
+        return { start: i, text: "" };
+      };
+      const bodies = [];
+      // An inline validator: `validateSearch: (search...) => <body>`.
+      const inline = /validateSearch\s*:\s*\([^)]*\)[^=\n]*=>/g;
+      let m;
+      while ((m = inline.exec(c)) !== null) bodies.push(group(m.index + m[0].length));
+      // A named validator a route hands over: a function reading the raw search object.
+      const named = /function\s+\w+\s*\(\s*search\s*:\s*Record<string,\s*unknown>\s*\)[^\n]*\{[ \t]*\n/g;
+      while ((m = named.exec(c)) !== null) bodies.push(group(m.index + m[0].lastIndexOf("{")));
+      // An empty object as one branch of a choice: the key it stands for is left out.
+      const leaves = /\?\s*\{\s*\}\s*:|:\s*\{\s*\}(?=\s*[),;\]\n])/g;
+      for (const body of bodies) {
+        leaves.lastIndex = 0;
+        let l;
+        while ((l = leaves.exec(body.text)) !== null) {
+          const line = lineOfIndex(c, body.start + l.index);
+          hits.push({ line, excerpt: (c.split("\n")[line - 1] ?? "").trim() });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "apps/<app>/src/routes/terms.tsx",
+      broken: `export const Route = createFileRoute("/terms")({
+  validateSearch: (search: Record<string, unknown>): TermsChoice => {
+    const version = parseVersion(search.version);
+    return { ...(version === undefined ? {} : { version }) };
+  },
+});`,
+      fixed: `export const Route = createFileRoute("/terms")({
+  validateSearch: (search: Record<string, unknown>): TermsChoice => {
+    const version = parseVersion(search.version);
+    return { version };
+  },
+});`,
+      miss: [
+        {
+          note: "an expression-bodied validator that writes its key either way",
+          source: `export const Route = createFileRoute("/help")({
+  validateSearch: (search: Record<string, unknown>): HelpSearch => ({ q: typeof search.q === "string" && search.q !== "" ? search.q : undefined }),
+});`,
+        },
+        {
+          note: "a named validator that writes every key",
+          source: `export function checkoutSearch(search: Record<string, unknown>): CheckoutSearch {
+  const kind = search.kind === "plan" ? search.kind : undefined;
+  return { kind, trial: truthy(search.trial) ? true : undefined };
+}`,
+        },
+        {
+          note: "a navigation that leaves a default out of the address, which is not a validator",
+          source: `const choose = (next: Choice) => navigate({ search: { ...(next.cycle === "monthly" ? {} : { cycle: next.cycle }) } });`,
+        },
+      ],
+    },
+  },
+  {
     id: "session-token-read-from-the-query-string",
     invariant: "#77",
     level: "error",
