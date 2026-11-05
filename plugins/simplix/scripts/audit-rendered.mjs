@@ -2766,20 +2766,18 @@ const textContrastBelowMinimum = {
     };
     /**
      * The ground behind an element: ancestors' backgrounds composited until one is opaque, or null
-     * over an image. An ancestor that does not clip and whose box the element's centre lies outside
-     * is not behind it (a tooltip's arrow hangs below its bubble, over the page), so it is passed.
+     * over an image. An ancestor that does not clip and whose box the element's box does not overlap
+     * at all is not behind it (a tooltip's arrow hangs below its bubble, over the page), so it is passed.
      */
     const groundOf = (el) => {
       const layers = [];
       let reachedOpaque = false;
       const box = el.getBoundingClientRect();
-      const cx = box.left + box.width / 2;
-      const cy = box.top + box.height / 2;
       for (let n = el; n; n = n.parentElement) {
         const s = getComputedStyle(n);
         if (n !== el && s.overflowX === "visible" && s.overflowY === "visible") {
           const r = n.getBoundingClientRect();
-          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom) continue;
+          if (box.right <= r.left || box.left >= r.right || box.bottom <= r.top || box.top >= r.bottom) continue;
         }
         if (s.backgroundImage !== "none") return null;
         const c = rgba(s.backgroundColor);
@@ -2836,6 +2834,9 @@ const textContrastBelowMinimum = {
       const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent.trim()).join(" ");
       if (!own || ["SCRIPT", "STYLE", "NOSCRIPT", "OPTION"].includes(el.tagName) || !visible(el)) continue;
       const s = getComputedStyle(el);
+      // Text hidden for the eye and kept for a screen reader (a one-pixel box clipped away) paints no glyph.
+      const shownBox = el.getBoundingClientRect();
+      if (shownBox.width <= 1 && shownBox.height <= 1) continue;
       // Glyphs painted from a background (a clipped gradient) have no text colour to read.
       if (s.backgroundClip === "text" || s.webkitBackgroundClip === "text") continue;
       // Text set to font-size 0 paints no glyph: a one-pixel separator drawn as a background keeps its
@@ -4188,6 +4189,13 @@ const FIXTURES = {
         .tip{position:relative;display:inline-block;padding:6px 10px;background:#e3eeee;color:#12201f}
         .tip svg{position:absolute;left:20px;top:100%}</style>
         <div class=tip>Only a failed event is sent back<svg width=10 height=5 viewBox="0 0 10 5" fill="#e3eeee"><polygon points="0,0 10,0 5,5" /></svg></div>`,
+      // A panel's title kept for a screen reader only: a one-pixel clipped box at the panel's edge,
+      // in the panel's light ink, on a page whose canvas is white. It paints no glyph to judge.
+      "a screen-reader title clipped to one pixel at a dark panel's edge":
+        `<style>body{margin:0;font:14px sans-serif}
+        .panel{position:fixed;top:0;right:0;width:400px;height:300px;background:#14252a;color:#e3eeee;padding:16px}
+        .sr{position:absolute;top:0;left:0;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
+        <div class=panel><h2 class=sr>Details</h2><p>Payment event</p></div>`,
       // A one-pixel separator drawn as a background keeps its character in the markup at font-size 0.
       "a separator whose character is set to font-size 0":
         `<style>body{margin:0;font:14px sans-serif;background:#fff}
