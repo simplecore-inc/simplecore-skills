@@ -41,6 +41,7 @@ Run each census over the WHOLE cluster, with the browser as the instrument. Anch
 5. **Presentation agreement** - the same status uses the same badge component and tone map on every surface, at parity size (#43); red is reserved cluster-wide for act-now sets (#48); the same temporal kind formats through the same components and zone everywhere (#42).
 6. **Affordance agreement** - an action available for state X on one surface is available, or deliberately absent, on every other surface showing state X. Deliberate asymmetry (a trust boundary #47, a scope restriction) is verified as SERVER-enforced - visually absent but callable is a hole, not an asymmetry.
 7. **Shape parity between sibling screens** - two same-shape screens inside the cluster (two lists, two boards) walk the comparison sheet from the `simplix:frontend` skill's `customize/precedent-check.md` against each other in the live browser (lens 4, `judgment-lenses.md`).
+8. **Account-derived defaults** - a value the account decides rather than the reader's language (a subscriber's billing currency, the cycle billed, the plan's display name) is computed by one shared function that every surface starting from it reads. Census it with an account whose value differs from the language default (a subscriber billed in won reading the English pages): open every surface that prices, links a purchase or names the plan (the pricing page and its links, the purchase pages, the checkout opened without the value in its address, the account sections, the receipts) and list each one that falls back to the language. One surface that remembered the account while its siblings did not is the precedent, not the exception; lift its logic into the shared function and point the siblings at it.
 
 ---
 
@@ -51,6 +52,7 @@ For every flow arrow that crosses personas or areas (`personas-and-flows.md` § 
 1. **Identity carries over** - the second persona can FIND the record by what they know (a name, today's queue), not by an id the first persona would have to read out loud.
 2. **The state label matches the promise** - what surface A said would happen ("submitted for approval") is the state surface B displays, in B's persona's vocabulary.
 3. **The way back exists** - a rejection, return, or cancellation on B's side is visible on A's side with its reason, and A has an affordance to act on it (revise, resubmit, withdraw).
+4. **A message's instruction works where it sends the reader** - every mail, notice or toast that tells the reader to do something on a named page ("choose it on the pricing page before then", "cancel any time in My account") is followed on that page in the account state the message is sent in. Open the page as that state and press the thing the message names; a page that draws the choice disabled, labels it "your plan", or hides it in that state is a dead end the message walks the reader into.
 
 ---
 

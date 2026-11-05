@@ -12,6 +12,8 @@ The continuous lens: never break character while driving (SKILL.md Ground Rules,
 
 Anchor: a concrete persona failure - a task they cannot complete, a term they do not know, a value they cannot interpret.
 
+A sentence that promises an event (a refill, a renewal, a next payment, credits going up, a change on a date) is read in every state that stops or alters the event: set to cancel, payment failed, change scheduled, trial ending, the change applied but its effect not yet granted. Name those states from the record's lifecycle first, then open the sentence in each. A line that is true for an active subscription and false the day its renewal failed ("refilled Nov 4" for the payment that did not go through) passes every census that reads the active state only.
+
 ## Lens 2 - The UI/UX reviewer
 
 An explicit pass per screen cluster. Asks:
