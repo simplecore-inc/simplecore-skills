@@ -23,6 +23,7 @@ symptom.
 15. [Overriding `configureMessageConverters(List)` drops Spring's defaults](#overriding-configuremessageconverterslist-drops-springs-defaults)
 16. [A refused search sort answers 200 with an error body](#a-refused-search-sort-answers-200-with-an-error-body)
 17. [A test class with a context of its own keeps it for the whole test JVM](#a-test-class-with-a-context-of-its-own-keeps-it-for-the-whole-test-jvm)
+18. [A field the request DTO lacks is dropped, never refused](#a-field-the-request-dto-lacks-is-dropped-never-refused)
 
 ---
 
@@ -278,3 +279,24 @@ without it, close the class's context after it runs with
 in the shared test database breaks another class that reads a whole table (`findAll()`): the order
 that hid it is gone. A class that writes to the migrated test database removes its own rows in an
 `@AfterEach`, by the keys it wrote, so no later class sees them whatever the order.
+
+## A field the request DTO lacks is dropped, never refused
+
+The SimpliX `ObjectMapper` (`SimpliXJacksonAutoConfiguration`, the primary mapper the MVC
+converter is built from) disables `FAIL_ON_UNKNOWN_PROPERTIES`. A body carrying a field its DTO
+does not declare binds without it and the request answers as if the field were never sent: no 400,
+no log line.
+
+- **So a value the server owns is kept from the client by leaving it out of the request DTO**, and
+  a server-derived value (an expiry, a status, an owner) needs no refusal branch. A field added to
+  the DTO "to reject it" invites a later edit that starts honouring it.
+- **A test that proves the client cannot set it reads the body twice**: once through a strict
+  `new ObjectMapper()`, which must throw `UnrecognizedPropertyException` naming the field (the
+  proof the DTO has no such property), and once with `FAIL_ON_UNKNOWN_PROPERTIES` disabled, as the
+  application reads it, after which the written row carries the server's value and not the
+  supplied one. Name the test for what happens (`..._is_ignored_...`), since nothing is refused.
+- **A `@DataJpaTest` slice has no Jackson auto-configuration**, so the test builds the two readers
+  itself rather than importing the SimpliX one into the slice.
+- **The flip side is a client typo**: a misspelt optional field is silently absent too, and the
+  server applies its default. A screen that sends a field the DTO lacks is found by comparing the
+  request body with the DTO (the frontend's generated request type), never by a server error.
