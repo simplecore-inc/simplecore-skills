@@ -2768,6 +2768,7 @@ const textContrastBelowMinimum = {
      * The ground behind an element: ancestors' backgrounds composited until one is opaque, or null
      * over an image. An ancestor that does not clip and whose box the element's box does not overlap
      * at all is not behind it (a tooltip's arrow hangs below its bubble, over the page), so it is passed.
+     * The root and the body are never passed: their background is painted over the whole canvas.
      */
     const groundOf = (el) => {
       const layers = [];
@@ -2775,7 +2776,7 @@ const textContrastBelowMinimum = {
       const box = el.getBoundingClientRect();
       for (let n = el; n; n = n.parentElement) {
         const s = getComputedStyle(n);
-        if (n !== el && s.overflowX === "visible" && s.overflowY === "visible") {
+        if (n !== el && n !== document.documentElement && n !== document.body && s.overflowX === "visible" && s.overflowY === "visible") {
           const r = n.getBoundingClientRect();
           if (box.right <= r.left || box.left >= r.right || box.bottom <= r.top || box.top >= r.bottom) continue;
         }
@@ -2794,6 +2795,20 @@ const textContrastBelowMinimum = {
       return a;
     };
     const exempt = (el) => !!el.closest(":disabled, [disabled], [aria-disabled='true']");
+    /**
+     * Whether a clipping ancestor cuts the element away whole, so it paints nothing: the digits a
+     * rolling figure keeps above and below its one-line window, a row folded shut.
+     */
+    const clippedAway = (el) => {
+      const box = el.getBoundingClientRect();
+      for (let n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.overflowX === "visible" && s.overflowY === "visible") continue;
+        const r = n.getBoundingClientRect();
+        if (box.bottom <= r.top || box.top >= r.bottom || box.right <= r.left || box.left >= r.right) return true;
+      }
+      return false;
+    };
     const ignored = (el) => o.contrastIgnoreSelector && el.closest(o.contrastIgnoreSelector);
     const label = (el, own) => {
       const t = (own || el.closest("a,button,[role='menuitem'],[role='tab']")?.innerText || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim();
@@ -2823,7 +2838,7 @@ const textContrastBelowMinimum = {
       if (el instanceof SVGSVGElement) {
         if (!o.contrastCheckIcons) continue;
         const r = el.getBoundingClientRect();
-        if (r.width > o.contrastIconMaxPx || r.height > o.contrastIconMaxPx || !visible(el)) continue;
+        if (r.width > o.contrastIconMaxPx || r.height > o.contrastIconMaxPx || !visible(el) || clippedAway(el)) continue;
         const s = getComputedStyle(el);
         const stroked = s.stroke !== "none" && parseFloat(s.strokeWidth) > 0;
         const fill = stroked ? s.stroke : s.fill !== "none" ? s.fill : null;
@@ -2836,7 +2851,7 @@ const textContrastBelowMinimum = {
       const s = getComputedStyle(el);
       // Text hidden for the eye and kept for a screen reader (a one-pixel box clipped away) paints no glyph.
       const shownBox = el.getBoundingClientRect();
-      if (shownBox.width <= 1 && shownBox.height <= 1) continue;
+      if ((shownBox.width <= 1 && shownBox.height <= 1) || clippedAway(el)) continue;
       // Glyphs painted from a background (a clipped gradient) have no text colour to read.
       if (s.backgroundClip === "text" || s.webkitBackgroundClip === "text") continue;
       // Text set to font-size 0 paints no glyph: a one-pixel separator drawn as a background keeps its
@@ -4196,6 +4211,20 @@ const FIXTURES = {
         .panel{position:fixed;top:0;right:0;width:400px;height:300px;background:#14252a;color:#e3eeee;padding:16px}
         .sr{position:absolute;top:0;left:0;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
         <div class=panel><h2 class=sr>Details</h2><p>Payment event</p></div>`,
+      // A rolling figure keeps every digit in a column and shows one through a one-line window; the
+      // digits above the window are cut away whole and paint nothing, wherever the ground walk ends.
+      "the digits a rolling figure keeps above its one-line window":
+        `<style>body{margin:0;font:14px/20px sans-serif}
+        .tile{background:#14252a;color:#e3eeee;height:40px;padding:0 16px}
+        .win{display:inline-block;height:20px;overflow:hidden;vertical-align:bottom}
+        .col{display:flex;flex-direction:column;transform:translateY(-60px)}.col span{height:20px}</style>
+        <div class=tile>Received <span class=win><span class=col><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span></span></span></div>`,
+      // Text laid out below a short body, on a page whose ground is the body's: the body's background
+      // is painted over the whole canvas, so it is the ground there too.
+      "text below a short body whose background is the page's":
+        `<style>html{margin:0}body{margin:0;height:40px;background:#14252a;color:#e3eeee;font:14px sans-serif}
+        .late{position:absolute;top:200px;left:16px;color:#e3eeee}</style>
+        <p>Payment events</p><p class=late>Received at</p>`,
       // A one-pixel separator drawn as a background keeps its character in the markup at font-size 0.
       "a separator whose character is set to font-size 0":
         `<style>body{margin:0;font:14px sans-serif;background:#fff}
