@@ -611,6 +611,14 @@ This overwrites (the `orval` layout; on `meta`, `src/generated-meta/` is the reg
 This regenerates only when not customized:
 - `src/mock/index.ts` - store wiring + generated-handler spreads; regenerated to stay in sync with `handlers.ts` UNLESS it has custom handler overrides (the `// Add custom handler overrides here` region is non-empty), in which case it is preserved untouched.
 
+**Committing a regeneration in a shared working tree stages the generated paths by name, never the
+package's status listing.** The package also holds hand-written files the generator never touches
+(mock scenarios and their tests, seeds), and another agent may be mid-edit in them: listing
+`git status` for `packages/<domain>` and staging every row commits that agent's work under a
+message about the regeneration. Stage `src/generated-meta/` (or `src/generated/`), `src/locales/`,
+`openapi/meta.json` and any file the generator newly wrote, then read the commit's file list for a
+path outside them.
+
 This preserves:
 - `src/mock/seeds.ts` - only generated on first creation, customizable
 - `src/mutator.ts` - only generated on the first `add-domain`, so the one-time `getMutator("boot")` fix (SKILL.md invariant #30, § Common Issues) survives every regeneration

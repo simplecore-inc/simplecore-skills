@@ -90,7 +90,7 @@ function collectSources(root = ROOT) {
  * this script never guesses. A missing file or section is the empty policy.
  *
  * @example
- * { "audit": { "scopeForcingCalls": ["<scopeHelper>", "<ScopedParamsType>"] } }
+ * { "audit": { "scopeForcingCalls": ["<scopeHelper>", "<ScopedParamsType>"], "rereadCalls": ["<RereadHelper.method>"] } }
  *
  * @param root the backend project root
  * @returns the declared `audit` object, or `{}`
@@ -3234,6 +3234,101 @@ public class ApprovalInboxService {
         row.setAttachmentLabel(attachment.getAttachmentLabel());
         row.setAttachmentMeta(attachment.getAttachmentMeta());
         return row;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "action-answer-mapped-before-flush",
+    invariant: "canonical-service",
+    level: "review",
+    desc: "A write method maps its answer with `findById(id, Dto.class)` after another component wrote the row (a ledger, a guard, a reprocessing step), with no flush or refresh between. `findById` maps the instance the persistence context already holds: the columns the write set by hand are current, but a `@Formula` field keeps the value it was loaded with and the auditing fields (`updatedAt`, `updatedBy`) are set only at flush, so the answer reports the row as it was before the write. Flush and refresh the row before mapping it (`entityManager.flush()` then `entityManager.refresh(...)`), or name the project's own re-read helper in `.claude/simplix.json` `audit.rereadCalls`. A method whose own write is `saveAndFlush` keeps its audit fields current and is not reported; a formula over a column it changed would still be stale there. A mapping behind a helper of the service's own (`return detail(id)`) is not seen, so census those by hand",
+    appliesTo: isService,
+    check: (c, _rel, ctx) => {
+      const clean = stripCommentsAndStrings(c);
+      const declared = (Array.isArray(ctx?.audit?.rereadCalls) ? ctx.audit.rereadCalls : [])
+        .filter((n) => typeof n === "string" && /^[A-Za-z_$][\w$.]*$/.test(n))
+        .map((n) => n.replace(/\./g, "\\."));
+      const REREAD = new RegExp(`\\bsaveAndFlush\\s*\\(|\\.flush\\s*\\(|\\brefresh\\s*\\(${declared.length ? `|\\b(?:${declared.join("|")})\\s*\\(` : ""}`);
+      const hits = [];
+      const re = /@Transactional\b(\s*\(([^)]*)\))?\s*(?:@\w+(?:\s*\([^)]*\))?\s*)*public\s+[\w<>,\s?]+?\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w.,\s]+)?\{/g;
+      let m;
+      while ((m = re.exec(clean))) {
+        if (m[2] && /readOnly\s*=\s*true/.test(m[2])) continue;
+        const body = braceBody(clean, m.index + m[0].length - 1);
+        const mapped = body.search(/\bfindById\s*\(\s*[^,()]+,\s*\w+\.class\s*\)/);
+        if (mapped < 0) continue;
+        const before = body.slice(0, mapped);
+        if (REREAD.test(before)) continue;
+        // A collaborator wrote first: a call on a field other than the service's own repository.
+        if (!/\b(?!repository\b|modelMapper\b|entityManager\b|this\b)[a-z]\w*\s*\.\s*\w+\s*\(/.test(before)) continue;
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[3]}() maps the row another component wrote without flushing or refreshing it` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/admin/thing/src/main/java/app/web/admin/thing/service/AccountService.java",
+      broken: `public class AccountService {
+    @Transactional
+    public AccountDetailDTO adjust(String accountId, AdjustDTO adjustDTO) {
+        ledger.adjust(accountId, adjustDTO.getAmount());
+        return findById(accountId, AccountDetailDTO.class).orElseThrow();
+    }
+}`,
+      fixed: `public class AccountService {
+    @Transactional
+    public AccountDetailDTO adjust(String accountId, AdjustDTO adjustDTO) {
+        ledger.adjust(accountId, adjustDTO.getAmount());
+        entityManager.flush();
+        repository.findById(accountId).ifPresent(entityManager::refresh);
+        return findById(accountId, AccountDetailDTO.class).orElseThrow();
+    }
+}`,
+      hit: [
+        {
+          note: "a re-read helper the project has but did not declare in audit.rereadCalls",
+          ctx: {},
+          source: `public class AccountService {
+    @Transactional
+    public AccountDetailDTO adjust(String accountId, AdjustDTO adjustDTO) {
+        ledger.adjust(accountId, adjustDTO.getAmount());
+        return findById(accountId, AccountDetailDTO.class).orElseThrow();
+    }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "a re-read helper the project declares in audit.rereadCalls",
+          ctx: { audit: { rereadCalls: ["Rows.reread"] } },
+          source: `public class AccountService {
+    @Transactional
+    public AccountDetailDTO adjust(String accountId, AdjustDTO adjustDTO) {
+        ledger.adjust(accountId, adjustDTO.getAmount());
+        Rows.reread(entityManager, Account.class, accountId);
+        return findById(accountId, AccountDetailDTO.class).orElseThrow();
+    }
+}`,
+        },
+        {
+          note: "the generated save-and-project shape, whose own write flushes",
+          source: `public class AccountService {
+    @Transactional
+    public AccountDetailDTO create(AccountCreateDTO createDTO) {
+        Account saved = saveAndFlush(mapper.map(createDTO));
+        return findById(saved.getAccountId(), AccountDetailDTO.class).orElseThrow();
+    }
+}`,
+        },
+        {
+          note: "a read-only method",
+          source: `public class AccountService {
+    @Transactional(readOnly = true)
+    public AccountDetailDTO detail(String accountId) {
+        policy.requireVisible(accountId);
+        return findById(accountId, AccountDetailDTO.class).orElseThrow();
     }
 }`,
         },
