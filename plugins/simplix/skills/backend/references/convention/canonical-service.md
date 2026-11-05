@@ -131,3 +131,30 @@ A search override that answers early, and a row assembled by hand, leave the gen
 
 - **An empty page carries the request it answers**: `new PageImpl<>(List.of(), pageRequest, 0)`, never `new PageImpl<>(List.of())`. The one-argument form holds `Pageable.unpaged()`, whose `getPageNumber()` / `getPageSize()` throw when the response is serialized, so the caller gets a 500 on the branch a new account takes first. Audit: `empty-page-with-no-pageable`.
 - **A row built by hand copies every field the source and the DTO both declare** (`Dto row = new Dto(); row.setX(src.getX()); ... return row;`). Prefer the projection (`findById(id, DTO.class)`, `findAllWithSearch`) wherever it can express the row: a hand-written mapper is the one place a field added to the entity does not reach. Audit: `hand-written-row-drops-a-field` (review level).
+---
+
+## A Record a Webhook Reads Commits Before the Call That Triggers It
+
+A command that writes a record and then calls an external service whose webhook reads that record
+(a payment provider's price change, whose payment event looks up what the raise grants) commits the
+record in its own transaction **before** the call. Inside one `@Transactional` method the record
+commits only after the method returns, so the webhook can be processed first and find nothing; the
+processor then either fails every retry until the provider gives up, or, once it treats "no record"
+as an outside change, misfiles a portal command as one.
+
+- **Shape**: the command method is `@Transactional(propagation = Propagation.NOT_SUPPORTED)` and runs
+  its steps through a `TransactionTemplate` built from the `PlatformTransactionManager`: one
+  transaction loads, checks and writes the record; the external call runs outside any transaction;
+  a second transaction reloads the row by id and applies what the provider accepted. The precedent
+  for the external call between two short transactions is any relay service that holds, calls a
+  provider, and confirms.
+- **Not `REQUIRES_NEW` on a held entity.** A `BaseEntity` carries `@Version`: a `REQUIRES_NEW` bean
+  method that writes the row while the outer transaction still holds it bumps the version, and the
+  outer save fails with an optimistic lock exception at commit.
+- **A refused call takes the record back** in a third transaction, guarded so that a record a
+  webhook has already consumed is left alone; catch the framework's exception type, not a blanket
+  `RuntimeException`.
+- **Test the order, not the outcome**: a `PlatformTransactionManager` stub
+  (`AbstractPlatformTransactionManager` with no-op `doBegin`) whose `doCommit` notes how many
+  external calls had been made and what the saved row held. A single-transaction version commits
+  once, after the call, and fails it.
