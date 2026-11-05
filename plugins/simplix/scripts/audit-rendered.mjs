@@ -2764,12 +2764,23 @@ const textContrastBelowMinimum = {
       }
       return true;
     };
-    /** The ground behind an element: ancestors' backgrounds composited until one is opaque, or null over an image. */
+    /**
+     * The ground behind an element: ancestors' backgrounds composited until one is opaque, or null
+     * over an image. An ancestor that does not clip and whose box the element's centre lies outside
+     * is not behind it (a tooltip's arrow hangs below its bubble, over the page), so it is passed.
+     */
     const groundOf = (el) => {
       const layers = [];
       let reachedOpaque = false;
+      const box = el.getBoundingClientRect();
+      const cx = box.left + box.width / 2;
+      const cy = box.top + box.height / 2;
       for (let n = el; n; n = n.parentElement) {
         const s = getComputedStyle(n);
+        if (n !== el && s.overflowX === "visible" && s.overflowY === "visible") {
+          const r = n.getBoundingClientRect();
+          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom) continue;
+        }
         if (s.backgroundImage !== "none") return null;
         const c = rgba(s.backgroundColor);
         if (c[3] > 0) layers.push(c);
@@ -4170,6 +4181,13 @@ const FIXTURES = {
         <div class=hero>Welcome back</div>`,
       "ordinary ink on white":
         `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}</style><p>Account lifecycle</p>`,
+      // A tooltip's arrow is painted in the bubble's own colour and hangs below the bubble, over the
+      // page: its ground is the page, not the bubble that holds it in the markup.
+      "a tooltip arrow hanging below its bubble":
+        `<style>body{margin:0;font:14px sans-serif;background:#14252a;padding:24px}
+        .tip{position:relative;display:inline-block;padding:6px 10px;background:#e3eeee;color:#12201f}
+        .tip svg{position:absolute;left:20px;top:100%}</style>
+        <div class=tip>Only a failed event is sent back<svg width=10 height=5 viewBox="0 0 10 5" fill="#e3eeee"><polygon points="0,0 10,0 5,5" /></svg></div>`,
       // A one-pixel separator drawn as a background keeps its character in the markup at font-size 0.
       "a separator whose character is set to font-size 0":
         `<style>body{margin:0;font:14px sans-serif;background:#fff}
