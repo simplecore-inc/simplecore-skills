@@ -2,14 +2,14 @@
  * Which catalogue placeholders run their value through `Intl.NumberFormat`.
  *
  * <p>i18next writes a format after the value's name (`{{count, number}}`, `{{price, currency(EUR)}}`)
- * and chains several with a comma. Only `number` and `currency` turn the value into a number; every
- * other format, built in (`datetime`, `relativetime`, `list`) or registered by the application (a
+ * and chains several with a comma. Only `number`, `currency` and `relativetime` need a number; every
+ * other format, built in (`datetime`, `list`) or registered by the application (a
  * Korean particle picker written `{{plan, josa(을/를)}}`), takes the value it is given, so a string
  * handed to it is not the `NaN` defect.
  */
 
-/** i18next's formats that pass the value to `Intl.NumberFormat`. */
-export const NUMBER_FORMATS = new Set(["number", "currency"]);
+/** i18next's formats that need a number: `Intl.NumberFormat`, and `Intl.RelativeTimeFormat` for `relativetime`. */
+export const NUMBER_FORMATS = new Set(["number", "currency", "relativetime"]);
 
 /**
  * The names of the placeholders in one catalogue entry that ask for a number format.
