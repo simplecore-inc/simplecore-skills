@@ -93,6 +93,10 @@ Paths in the recipes are written generically (`modules/`, `apps/`, `<backend>/mo
 
 4. **Auto-approval and empty chains.** A request that sails through because no approver is configured is a hole, not a pass. Check the approval path exists before trusting an "approved".
 
+5. **The focus survives every action.** Press each action by keyboard (`focus`, then `Enter`) and read `document.activeElement` at once and again after the answer arrives; `BODY` means the reader was dropped to the top of the document, and every other census passes it. The shapes that drop it: a control that turns natively `disabled` while its own request runs; a control re-rendered under another key when its state changes (Request becoming Download); a row replaced by the inline question it opened, and the question closing; a notice removed after its own action was pressed; a pager that unmounts after the last page. Fix it where the shape is drawn (the kit's action, question, layout or table), and give the page the exact next target only where it replaces the control itself. Prove each fix by turning it off once and seeing `BODY` again.
+
+6. **An excursion to another site has a way back.** A link into the identity provider's account pages, a payment page or a help centre is opened and read as the persona: the page exists (a deep link into the wrong console answers 404), it is in the persona's language and scheme, and it offers the way back to the screen that sent the reader, named for a person, never a client id.
+
 ---
 
 ## F. Language and terminology
