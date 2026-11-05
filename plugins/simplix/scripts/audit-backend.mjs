@@ -1080,6 +1080,45 @@ function duplicateDtoNameHits(content, rel, ctx, level) {
   return out;
 }
 
+/**
+ * The default sort each controller declares for the entity it serves, keyed by entity.
+ *
+ * <p>Read from `extends SimpliXBaseController<Entity, ...>` and `@SimpliXDefaultSort(field = ...,
+ * direction = ...)`; a controller without the annotation declares nothing and is left out.
+ *
+ * @param sources `{ rel, src }` of the main sources
+ * @returns entity name to `[{ rel, line, sort }]`, in path order
+ */
+function buildDefaultSortIndex(sources) {
+  const byEntity = new Map();
+  for (const { rel, src } of [...sources].sort((a, b) => a.rel.localeCompare(b.rel))) {
+    const own = defaultSortOf(src);
+    if (!own) continue;
+    if (!byEntity.has(own.entity)) byEntity.set(own.entity, []);
+    byEntity.get(own.entity).push({ rel, line: own.line, sort: own.sort });
+  }
+  return byEntity;
+}
+
+/** The entity and the default sort one controller source declares, or null. */
+function defaultSortOf(src) {
+  const base = /extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/.exec(src);
+  const sort = /@SimpliXDefaultSort\s*\(([^)]*)\)/.exec(src);
+  if (!base || !sort) return null;
+  const field = /field\s*=\s*"([^"]*)"/.exec(sort[1])?.[1] ?? "";
+  const direction = (/direction\s*=\s*"([^"]*)"/.exec(sort[1])?.[1] ?? "desc").toLowerCase();
+  return { entity: base[1], line: src.slice(0, sort.index).split("\n").length, sort: `${field} ${direction}` };
+}
+
+/** The index over the repository's main sources, with paths relative to the audited root. */
+function defaultSortIndex(files, root = ROOT) {
+  const sources = [];
+  for (const abs of files) {
+    try { sources.push({ rel: path.relative(root, abs), src: fs.readFileSync(abs, "utf8") }); } catch { /* unreadable: skipped like every other index */ }
+  }
+  return buildDefaultSortIndex(sources);
+}
+
 /** The two files of the incident shape, as sources for `buildDtoNameIndex`. */
 function twinDtoSources(secondName) {
   return [
@@ -3601,6 +3640,54 @@ public class LedgerProperties {
     },
   },
   {
+    id: "entity-default-sort-differs-across-controllers",
+    invariant: "controller/class-level-list-metadata",
+    level: "review",
+    desc: "Two controllers over one entity declare different `@SimpliXDefaultSort` values (an admin list by `name asc`, the customer's own list by `createdAt desc`). SimpliX Meta writes one `defaultSort` per entity, so which controller wins depends on registration order: every `simplix meta` run can flip the entity's default sort in `meta.json` and the generated list config with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same default sort where the lists mean the same order (a record table read by its own time stamp), or keep the difference on purpose and restore that hunk after each regeneration until Meta carries a sort per endpoint. Only the later controller in path order is reported, naming the first",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c, rel, ctx) => {
+      const index = ctx?.defaultSorts;
+      if (!index) return [];
+      const own = defaultSortOf(c);
+      if (!own) return [];
+      const all = index.get(own.entity) ?? [];
+      const first = all.find((e) => e.rel !== rel);
+      if (!first || first.sort === own.sort) return [];
+      const firstIndex = all.findIndex((e) => e.rel === first.rel);
+      const ownIndex = all.findIndex((e) => e.rel === rel);
+      if (ownIndex >= 0 && ownIndex < firstIndex) return [];
+      return [{ line: own.line, excerpt: `${own.entity} sorts by ${own.sort} here and by ${first.sort} at ${first.rel}:${first.line}` }];
+    },
+    samples: {
+      file: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java",
+      ctx: { defaultSorts: buildDefaultSortIndex([
+        { rel: "modules/admin/thing/src/main/java/app/web/admin/thing/controller/AdminThingRestController.java", src: `@SimpliXDefaultSort(field = "name", direction = "asc")\npublic class AdminThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+        { rel: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java", src: `@SimpliXDefaultSort(field = "createdAt", direction = "desc")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+      ]) },
+      broken: `@SimpliXDefaultSort(field = "createdAt", direction = "desc")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+      fixed: `@SimpliXDefaultSort(field = "name", direction = "asc")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+      miss: [
+        {
+          note: "the first controller in path order (the later one is the one reported)",
+          file: "modules/admin/thing/src/main/java/app/web/admin/thing/controller/AdminThingRestController.java",
+          source: `@SimpliXDefaultSort(field = "name", direction = "asc")\npublic class AdminThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+        },
+        {
+          note: "a controller over another entity",
+          source: `@SimpliXDefaultSort(field = "createdAt", direction = "desc")\npublic class MyOtherRestController extends SimpliXBaseController<Other, String> { }\n`,
+        },
+        {
+          note: "the same sort written with the default direction (desc) left out",
+          ctx: { defaultSorts: buildDefaultSortIndex([
+            { rel: "modules/admin/thing/src/main/java/app/web/admin/thing/controller/AdminThingRestController.java", src: `@SimpliXDefaultSort(field = "name")\npublic class AdminThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+            { rel: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java", src: `@SimpliXDefaultSort(field = "name", direction = "DESC")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+          ]) },
+          source: `@SimpliXDefaultSort(field = "name", direction = "DESC")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+        },
+      ],
+    },
+  },
+  {
     id: "duplicate-dto-simple-name-unreached",
     invariant: "dto/simple-name",
     level: "review",
@@ -3949,7 +4036,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();
