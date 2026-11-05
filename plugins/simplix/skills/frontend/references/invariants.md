@@ -1284,7 +1284,13 @@ may normalise the address, so a fragment read from inside a component is a fragm
 version can drop, and a value read twice re-opens a session under a hot reload. Capture at module
 scope in the app that owns the entry point, strip it in the same breath, and hand it to the
 component the way any other app-owned fact is handed in. `session-token-read-from-the-query-string`
-in `audit-frontend.mjs` catches the read half.
+in `audit-frontend.mjs` catches the read half. **A single-use token a mailed link carries (an
+identity or a confirmation link) follows the same carrier rule, and the page it opens is on the app's
+public route list**: a guarded route parks the address and redirects to sign-in, so the fragment rides
+into the sign-in hop and back, and the page that finally reads it is one the reader reached signed in
+by somebody else's account, or never. The page posts the token once per page load (a module-level set
+of posted tokens survives a development double mount and a router remount), and trying again is the
+reader's own act.
 
 ## #78 A read that decides whether a field is required is never gated on that field
 

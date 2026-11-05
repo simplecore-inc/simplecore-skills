@@ -335,6 +335,15 @@ The account's saved locale decides the language, not the browser's storage: a pa
 (the project's own locale endpoint) or answer the account read as above, and let
 `compare-rendered.mjs`'s language warning confirm it.
 
+A scripted press names exactly one element, and the runner that presses refuses a selector matching
+several. `querySelector` takes the first match, so a press written by tone or position
+(`[data-slot="<table>"] [data-tone="secondary"]:not(:disabled)`) presses whatever the page draws first:
+the day a new row draws a secondary action above the intended one, the run presses that action,
+navigates elsewhere, and reports the other page's differences as the state's. Select by the
+control's own identity (`[data-action="<id>"]`, its accessible name in the locale under test, an id
+from the response), have the press count the matches and click only when there is one, and fail the
+row naming the selector and the count otherwise.
+
 Several responses of one endpoint can arrive on one screen (a tab count asks with `size=1`), so a
 driver that keeps the last response reads the wrong page; keep every response's content and pick
 by its query. A filter result is asserted against the operator's case semantics: `contains` is
