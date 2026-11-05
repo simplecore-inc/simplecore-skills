@@ -1081,23 +1081,35 @@ function duplicateDtoNameHits(content, rel, ctx, level) {
 }
 
 /**
- * The default sort each controller declares for the entity it serves, keyed by entity.
+ * What each controller declares at class level for the entity it serves, keyed by entity: the
+ * declarations SimpliX Meta keeps one value of per entity, so two controllers that differ flip it.
  *
- * <p>Read from `extends SimpliXBaseController<Entity, ...>` and `@SimpliXDefaultSort(field = ...,
- * direction = ...)`; a controller without the annotation declares nothing and is left out.
+ * <p>The entity is read from `extends SimpliXBaseController<Entity, ...>`; a controller without the
+ * declaration `of` reads is left out.
  *
  * @param sources `{ rel, src }` of the main sources
- * @returns entity name to `[{ rel, line, sort }]`, in path order
+ * @param of reads one source to `{ entity, line, value }`, or null
+ * @returns entity name to `[{ rel, line, value }]`, in path order
  */
-function buildDefaultSortIndex(sources) {
+function buildEntityDeclarationIndex(sources, of) {
   const byEntity = new Map();
   for (const { rel, src } of [...sources].sort((a, b) => a.rel.localeCompare(b.rel))) {
-    const own = defaultSortOf(src);
+    const own = of(src);
     if (!own) continue;
     if (!byEntity.has(own.entity)) byEntity.set(own.entity, []);
-    byEntity.get(own.entity).push({ rel, line: own.line, sort: own.sort });
+    byEntity.get(own.entity).push({ rel, line: own.line, value: own.value });
   }
   return byEntity;
+}
+
+/** The default sort index: `@SimpliXDefaultSort(field = ..., direction = ...)` per controller. */
+function buildDefaultSortIndex(sources) {
+  return buildEntityDeclarationIndex(sources, defaultSortOf);
+}
+
+/** The list figures index: `@SimpliXListFigures(statusCounts = ..., aggregates = ...)` per controller. */
+function buildListFiguresIndex(sources) {
+  return buildEntityDeclarationIndex(sources, listFiguresOf);
 }
 
 /** The entity and the default sort one controller source declares, or null. */
@@ -1107,16 +1119,71 @@ function defaultSortOf(src) {
   if (!base || !sort) return null;
   const field = /field\s*=\s*"([^"]*)"/.exec(sort[1])?.[1] ?? "";
   const direction = (/direction\s*=\s*"([^"]*)"/.exec(sort[1])?.[1] ?? "desc").toLowerCase();
-  return { entity: base[1], line: src.slice(0, sort.index).split("\n").length, sort: `${field} ${direction}` };
+  return { entity: base[1], line: src.slice(0, sort.index).split("\n").length, value: `${field} ${direction}` };
 }
 
-/** The index over the repository's main sources, with paths relative to the audited root. */
-function defaultSortIndex(files, root = ROOT) {
+/**
+ * The entity and the entity-level list figures one controller source declares, or null: the status
+ * counts and the aggregates, in declared order, which is the order Meta writes them. The time axis is
+ * published per operation only, so it is not read.
+ */
+function listFiguresOf(src) {
+  const base = /extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/.exec(src);
+  const open = /@SimpliXListFigures\s*\(/.exec(src);
+  if (!base || !open) return null;
+  let depth = 0;
+  let end = open.index + open[0].length - 1;
+  for (; end < src.length; end++) {
+    if (src[end] === "(") depth++;
+    else if (src[end] === ")" && --depth === 0) break;
+  }
+  const body = src.slice(open.index + open[0].length, end);
+  const counted = /statusCounts\s*=\s*(\{[^}]*\}|"[^"]*")/.exec(body)?.[1] ?? "";
+  const statusCounts = [...counted.matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+  const aggregates = [...body.matchAll(/Figure\s*\(([^)]*)\)/g)].map((m) =>
+    `${/field\s*=\s*"([^"]*)"/.exec(m[1])?.[1] ?? ""} ${/op\s*=\s*"([^"]*)"/.exec(m[1])?.[1] ?? ""}`.trim());
+  return {
+    entity: base[1],
+    line: src.slice(0, open.index).split("\n").length,
+    value: `status counts [${statusCounts.join(", ")}], aggregates [${aggregates.join(", ")}]`,
+  };
+}
+
+/** Reads every main source once, with paths relative to the audited root. */
+function mainSources(files, root = ROOT) {
   const sources = [];
   for (const abs of files) {
     try { sources.push({ rel: path.relative(root, abs), src: fs.readFileSync(abs, "utf8") }); } catch { /* unreadable: skipped like every other index */ }
   }
-  return buildDefaultSortIndex(sources);
+  return sources;
+}
+
+/** The default sort index over the repository's main sources. */
+function defaultSortIndex(files, root = ROOT) {
+  return buildDefaultSortIndex(mainSources(files, root));
+}
+
+/** The list figures index over the repository's main sources. */
+function listFiguresIndex(files, root = ROOT) {
+  return buildListFiguresIndex(mainSources(files, root));
+}
+
+/**
+ * The later of two controllers over one entity whose declarations differ, as a hit naming the
+ * first; nothing for the first controller in path order, for a controller that declares nothing,
+ * and for one that declares what the first does.
+ */
+function entityDeclarationDiffers(c, rel, index, of, describe) {
+  if (!index) return [];
+  const own = of(c);
+  if (!own) return [];
+  const all = index.get(own.entity) ?? [];
+  const first = all.find((e) => e.rel !== rel);
+  if (!first || first.value === own.value) return [];
+  const firstIndex = all.findIndex((e) => e.rel === first.rel);
+  const ownIndex = all.findIndex((e) => e.rel === rel);
+  if (ownIndex >= 0 && ownIndex < firstIndex) return [];
+  return [{ line: own.line, excerpt: describe(own, first) }];
 }
 
 /** The two files of the incident shape, as sources for `buildDtoNameIndex`. */
@@ -3645,19 +3712,8 @@ public class LedgerProperties {
     level: "review",
     desc: "Two controllers over one entity declare different `@SimpliXDefaultSort` values (an admin list by `name asc`, the customer's own list by `createdAt desc`). SimpliX Meta writes one `defaultSort` per entity, so which controller wins depends on registration order: every `simplix meta` run can flip the entity's default sort in `meta.json` and the generated list config with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same default sort where the lists mean the same order (a record table read by its own time stamp), or keep the difference on purpose and restore that hunk after each regeneration until Meta carries a sort per endpoint. Only the later controller in path order is reported, naming the first",
     appliesTo: (p) => p.endsWith(".java"),
-    check: (c, rel, ctx) => {
-      const index = ctx?.defaultSorts;
-      if (!index) return [];
-      const own = defaultSortOf(c);
-      if (!own) return [];
-      const all = index.get(own.entity) ?? [];
-      const first = all.find((e) => e.rel !== rel);
-      if (!first || first.sort === own.sort) return [];
-      const firstIndex = all.findIndex((e) => e.rel === first.rel);
-      const ownIndex = all.findIndex((e) => e.rel === rel);
-      if (ownIndex >= 0 && ownIndex < firstIndex) return [];
-      return [{ line: own.line, excerpt: `${own.entity} sorts by ${own.sort} here and by ${first.sort} at ${first.rel}:${first.line}` }];
-    },
+    check: (c, rel, ctx) => entityDeclarationDiffers(c, rel, ctx?.defaultSorts, defaultSortOf,
+      (own, first) => `${own.entity} sorts by ${own.value} here and by ${first.value} at ${first.rel}:${first.line}`),
     samples: {
       file: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java",
       ctx: { defaultSorts: buildDefaultSortIndex([
@@ -3683,6 +3739,45 @@ public class LedgerProperties {
             { rel: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java", src: `@SimpliXDefaultSort(field = "name", direction = "DESC")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
           ]) },
           source: `@SimpliXDefaultSort(field = "name", direction = "DESC")\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+        },
+      ],
+    },
+  },
+  {
+    id: "entity-list-figures-differ-across-controllers",
+    invariant: "controller/class-level-list-metadata",
+    level: "review",
+    desc: "Two controllers over one entity declare different `@SimpliXListFigures` status counts or aggregates (an operators' ledger counted by entry type and summed by amount, the customer's own summed by remaining amount and amount). Each controller's operations carry their own figures, but SimpliX Meta also writes one `statusCounts` and one `aggregates` on the entity, and which controller wins depends on registration order: a `simplix meta` run can flip that entity block in `meta.json` with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same figures where the lists mean the same summary, or keep the difference on purpose and leave that hunk out of each regeneration's commit until Meta keys entity figures per endpoint. Only the later controller in path order is reported, naming the first",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c, rel, ctx) => entityDeclarationDiffers(c, rel, ctx?.listFigures, listFiguresOf,
+      (own, first) => `${own.entity} declares ${own.value} here and ${first.value} at ${first.rel}:${first.line}`),
+    samples: {
+      file: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java",
+      ctx: { listFigures: buildListFiguresIndex([
+        { rel: "modules/admin/thing/src/main/java/app/web/admin/thing/controller/AdminThingRestController.java", src: `@SimpliXListFigures(statusCounts = {"kind"}, aggregates = {@SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class AdminThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+        { rel: "modules/portal/thing/src/main/java/app/web/portal/thing/controller/MyThingRestController.java", src: `@SimpliXListFigures(statusCounts = {}, aggregates = {@SimpliXListFigures.Figure(field = "left", op = "sum"), @SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n` },
+      ]) },
+      broken: `@SimpliXListFigures(statusCounts = {}, aggregates = {@SimpliXListFigures.Figure(field = "left", op = "sum"), @SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+      fixed: `@SimpliXListFigures(statusCounts = {"kind"}, aggregates = {@SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+      hit: [
+        {
+          note: "the same aggregates and a status count only one of them declares, the single-value form",
+          source: `@SimpliXListFigures(statusCounts = "status", aggregates = {@SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+        },
+      ],
+      miss: [
+        {
+          note: "the first controller in path order (the later one is the one reported)",
+          file: "modules/admin/thing/src/main/java/app/web/admin/thing/controller/AdminThingRestController.java",
+          source: `@SimpliXListFigures(statusCounts = {"kind"}, aggregates = {@SimpliXListFigures.Figure(field = "amount", op = "sum")})\npublic class AdminThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
+        },
+        {
+          note: "a controller over another entity",
+          source: `@SimpliXListFigures(statusCounts = {}, aggregates = {@SimpliXListFigures.Figure(field = "left", op = "sum")})\npublic class MyOtherRestController extends SimpliXBaseController<Other, String> { }\n`,
+        },
+        {
+          note: "a controller that declares no figures publishes none on the entity",
+          source: `public class MyThingRestController extends SimpliXBaseController<Thing, String> { }\n`,
         },
       ],
     },
@@ -4036,7 +4131,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();
