@@ -1158,6 +1158,28 @@ function mainSources(files, root = ROOT) {
   return sources;
 }
 
+/**
+ * The entity fields a stored file's path is written into: every `.x(<expr>.storedPath())` builder
+ * call and `setX(<expr>.storedPath())` setter in a main source, by field name. The SimpliX file
+ * store's path is its group, the date folders and a UUID name with the extension, so it runs to
+ * 66 characters with a short group and grows with the group's name.
+ */
+function buildStoredPathIndex(sources) {
+  const fields = new Set();
+  for (const { src } of sources) {
+    for (const m of stripCommentsAndStrings(src).matchAll(/\.(\w+)\(\s*[\w.()]*?\bstoredPath\(\)\s*\)/g)) {
+      const name = m[1].startsWith("set") && m[1].length > 3 ? m[1][3].toLowerCase() + m[1].slice(4) : m[1];
+      fields.add(name);
+    }
+  }
+  return fields;
+}
+
+/** The stored path index over the repository's main sources. */
+function storedPathIndex(files, root = ROOT) {
+  return buildStoredPathIndex(mainSources(files, root));
+}
+
 /** The default sort index over the repository's main sources. */
 function defaultSortIndex(files, root = ROOT) {
   return buildDefaultSortIndex(mainSources(files, root));
@@ -2385,6 +2407,107 @@ public class AreaRestController {
         private Boolean plainText;
     }
 }`,
+    },
+  },
+  {
+    id: "validation-getter-on-dto",
+    invariant: "validation-patterns",
+    level: "error",
+    desc: "A DTO declares a bean-validation getter (`@AssertTrue`/`@AssertFalse` on an `isX()`/`getX()` method) to judge several fields together. SimpliX Meta and the OpenAPI document read every getter as a property, so the request publishes a required field `x` that no client has and a generated form or client must send. Judge the combination in the service (a `SimpliXGeneralException` with `VAL_INVALID_PARAMETER` and a message key) or with a class-level constraint, and keep the DTO's published fields the request's own",
+    appliesTo: isDtoContainer,
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      // The annotations usually stand on lines of their own above the method, so match across lines.
+      for (const m of clean.matchAll(/@Assert(?:True|False)\b(?:\s*\([^)]*\))?\s*(?:@\w+(?:\s*\([^)]*\))?\s*)*(?:public\s+)?(?:boolean|Boolean)\s+((?:is|get)\w+)\s*\(/g)) {
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]}() is published as a request field` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/portal/thing/src/main/java/app/web/thing/dto/ThingDTOs.java",
+      broken: `public class ThingDTOs {
+    public record ThingRequestDTO(String via, String phone) {
+        @AssertTrue public boolean isOneShape() { return phone != null; }
+    }
+}`,
+      fixed: `public class ThingDTOs {
+    public record ThingRequestDTO(@NotNull @AssertTrue Boolean agreed, String phone) {
+    }
+}`,
+      hit: [
+        {
+          note: "the annotations on lines of their own above the method, with another annotation between",
+          source: `public class ThingDTOs {
+    public record ThingRequestDTO(String via, String phone) {
+
+        @AssertTrue
+        @Schema(hidden = true)
+        public boolean isOneShape() {
+            return phone != null;
+        }
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "stored-path-column-narrower-than-the-path",
+    invariant: "field-types",
+    level: "error",
+    desc: "An entity column receives a stored file's path (`storedPath()` is written into it) but is declared shorter than 255 characters. The SimpliX file store writes `<group>/<yyyy>/<MM>/<dd>/<uuid>.<ext>`, 66 characters with a short group, so a 64-character column refuses every write with `value too long` and the request answers 409; a provider-backed path that tests never reach ships it untested. Give the column the width the stored file record gives its own path (and the migration that widens it)",
+    appliesTo: (p) => /\/entity\/\w+\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c, file, ctx) => {
+      const paths = ctx?.storedPaths;
+      if (!paths || paths.size === 0) return [];
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      for (const m of clean.matchAll(/@Column\s*\(([^)]*)\)\s*(?:@\w+(?:\s*\([^)]*\))?\s*)*private\s+String\s+(\w+)\s*;/g)) {
+        const length = /\blength\s*=\s*(\d+)/.exec(m[1]);
+        const width = length ? Number(length[1]) : 255;
+        if (!paths.has(m[2]) || width >= 255) continue;
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[2]} keeps a stored path in ${width} characters` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/domain-thing/src/main/java/app/domain/thing/entity/Thing.java",
+      ctx: { storedPaths: new Set(["recordingFileId"]) },
+      broken: `@Entity
+public class Thing {
+    @Column(name = "recording_file_id", length = 64)
+    @Comment("The recording in file storage")
+    private String recordingFileId;
+}`,
+      fixed: `@Entity
+public class Thing {
+    @Column(name = "recording_file_id", length = 1000)
+    @Comment("The recording in file storage")
+    private String recordingFileId;
+}`,
+      hit: [
+        {
+          note: "the index reads a setter as well as a builder call",
+          source: `@Entity
+public class Thing {
+    @Column(name = "sample_path", length = 36)
+    private String samplePath;
+}`,
+          ctx: { storedPaths: buildStoredPathIndex([{ rel: "S.java", src: "class S { void f(StoredFileInfo s, Thing t) { t.setSamplePath(s.storedPath()); } }" }]) },
+        },
+      ],
+      miss: [
+        {
+          note: "a narrow column nothing writes a stored path into, such as a file record's id",
+          source: `@Entity
+public class Thing {
+    @Column(name = "file_id", length = 36)
+    private String fileId;
+}`,
+          ctx: { storedPaths: new Set(["recordingFileId"]) },
+        },
+      ],
     },
   },
   {
@@ -4131,7 +4254,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files), storedPaths: storedPathIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();

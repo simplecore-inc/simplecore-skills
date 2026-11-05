@@ -128,6 +128,16 @@ public class AuthRolePermissionService {
 
 ---
 
+
+### A rule across fields is never a getter on the DTO
+
+A `@AssertTrue boolean isOneShape()` on a request record reads like the shortest way to say "a phone
+check names a number, an email check names none", and it validates correctly. SimpliX Meta and the
+OpenAPI document read every getter as a property, so the request also publishes a required boolean
+field `oneShape` that no client has and that a generated client or form must send. Judge the
+combination with `@ValidateWith` (above) or in the service (`SimpliXGeneralException` with
+`VAL_INVALID_PARAMETER` and a message key). The audit's `validation-getter-on-dto` refuses the getter.
+
 ## @NotBlank vs @NotNull
 
 ### Rule: Check Entity Field Type

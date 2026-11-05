@@ -80,6 +80,15 @@ private String channelCode;
 private String channelCode;
 ```
 
+### A stored file's path
+
+A column that keeps what the file store returns as `storedPath()` holds `<group>/<yyyy>/<MM>/<dd>/<uuid>.<ext>`,
+66 characters with a short group, so it is never sized like an id: a `length = 64` column refuses
+every write with `value too long` (a 409 on the request), and a path written only on a provider
+call no test reaches ships that way. Give it the width the stored file record gives its own path,
+with the migration that widens an existing column. The audit's `stored-path-column-narrower-than-the-path`
+reads every `storedPath()` written into a field and refuses that field below 255 characters.
+
 ### Text (Long String)
 
 ```java
