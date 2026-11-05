@@ -2153,7 +2153,14 @@ public class AreaRestController {
       const clean = stripCommentsAndStrings(c);
       if (!/@RestController\b/.test(clean)) return [];
       const hits = [];
+      // OpenAPI's @RequestBody documents a body; only Spring's binds one. A file that imports the
+      // OpenAPI one and not Spring's binds none, and an annotation attribute value
+      // (`requestBody = @RequestBody(...)` inside @Operation) is never a parameter.
+      const openApiOnly = /import\s+io\.swagger\.v3\.oas\.annotations\.parameters\.RequestBody\s*;/.test(clean)
+        && !/import\s+org\.springframework\.web\.bind\.annotation\.(?:RequestBody|\*)\s*;/.test(clean);
+      if (openApiOnly) return [];
       for (const m of clean.matchAll(/@RequestBody\b/g)) {
+        if (/=\s*$/.test(clean.slice(Math.max(0, m.index - 40), m.index))) continue;
         const p = parameterAround(clean, m.index);
         if (/@Validated\b|@Valid\b/.test(p)) continue;
         const type = p.replace(/@\w+(?:\.\w+)*(?:\s*\([^)]*\))?/g, "").trim().replace(/^final\s+/, "");
@@ -2197,6 +2204,26 @@ public class AreaRestController {
         },
       ],
       miss: [
+        {
+          note: "OpenAPI's @RequestBody as an @Operation attribute, on an endpoint that reads the body as a stream",
+          source: `import io.swagger.v3.oas.annotations.parameters.RequestBody;
+@RestController
+public class UploadRestController {
+    @PostMapping
+    @Operation(operationId = "send", requestBody = @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BundleDTO.class))))
+    public ReceiptDTO send(HttpServletRequest request) { return null; }
+}`,
+        },
+        {
+          note: "an attribute value next to a Spring-bound, validated body",
+          source: `import org.springframework.web.bind.annotation.*;
+@RestController
+public class UploadRestController {
+    @PostMapping
+    @Operation(operationId = "send", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true))
+    public ReceiptDTO send(@RequestBody @Validated BundleDTO bundle) { return null; }
+}`,
+        },
         {
           note: "a bare Set<...> multi-update body is the generator's own shape",
           source: `@RestController
