@@ -171,6 +171,19 @@ column is not rendered at all - no header, no cells, no entry in the columns dro
   with the row actions past the right edge - the failure the prop exists to prevent, caused by the
   prop. Sum each wide set's declared `width` / `minWidth`, add the cell padding per column and the
   row-action column, and keep the total under the threshold.
+- **A column whose absence makes another drawn column read wrong never drops.** A record's
+  answer and its withdrawal, a status and the date that ended it: drop the second and the first
+  states something untrue ("granted" on a withdrawn consent). Mark it kept (the kit's `keep`), so
+  the narrow table holds it beside the leading and the sorted column, and lead with it in a list
+  that lives in a drawer. Everything kept adds to the narrowest table, and a list whose kept set
+  outgrows its narrowest pane falls to cards against a table design. Where two such columns do
+  not both fit, keep the one whose absence makes the row say something false, and let the one
+  whose absence only leaves the row silent drop; measure the narrowest pane before deciding.
+- **A column the screen adds after the generated ones takes a tier like them.** A derived marker
+  appended without `minTableWidth` draws at every width and silently joins the always-drawn set;
+  with the leading and the sorted columns that set can outgrow a tablet pane, and the list falls
+  to cards at 1024 with no width it was designed for. Give it the running width of the table up to
+  it, or use a kit that tiers every column after the leading ones (console-core `ladderColumns`).
 - **The secondary line under a row's name is the narrow form of those columns.** Where a board
   stacks 「code · rank · source」 into a caption, those become columns when there is room - and the
   caption has to drop what the columns took, or every row prints its values twice. Measure the
