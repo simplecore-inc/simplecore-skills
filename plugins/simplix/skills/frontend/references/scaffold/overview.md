@@ -611,6 +611,21 @@ This overwrites (the `orval` layout; on `meta`, `src/generated-meta/` is the reg
 This regenerates only when not customized:
 - `src/mock/index.ts` - store wiring + generated-handler spreads; regenerated to stay in sync with `handlers.ts` UNLESS it has custom handler overrides (the `// Add custom handler overrides here` region is non-empty), in which case it is preserved untouched.
 
+**What a generated handler answers (`meta` path).** A CRUD route answers from the entity's store.
+Every other route answers the shape its operation declares: a sample of the response DTO built by
+the seed-row rules and checked against the model with `satisfies` (a sample the model disagrees
+with fails the package typecheck), a sequence as one sample row, an action returning the stored DTO
+by the store's identifier with that stored record. A read declaring a DTO none of the entity's CRUD
+routes returns (an aggregate, a sub-resource's rows) answers that DTO's shape, never stored rows.
+A declared page, a binary body or a type SimpliX Meta does not declare has no sample: the handler
+answers `{}`, its line ends in `// no sample stands in for <type>`, and `simplix meta` prints
+`<tag>.<operation> declares <type>, which no mock sample stands in for`. A screen that renders empty
+in mock mode on one of those routes gets a hand-written handler (the domain's mock scenarios, or
+the override region of `src/mock/index.ts`, which then freezes that file), never an edit of
+`handlers.ts`. List them with
+`grep -rn "no sample stands in for" packages/*/src/generated-meta/mock/handlers.ts`, never by
+grepping a factory's doc comment, whose wording is not a contract.
+
 **Committing a regeneration in a shared working tree stages the generated paths by name, never the
 package's status listing.** The package also holds hand-written files the generator never touches
 (mock scenarios and their tests, seeds), and another agent may be mid-edit in them: listing
