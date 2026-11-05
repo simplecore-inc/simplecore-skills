@@ -24,6 +24,9 @@ symptom.
 16. [A refused search sort answers 200 with an error body](#a-refused-search-sort-answers-200-with-an-error-body)
 17. [A test class with a context of its own keeps it for the whole test JVM](#a-test-class-with-a-context-of-its-own-keeps-it-for-the-whole-test-jvm)
 18. [A field the request DTO lacks is dropped, never refused](#a-field-the-request-dto-lacks-is-dropped-never-refused)
+19. [A public route's CORS is the handler's, and a standalone dispatcher cannot answer its preflight](#a-public-routes-cors-is-the-handlers-and-a-standalone-dispatcher-cannot-answer-its-preflight)
+20. [A defaulted address makes a keyless provider read as configured](#a-defaulted-address-makes-a-keyless-provider-read-as-configured)
+21. [A gate that locks only where it limits leaves its idempotency read racing](#a-gate-that-locks-only-where-it-limits-leaves-its-idempotency-read-racing)
 
 ---
 
@@ -306,3 +309,56 @@ no log line.
 - **The flip side is a client typo**: a misspelt optional field is silently absent too, and the
   server applies its default. A screen that sends a field the DTO lacks is found by comparing the
   request body with the DTO (the frontend's generated request type), never by a server error.
+
+## A public route's CORS is the handler's, and a standalone dispatcher cannot answer its preflight
+
+A security chain that never calls `.cors(...)` adds no CORS filter, so a route under it answers a
+browser origin with no `Access-Control-Allow-Origin` at all, whatever `simplix.auth.cors` lists:
+that setting reaches only the chains that configure it. The way to open one public route to one
+browser origin is the handler's own mapping, `@CrossOrigin(origins = "${<property>}")` on the
+controller, which Spring MVC applies after the security chain has let the request through. An origin
+it does not list is refused by Spring's CORS processor with 403 and no allow header, a request with
+no `Origin` (a desktop client, an installer) is untouched, and the global origins stay off the route.
+
+- **A standalone `MockMvc` serves the GET and cannot serve the preflight.** `standaloneSetup`
+  registers only the annotated-controller adapter, so an `OPTIONS` with
+  `Access-Control-Request-Method` fails with `No adapter for handler [...PreFlightHttpRequestHandler]`.
+  Prove the allowed and refused GET there (resolve the placeholder with `addPlaceholderValue`), and the
+  preflight through the running server (`@SpringBootTest(webEnvironment = RANDOM_PORT)` and an HTTP
+  client), which also proves the security chain lets `OPTIONS` through.
+- **The refusal has two halves**: the foreign origin answers 403 and carries no allow header. A 403
+  alone can be any other refusal.
+
+## A defaulted address makes a keyless provider read as configured
+
+An adapter for a self-hosted server with no key (an OpenAI-compatible speech or text server on the
+developer's machine) usually judges itself configured by a non-blank base URL. When the property
+carries a default (`${X_BASE_URL:http://127.0.0.1:<port>/v1}`, or `@DefaultValue` on the record), that
+test can never fail: a server nobody named reads as configured, the fail-fast before the credit hold
+passes, and the call that follows fails as unreachable. The client then sees the provider-failed
+answer (502) after a hold was taken and released, where the contract promised the not-configured one
+(503) with nothing held.
+
+- **An address the operator must state has no default**, in the yml and in the properties record
+  alike; the instruction for the developer's own server goes in the README and the env sample.
+- **Do not answer it with a reachability probe in the configured check**: that turns an outage of a
+  configured server into "not configured", which a client never retries.
+- **The test builds the adapter with a blank address** (the test fixture that constructs adapters,
+  not only the selector's properties, since the selector reads only the provider's name) and asserts
+  503 and no hold on every path that reaches it: each kind of voice or model, and each purpose.
+
+## A gate that locks only where it limits leaves its idempotency read racing
+
+A monthly allowance gate commonly takes a per-person advisory lock (`pg_advisory_xact_lock`) and then
+counts, and returns early when the plan sets no limit. When the same transaction then looks the
+request's idempotency key up and inserts a row for it, the early return leaves that lookup unguarded
+on exactly the unlimited plans: two requests carrying one key both find nothing, both insert, and the
+second fails on the unique constraint instead of answering the replay.
+
+- **Take the lock before the early return.** It costs one call per request and serialises every
+  request of the person, so the second reads the first one's row.
+- **The test needs a person on an unlimited plan** (a live subscription to a plan whose allowance
+  column is null), two threads with one key, the first holding its transaction open between the
+  lookup and the insert. Expect one row, one writer and one reader; with the lock after the return it
+  fails on the unique constraint.
+
