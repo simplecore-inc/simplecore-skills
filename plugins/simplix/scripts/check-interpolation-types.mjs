@@ -38,6 +38,7 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 
 import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+import { numberFormattedNames } from "./lib/number-format.mjs";
 
 // Every option this script knows. `--root` is written `--root=<dir>` or `--root <dir>`.
 const OPTION_SPEC = { flags: ["--json", "--warn-only"], valued: ["root"] };
@@ -81,8 +82,8 @@ function formattedPairs() {
       continue;
     }
     for (const [key, value] of walk(parsed, "", [])) {
-      for (const m of value.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*,\s*[^}]*\}\}/g)) {
-        pairs.add(`${key.replace(PLURAL, "")}|${m[1]}`);
+      for (const name of numberFormattedNames(value)) {
+        pairs.add(`${key.replace(PLURAL, "")}|${name}`);
       }
     }
   }

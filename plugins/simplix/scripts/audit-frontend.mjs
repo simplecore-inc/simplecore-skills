@@ -50,6 +50,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+import { numberFormattedNames } from "./lib/number-format.mjs";
 
 // Every option this script knows. `--rule` is taken only as `--rule=<ids>`: the plugin's e2e
 // gate tells a narrowed run from a full one by that spelling, and a second spelling would let a
@@ -4338,7 +4339,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
               for (const [lang, entries] of catalogueLanguages(dir)) {
                 for (const [entryKey, text] of entries) {
                   if (entryKey !== key && entryKey.replace(plural, "") !== key) continue;
-                  if (!new RegExp(`\\{\\{\\s*${name}\\s*,`).test(text)) continue;
+                  if (!numberFormattedNames(text).has(name)) continue;
                   formattedIn = `${path.relative(ROOT, dir).split(path.sep).join("/")}/${lang}`;
                 }
               }
@@ -4358,13 +4359,13 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
         "modules/site/src/locales/index.ts": `export const PACKAGE_NAMESPACE = "site";\n`,
         "modules/site/src/locales/widgets/ko.json": `{
   "unit": { "years": "{{count, number}}년" },
-  "retention": { "term": "법정 {{years, number}}", "anchor": "기산 {{anchor}}" },
+  "retention": { "term": "법정 {{years, number}}", "anchor": "기산 {{anchor}}", "kept": "{{plan, josa(을/를)}} 계속 씁니다" },
   "asset": { "length": "총연장 {{metres, number}}m" }
 }
 `,
         "modules/site/src/locales/widgets/en.json": `{
   "unit": { "years_one": "{{count, number}} year", "years_other": "{{count, number}} years" },
-  "retention": { "term": "Statutory {{years, number}}", "anchor": "From {{anchor}}" },
+  "retention": { "term": "Statutory {{years, number}}", "anchor": "From {{anchor}}", "kept": "You stay on {{plan}}" },
   "asset": { "length": "{{metres, number}} m" }
 }
 `,
@@ -4404,6 +4405,13 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
             source: `const { t } = useTranslation("site/widgets");
 
 <Text>{t("asset.length", { metres: (row.endM ?? 0) - (row.startM ?? 0) })}</Text>`,
+          },
+          {
+            note: "a rendered string handed to a format that takes words (a registered particle picker), not Intl.NumberFormat",
+            files: catalogue,
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("retention.kept", { plan: t(\`plan.\${row.planCode}\`) })}</Text>`,
           },
           {
             note: "a namespace this repository does not own - an absent catalogue asks for no format",
