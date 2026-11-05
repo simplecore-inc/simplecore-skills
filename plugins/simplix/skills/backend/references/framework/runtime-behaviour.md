@@ -22,6 +22,7 @@ symptom.
 14. [A framework snapshot is published by its owner only](#a-framework-snapshot-is-published-by-its-owner-only)
 15. [Overriding `configureMessageConverters(List)` drops Spring's defaults](#overriding-configuremessageconverterslist-drops-springs-defaults)
 16. [A refused search sort answers 200 with an error body](#a-refused-search-sort-answers-200-with-an-error-body)
+17. [A test class with a context of its own keeps it for the whole test JVM](#a-test-class-with-a-context-of-its-own-keeps-it-for-the-whole-test-jvm)
 
 ---
 
@@ -260,3 +261,20 @@ and says "nothing found". `determineSearchableErrorCode` also tests class names 
 read, not only its status. The status, and the order of those class-name tests, are the framework owner's
 to change (`A framework snapshot is published by its owner only`).
 Example: `GET .../search?page=0&size=3&sort=noSuchField.desc` answers `200 {type: ERROR, errorCode: SEARCH_INVALID_PARAMETER}`.
+
+## A test class with a context of its own keeps it for the whole test JVM
+
+Spring's test context cache keeps every context it built until the test JVM exits, so each class
+whose configuration differs (its own `@Import`, its own nested `@TestConfiguration`, its own
+properties) adds a context the heap holds beside every full-application test. One more schema-test
+class is enough to tip it: the symptom is an `OutOfMemoryError` while a different, unrelated class
+loads its context (a resource download test, an actuator test), and which class fails moves between
+runs. Measure it by excluding the new class with an init script
+(`tasks.withType(Test) { filter { excludeTestsMatching '*<NewClass>' } }`); when the suite is green
+without it, close the class's context after it runs with
+`@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)`.
+
+**And a class that failed runs first on the next Gradle run**, which is when a test that leaves rows
+in the shared test database breaks another class that reads a whole table (`findAll()`): the order
+that hid it is gone. A class that writes to the migrated test database removes its own rows in an
+`@AfterEach`, by the keys it wrote, so no later class sees them whatever the order.
