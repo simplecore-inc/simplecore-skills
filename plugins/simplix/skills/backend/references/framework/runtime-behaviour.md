@@ -290,13 +290,19 @@ no log line.
 - **So a value the server owns is kept from the client by leaving it out of the request DTO**, and
   a server-derived value (an expiry, a status, an owner) needs no refusal branch. A field added to
   the DTO "to reject it" invites a later edit that starts honouring it.
-- **A test that proves the client cannot set it reads the body twice**: once through a strict
-  `new ObjectMapper()`, which must throw `UnrecognizedPropertyException` naming the field (the
-  proof the DTO has no such property), and once with `FAIL_ON_UNKNOWN_PROPERTIES` disabled, as the
-  application reads it, after which the written row carries the server's value and not the
-  supplied one. Name the test for what happens (`..._is_ignored_...`), since nothing is refused.
-- **A `@DataJpaTest` slice has no Jackson auto-configuration**, so the test builds the two readers
-  itself rather than importing the SimpliX one into the slice.
+- **A test that proves the client cannot set it reads the body through the application's own
+  mapper**, the primary `ObjectMapper` bean `SimpliXJacksonAutoConfiguration` registers, never a
+  reader the test builds. A hand-built `new ObjectMapper()` carries Jackson's defaults, so what it
+  proves is Jackson, not this application's configuration, and it still passes when the
+  application's mapper is replaced by a stock one. The test reads the body twice with that bean:
+  once through `mapper.copy().enable(FAIL_ON_UNKNOWN_PROPERTIES)`, which must throw
+  `UnrecognizedPropertyException` naming the field (the DTO has no such property), and once as the
+  bean stands, after which the written row carries the server's value and not the supplied one.
+  Name the test for what happens (`..._is_ignored_...`), since nothing is refused. Prove the test
+  discriminates by swapping the bean for `new ObjectMapper()` once: the second read must fail.
+- **A `@DataJpaTest` slice has no Jackson auto-configuration, so the test adds it**:
+  `@ImportAutoConfiguration(SimpliXJacksonAutoConfiguration.class)` on the class and
+  `@Autowired ObjectMapper`. The slice needs no web layer for this.
 - **The flip side is a client typo**: a misspelt optional field is silently absent too, and the
   server applies its default. A screen that sends a field the DTO lacks is found by comparing the
   request body with the DTO (the frontend's generated request type), never by a server error.
