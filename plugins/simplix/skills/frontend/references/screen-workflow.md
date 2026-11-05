@@ -582,3 +582,29 @@ Read this before planning a screen or dispatching agents for screen work.
 - **Prevention.** Rule 21; the generator reads the yml's `entity` key apart from its file name, and
   the audit rule above fails the hand-placed form.
 
+
+## A kit slot style change measured the old layout
+- **What happened.** A kit slot style was changed (a stepper's fixed column count) and the product's
+  rendered parity run still read the old layout, because the apps draw the kit through its generated
+  design stylesheet and the style source alone reaches nothing. The edit read as having no effect.
+- **Prevention.** A `*.style.ts` edit is followed at once by the kit's `design:css`, before any
+  rendered check reads it; `design:check` in the kit gate fails a stylesheet left behind the source.
+
+## A rule for one family of controls missed a control drawn outside its module
+- **What happened.** A phone-width input size was added to the form module's field styles. The help
+  search, an `<input>` drawn by another module with its own slot style, kept the smaller size, so a
+  phone browser still zoomed into it on focus. Every field the rule's author looked at was right.
+- **Prevention.** A rule that holds for every element of a kind is checked over the element, not
+  over the styles its author knows: a kit test reads every `<input>` and `<textarea>` the kit's
+  sources draw, takes the slot style each spreads, and requires the rule's classes in it, with a hit
+  case and a miss case of its own.
+
+## A kit style change left the kit's recorded measures red
+- **What happened.** A computed value moved (an input's size at phone width), the kit commit passed
+  its unit tests, and the kit's measure selftest went red on every recorded page that draws the
+  control, because those pages hold the reference's look as recorded before the change. One fixture
+  also carried an older wording of the reference's copy, which moved a paragraph's height.
+- **Prevention.** A kit change that moves a computed value runs the kit's full test, measures
+  included, before its commit. The pages are re-read from the reference once it draws the new value,
+  recorded only with an expected-difference pattern naming the moved properties, and a fixture's
+  copy is taken again from the reference where the reading shows it drifted.
