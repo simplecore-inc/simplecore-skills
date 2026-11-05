@@ -2841,6 +2841,44 @@ const textContrastBelowMinimum = {
   },
 };
 
+/**
+ * An SVG paint (`fill` or `stroke`) naming a custom property the page never defines.
+ *
+ * The defect it was written from: a product's logo painted `fill="var(--brand-symbol)"` in a site
+ * whose theme writes only its own `--site-*` variables. An undefined variable with no fallback
+ * makes the paint fall back to its initial value, black, silently: the logo read as black on white
+ * and vanished on every dark ground, and no text-contrast or style comparison saw it, because a
+ * brand mark is paths, not text.
+ *
+ * **What the rule asks.** For each painted element whose `fill` or `stroke` attribute (or inline
+ * style) is a `var(--name)` with no fallback, whether `--name` resolves to anything on that element.
+ */
+const paintNamesAnUndefinedVariable = {
+  id: "paintNamesAnUndefinedVariable",
+  grade: "error",
+  title: "an SVG paint names a custom property the page never defines - it paints black, silently",
+  page: () => {
+    const findings = [];
+    let compared = 0;
+    for (const el of document.querySelectorAll("svg [fill], svg [stroke], svg[fill], svg[stroke], svg [style*='var(--']")) {
+      const box = el.getBoundingClientRect();
+      if (box.width === 0 && box.height === 0) continue;
+      for (const prop of ["fill", "stroke"]) {
+        const raw = (el.getAttribute(prop) || el.style.getPropertyValue(prop) || "").trim();
+        const m = /^var\(\s*(--[\w-]+)\s*\)$/.exec(raw);
+        if (!m) continue;
+        compared += 1;
+        if (getComputedStyle(el).getPropertyValue(m[1]).trim() === "") {
+          const owner = el.closest("svg");
+          const name = owner?.getAttribute("aria-label") || owner?.closest("[aria-label]")?.getAttribute("aria-label") || el.tagName.toLowerCase();
+          findings.push(`「${name}」 paints ${prop}: ${raw}, and ${m[1]} is not defined here - it computes ${getComputedStyle(el)[prop]}`);
+        }
+      }
+    }
+    return { compared, findings: [...new Set(findings)] };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -2861,6 +2899,7 @@ export const checks = [
   buttonWithoutBackground,
   valueOffTheTokenSet,
   textContrastBelowMinimum,
+  paintNamesAnUndefinedVariable,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -2982,6 +3021,25 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  paintNamesAnUndefinedVariable: {
+    broken: {
+      // The screen this check was written from: a logo painted from a theme the page does not load.
+      "a logo painted from variables no theme defines":
+        `<style>body{margin:0;background:#0c1315}</style>
+        <svg aria-label="Brand" width="120" height="40" viewBox="0 0 120 40"><path fill="var(--brand-symbol)" d="M0 0h40v40H0z"/><path fill="var(--brand-name)" d="M50 10h60v20H50z"/></svg>`,
+    },
+    quiet: {
+      "a logo painted from variables the theme defines":
+        `<style>:root{--brand-symbol:#3ddbc9;--brand-name:#e3eeee}body{margin:0;background:#0c1315}</style>
+        <svg aria-label="Brand" width="120" height="40" viewBox="0 0 120 40"><path fill="var(--brand-symbol)" d="M0 0h40v40H0z"/><path fill="var(--brand-name)" d="M50 10h60v20H50z"/></svg>`,
+      "a paint with a fallback of its own":
+        `<style>body{margin:0}</style>
+        <svg aria-label="Brand" width="40" height="40" viewBox="0 0 40 40"><path fill="var(--brand-symbol, #0b7a73)" d="M0 0h40v40H0z"/></svg>`,
+      "a variable defined only inside the scope the paint sits in":
+        `<style>body{margin:0}.band{--ink:#e3eeee;background:#0c1315}</style>
+        <div class="band"><svg aria-label="Brand" width="40" height="40" viewBox="0 0 40 40"><path fill="var(--ink)" d="M0 0h40v40H0z"/></svg></div>`,
+    },
+  },
   pageLanguageFollowsTheLocale: {
     broken: {
       // The screen this check was written from: the locale switched to Korean, the attribute kept.
