@@ -734,6 +734,24 @@ so the first run's cleanup sets a flag that discards the only response there is,
 screen sits on its loading state forever. Whether to accept a response is decided by the
 same `ref`, never by a cancellation flag.
 
+### A hook that saves a client value to the server is one writer per window, by a claim
+
+A sync hook (the interface language saved to the account, a theme saved to a profile) runs a
+mutation whenever the client value changes. Mounted twice, both mounts see the same change and
+both save it: one change becomes two requests of one row in flight, the later commit decides the
+stored value, and a versioned row answers one of them with an optimistic-lock failure. A
+docstring that says "mount it once" does not stop the second mount.
+
+- **Make the hook claim the window.** Keep its decisions in a plain function (load: apply the
+  stored value; later change: save it) and a module-level slot the first mount to see the loaded
+  value claims and its unmount releases; every other mount reads and writes nothing. A module
+  holds one value per window, which is the unit a writer is counted per.
+- **Test the decisions without a DOM**: drive one window with two mounts through one change and
+  assert one save; a mutant without the claim must turn it red.
+- **A census of where a hook is mounted is a grep for its call (`useX(`), never for its name.** A
+  comment naming the hook ("the top bar saves it (useX)") was once counted as a third mount and
+  sent a fix after a writer that did not exist; the browser count of requests settled it.
+
 ### Mock layer
 
 Codegen mocks are neither `deriveMockHandlers` nor `createMockClient`. Each domain's
