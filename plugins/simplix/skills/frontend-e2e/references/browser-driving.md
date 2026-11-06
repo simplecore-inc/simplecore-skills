@@ -246,7 +246,12 @@ state whose signature equals the previous state's has read nothing new, and fail
 last-input gate still reads the keyboard a focus probe left behind (its real Tab), and the surface's
 own focus move then opens a tooltip no pointer reader ever sees. Press with the driver's pointer at
 a point of the row that no control in it covers (a peek link or a copy button opens something
-else), and press once more from a fresh point only after the first opened nothing, saying so.
+else), and press once more from a fresh point only after the first opened nothing, saying so. Judge
+the point by every control's box, not by the element that answers there first: a reference cell's
+link box outgrew its text, the press at the cell's middle opened the customer's peek, and the run
+read another record as the row's. Then prove the surface is the row's (the list names the record it
+opened in its address) and wait for the frame's record the same way as the screen's, since a story's
+drawer mounts after its first paint too.
 
 **A closed overlay can stay drawn in a tab that runs no frames.** A tooltip set to `closed` whose
 exit animation never started is still in the DOM, fully opaque, where it was placed; a wait for

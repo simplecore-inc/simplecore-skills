@@ -474,7 +474,9 @@ const DEFAULTS = {
    * <p>A control carries a tint and a corner and says a few words, and so does a message. What
    * separates them is that one of them is pressed.
    */
-  notAMessageSelector: 'button, [role="button"], a[href], input, select, textarea',
+  // The framework's time range strip (`TimeRangeSelector`, slots `time-range-*`) is a control too:
+  // its window badge is tinted, rounded and leads with a calendar glyph.
+  notAMessageSelector: 'button, [role="button"], a[href], input, select, textarea, [data-slot^="time-range-"]',
 
   /** How much prose a band has to hold before it is saying something rather than labelling it. */
   messageProseChars: 8,
@@ -3220,6 +3222,16 @@ const FIXTURES = {
         </main>`,
     },
     quiet: {
+      // The framework's time range strip draws its window as a rounded, tinted badge with a
+      // calendar glyph and a sentence-long date range. It is a control of the strip, never a
+      // message, and read as one it reported a glyph no notice kind carries on every timed list.
+      "a time range strip whose window badge is tinted, rounded and carries a glyph":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .strip{background:#f1f5f9;border-radius:12px;padding:8px;display:flex;gap:8px;align-items:center}
+        .badge{background:#e2e8f0;border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center;width:640px}</style>
+        <main><div data-slot=time-range-selector class=strip><div data-slot=time-range-controls>
+        <span data-slot=time-range-badge class=badge><svg class="lucide lucide-calendar" width=14 height=14><rect x=3 y=4 width=18 height=18 rx=2 /></svg>11/06/2026 00:00 to 11/07/2026 00:00 in the display zone</span>
+        </div><button data-slot=time-range-preset>Now</button><button data-slot=time-range-preset>1 hour</button></div></main>`,
       // Two figure tiles stacked on a phone above one info card: the tiles are not messages.
       "figure tiles across a phone column":
         `<style>body{margin:0;font:14px sans-serif;width:390px}main{display:block;padding:12px}
