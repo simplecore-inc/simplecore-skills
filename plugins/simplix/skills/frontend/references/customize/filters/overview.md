@@ -85,6 +85,17 @@ const { options: userOptions } = useUserOptions();
 
 The backend SearchDTO field must allow `EQUALS, IN` (faceted serializes to `field.in`); drop `CONTAINS` from id fields - partial match on an opaque id is meaningless. This is a full-stack pre-condition, not a suggestion: a `faceted` filter over a SearchDTO field whose `@SearchableField(operators = {...})` OMITS `IN` sends `field.in=` to a field that rejects the operator, and the searchable layer returns an EMPTY result set with no error - the filter looks functional but silently shows nothing. Before wiring any faceted filter, confirm the backend field lists `IN`; if it does not, add `IN` to that field's operators (backend change + OpenAPI regen) as part of the same task.
 
+**A searched facet (`createEntityFacet`) is bound to the column it filters, not to the entity it
+searches.** Its `idField` is both what `getValue` returns and the filter key it reads the picked
+values back from (`<idField>.in`), so one facet hook per referenced entity, handed to every column
+that references that entity, resolves names only on the column whose key matches. A facet built
+for `userId` and handed to an `ownerUserId` or `actorUserId` filter searches and filters correctly,
+and then shows the picked account as a bare id, or loses its name, the moment the search text
+changes: nothing errors. Build the facet per column from the factory (`createUserFacet("<column>")`
+or the project's equivalent) and check every `facets: { <key>: <hook result> }` pairs a key with a
+facet made for that key. A generator config that names one facet hook per entity is the source of
+this defect: it needs a factory it can call with the column.
+
 ### ★ ChipFilter: Special Cases Only
 
 `CrudList.ChipFilter` is for these cases only:
