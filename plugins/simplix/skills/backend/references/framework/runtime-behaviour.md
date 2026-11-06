@@ -619,3 +619,22 @@ that day, because the real `createdAt` was younger than any cutoff the test cloc
 - To find the exposure, list the repository methods and comparisons over `createdAt` / `updatedAt`
   that take a caller's instant, then the slice tests that reach them with a fixed clock; a test that
   mocks the repository sets the stamp by hand and is not exposed.
+
+## A `@Formula` is computed only by a select Hibernate writes, so two reads miss it
+
+A formula field (a derived name, a current plan, an available balance) has no column: Hibernate
+computes it inside its own select. Two common reads never run that select.
+
+- **The answer of a write.** `saveAndFlush` and then `findById(id, DetailDTO.class)` in the same
+  transaction maps the instance the persistence context already holds, which carries the formula as
+  it was loaded (null for a new row). The create answers without the name the list shows a moment
+  later. Flush and refresh the written row before mapping the answer (a helper such as
+  `reread(entityManager, Type.class, id)` that calls `flush()` and `refresh()`), in every service
+  whose entity carries a formula and whose write returns the record; a test proves it by reading
+  the formula off the write's own answer, which is red without the refresh.
+- **A native query mapped onto the entity.** `select * ... for update skip locked` returning
+  `List<Entity>` fails on every call with 「Unable to find column position by name」 once the entity
+  gains a formula, which turns a job claim or an expiry sweep into a failure at run time. Lock the ids
+  natively and read the rows through the repository in the locked order. The audit's
+  `native-select-star-into-formula-entity` finds this; run the audit after adding a formula, before
+  the build.
