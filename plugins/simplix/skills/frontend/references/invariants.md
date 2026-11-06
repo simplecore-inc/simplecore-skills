@@ -371,6 +371,30 @@ routed tree once in the app's provider stack. Labels take no `onPeek` prop and h
   for a one-off trigger that is not a reusable reference label - the state is already
   outside the row. Never place one inside a cell render or a `.map()` callback.
 
+- **One peek per kind, built from the entity's own detail screen.** The app registers every kind
+  from one table (the console kit's `entityPeek({ detail: lazy(...), idProp, route, props })`):
+  the peek is the record's full detail (head, figures, sections, tabs) with Close and, where the
+  entity has a page, Go to page to `<route>?id=<id>`. A hand-built peek per entity is a second
+  copy of the detail that drifts from it; `props` withholds verbs a dialog over another screen
+  must not offer. A peek opened inside a peek stacks over it; the host returns the focus to the
+  name that opened it when it closes (a host-mounted dialog finds no trigger of its own).
+- **A kind that nothing registers opens nothing.** A generator that derives the kind from a field
+  stem (`currentPlanId` beside `currentPlanName` gives `currentPlan`) names no entity; map the stem
+  in the project config's `references.peeks` and ask the backend to declare the reference in Meta.
+  `peek-kind-nothing-registers` in `audit-frontend.mjs` fails on it.
+- **A link whose record can be gone says so before the press.** The app registers, beside each
+  kind's peek, the kind's own list search narrowed to ids (the kit's `registerReferenceLookup` +
+  `lookupFromList`); the kit asks it once per kind for every id drawn in the same tick. An id the
+  search does not return is deleted, a refused search or a reader the list's access rule refuses
+  is unavailable (both drawn as muted text with a badge, no link, no focus stop), any other failure
+  and the wait itself leave the link. Never a fetch per cell, and never a per-entity server flag
+  the generator would have to add to every DTO.
+- **A person is drawn one way.** Every user reference, owner of the user kind, actor and author is
+  the kit's reference value for the account kind: one avatar part whose letters and tone come
+  from one rule seeded by the account id, the name as the peek link, a second line naming what
+  the person is. A second letters helper, stand-in picture or letters circle is refused by the
+  kit's `simplix-avatar-owner` check.
+
 ## #46 Delete is cloned, gated, and human-named
 
 Wire deletion by cloning an existing `useCrudDeleteWired` + `adaptOrvalDelete` +

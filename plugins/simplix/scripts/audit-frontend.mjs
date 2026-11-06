@@ -9623,7 +9623,81 @@ function untaggedFenceFindings() {
   return findings;
 }
 
+/**
+ * A peek kind a screen opens that no registration names.
+ *
+ * <p>A reference names the kind of record it opens as a string (`peekKind: "plan"`, an owner's
+ * `peekKinds` map, `peek.open({ kind })`), and the app registers each kind once where it joins the
+ * modules (`registerPeek`, or a table it registers from). A kind nobody registered opens nothing:
+ * the name reads as a link, the press does nothing, and the console prints the miss only to the
+ * developer console. A generator that derives the kind from a field stem (`currentPlanId` beside
+ * `currentPlanName` gives `currentPlan`) produces exactly this when the stem is not an entity.
+ *
+ * <p>Registered kinds are the string literals of every file that calls `registerPeek` (its direct
+ * arguments and its table's `kind:` entries); opened kinds are the `peekKind:` values, the values of
+ * a `peekKinds` map and the `kind:` of a `.open({ ... })` call elsewhere.
+ *
+ * @returns one finding per opened kind no registration names, at each place it is opened
+ */
+function unregisteredPeekKindFindings() {
+  const files = collectSources().map((abs) => ({ abs, text: fs.readFileSync(abs, "utf8") }));
+  const registered = new Set();
+  const registrars = new Set();
+  for (const { abs, text } of files) {
+    if (!/\bregisterPeek\s*\(/.test(text)) continue;
+    registrars.add(abs);
+    for (const m of text.matchAll(/registerPeek\(\s*"([\w-]+)"/g)) registered.add(m[1]);
+    for (const m of text.matchAll(/\bkind:\s*"([\w-]+)"/g)) registered.add(m[1]);
+  }
+  if (registrars.size === 0) return [];
+  const findings = [];
+  for (const { abs, text } of files) {
+    if (registrars.has(abs)) continue;
+    const opened = [];
+    for (const m of text.matchAll(/\bpeekKind:\s*"([\w-]+)"/g)) opened.push([m[1], m.index]);
+    for (const m of text.matchAll(/peekKinds:\s*\{[^}]*?kinds:\s*\{([^}]*)\}/g)) {
+      for (const v of m[1].matchAll(/:\s*"([\w-]+)"/g)) opened.push([v[1], m.index]);
+    }
+    for (const m of text.matchAll(/\.open\(\s*\{\s*kind:\s*"([\w-]+)"/g)) opened.push([m[1], m.index]);
+    for (const [kind, index] of opened) {
+      if (registered.has(kind)) continue;
+      findings.push({ file: path.relative(ROOT, abs), line: lineOfIndex(text, index), excerpt: `opens the peek kind "${kind}", which no registerPeek names` });
+    }
+  }
+  return findings;
+}
+
 const COLLECTION_RULES = [
+  {
+    id: "peek-kind-nothing-registers",
+    invariant: "#45",
+    level: "error",
+    desc: "A reference opens a peek kind no registration names (`peekKind`, an owner's `peekKinds`, `peek.open({ kind })` against `registerPeek` and the table it registers from). The name reads as a link and the press opens nothing. Register the kind where the app joins the modules, or map a generator's field stem to the real entity in `references.peeks`",
+    collect: unregisteredPeekKindFindings,
+    samples: {
+      broken: {
+        files: {
+          "apps/console/src/app/peek-kinds.tsx": `registerPeek("plan", render);`,
+          "modules/billing/src/widgets/account/list.tsx": `const F = [{ name: "currentPlanId", kind: "reference", peekKind: "currentPlan", nameField: "currentPlanName" }];`,
+        },
+      },
+      fixed: {
+        files: {
+          "apps/console/src/app/peek-kinds.tsx": `registerPeek("plan", render);`,
+          "modules/billing/src/widgets/account/list.tsx": `const F = [{ name: "currentPlanId", kind: "reference", peekKind: "plan", nameField: "currentPlanName" }];`,
+        },
+      },
+      miss: [
+        {
+          note: "a kind registered from a table the registering file iterates, opened through an owner map and the host",
+          files: {
+            "apps/console/src/app/peek-kinds.tsx": `const PEEKS = [{ kind: "userAccount", detail }, { kind: "team", detail }]; for (const { kind, ...spec } of PEEKS) registerPeek(kind, entityPeek(spec));`,
+            "modules/billing/src/widgets/account/list.tsx": `const F = [{ name: "ownerId", kind: "reference", peekKinds: { field: "ownerType", kinds: { USER: "userAccount", TEAM: "team" } } }]; peek.open({ kind: "userAccount", target });`,
+          },
+        },
+      ],
+    },
+  },
   {
     id: "empty-locale-value",
     invariant: "audit: locale fallback",
