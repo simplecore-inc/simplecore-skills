@@ -194,7 +194,7 @@ The template names are listed once, in SKILL.md invariant #67. Of these:
 - `form.hbs` and `editor.hbs` draw their save buttons with `SaveButton` (`actions-and-forms.md` § SaveButton); `form.hbs` takes `isPending` from `useCrudFormSubmit`
 - `detail.hbs` passes `isPending` to `CrudDetail.DefaultActions`
 
-## EmptyValue (em-dash placeholder for non-field cells)
+## EmptyValue (hyphen placeholder for non-field cells)
 
 | Field | Value |
 |-------|-------|
@@ -204,7 +204,9 @@ The template names are listed once, in SKILL.md invariant #67. Of these:
 
 ### Rule
 
-Muted em-dash placeholder (`children` default `-`) for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies - table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>-</span>` and inline `?? "-"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` - the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`), keep a string fallback - `EmptyValue` is a node.
+Muted placeholder for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies - table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>-</span>` and inline `?? "-"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` - the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`, a kit field's `text`), pass `EMPTY_VALUE_TEXT` - `EmptyValue` is a node.
+
+`EMPTY_VALUE_TEXT` (exported beside `EmptyValue`, one hyphen-minus) is `EmptyValue`'s default and the one text every placeholder for an absent value draws, a UI kit's own included: a kit placeholder constant is `EMPTY_VALUE_TEXT`, never a second literal, and a style sheet rule drawing an empty cell (`td:empty::after`) is the one place the text is written again, because CSS cannot import it. A literal written per screen is how an em dash or an en dash arrives with the copy. Detected (review) by `hand-written-empty-placeholder`.
 
 ## EmptyValueBadge (no-value pill for detail-style displays)
 

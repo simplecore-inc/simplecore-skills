@@ -122,6 +122,11 @@ in the project's `CLAUDE.md`, never here.
   helper adds its own source check against a direct read.
 - A holder tab (a list inside a record's detail) draws the columns of the holder's own list, never
   every field of the DTO.
+- Two holders of one entity (notes held by their subject and by their author) share a list hook
+  and an access rule, so the detail imports them once: the CLI hands the template `holderImports`,
+  one statement per package with each name once, and a detail template iterates it rather than
+  writing an import per holder. A detail rendered before that shape holds the same import twice
+  and does not compile (TS2300); `simplix generated --all <detail path>` re-renders it.
 - A history rail (the kit's `screen/history-rail`) draws each step as a dot with a line to the next.
   The line is absolutely positioned, 2px wide, stands 4px under its own dot and stops 4px above the
   next one at any row height, and is dashed where the next step was skipped. A screen draws no rail

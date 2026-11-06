@@ -471,6 +471,15 @@ const inPackages = (p) => p.startsWith("packages/");
 const inPages = (p) => /\/src\/pages\//.test(p);
 const isListWidget = (p) => /\/widgets\/.*list.*\.tsx$|\/widgets\/[^/]+\/list\.tsx$/.test(p);
 const isTsx = (p) => p.endsWith(".tsx");
+
+// The dashes a hand-written placeholder is spelled with, built from their code points so this file
+// carries neither character: hyphen-minus, en dash (U+2013) and em dash (U+2014), each written as
+// itself or as a script escape.
+const LONG_DASH = String.fromCodePoint(0x2014);
+const DASH_CLASS = `(?:-|${String.fromCodePoint(0x2013)}|${LONG_DASH}|\\\\u201[34])`;
+const HAND_WRITTEN_PLACEHOLDER = new RegExp(
+  `(?:\\?\\?|\\|\\||[?:])\\s*["'\`]${DASH_CLASS}["'\`]|fallback=["']${DASH_CLASS}["']|>\\s*(?:${String.fromCodePoint(0x2013)}|${LONG_DASH})\\s*<`,
+);
 const isSource = (p) => p.endsWith(".ts") || p.endsWith(".tsx");
 
 /**
@@ -6687,6 +6696,33 @@ const canManage = useCan("manage", SUBJECTS.area);
         {
           note: "a plain string field defaulted the ordinary way",
           source: `const name = row.name ?? "-";`,
+        },
+      ],
+    },
+  },
+  {
+    id: "hand-written-empty-placeholder",
+    invariant: "#22",
+    level: "review",
+    desc: "An absent value drawn as a dash literal (`?? \"-\"`, `|| <an en or em dash>`, `fallback=\"-\"`, a lone dash as JSX text) instead of `<EmptyValue />`, or `EMPTY_VALUE_TEXT` where the slot takes a string - each screen then picks its own glyph, and an em dash or an en dash arrives with the copy",
+    appliesTo: isTsx,
+    check: (c) => lineHits(c, HAND_WRITTEN_PLACEHOLDER, (line, lines, i) => notCommentLine(line, lines, i) && !/["'`]\+["'`]/.test(line)),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `{({ row }) => <Text>{row.areaCode ?? "${LONG_DASH}"}</Text>}`,
+      fixed: `{({ row }) => (row.areaCode ? <Text>{row.areaCode}</Text> : <EmptyValue />)}`,
+      miss: [
+        {
+          note: "a string slot given the framework's placeholder text",
+          source: `const label = row.areaName ?? EMPTY_VALUE_TEXT;`,
+        },
+        {
+          note: "a sign drawn beside a figure, which is a minus and not an absence",
+          source: `const sign = delta < 0 ? "-" : "+";`,
+        },
+        {
+          note: "a separator between two words",
+          source: `const title = [code, name].join(" - ");`,
         },
       ],
     },

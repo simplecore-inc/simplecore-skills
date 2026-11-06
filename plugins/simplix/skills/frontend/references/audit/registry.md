@@ -11,7 +11,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **EmptyState** - Shared empty-state block (icon + title + description + action) for every no-data area - never an inline icon-in-circle hand-roll
 - **DetailFields Fallback Standardization** - All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted dashed-outline "No value" pill
 - **Loading Indicator Standardization (Button `loading` prop)** - Button carries `loading` / `loadingText` built in - no manual `disabled={isPending}` + ternary text + spinner icon
-- **EmptyValue (em-dash placeholder for non-field cells)** - Muted em-dash placeholder (`children` default `-`) for "no value" in COMPACT contexts where neither a `DetailF
+- **EmptyValue (hyphen placeholder for non-field cells)** - Muted placeholder (`children` default `EMPTY_VALUE_TEXT`, one hyphen-minus) for "no value" in COMPACT contexts where neither a `DetailF
 - **EmptyValueBadge (no-value pill for detail-style displays)** - Muted dashed "No value" pill for empty detail-style values (standard label: `값 없음` / `No value` / `値なし`)
 
 ## Identity, detail fields & user labels → `registry/identity-and-detail-fields.md`
@@ -112,6 +112,7 @@ These rules guard a convention that has no shared component to register; the inv
 | #15 | `chip-filter-equality-field` |
 | #16 | `filter-category-order` |
 | #21 | `card-drops-status` |
+| #22 | `hand-written-empty-placeholder` |
 | #27 | `markdown-code-fence-without-language` |
 | #30 | `hand-written-endpoint-url`, `mock-seed-missing` |
 | #31 | `hand-rolled-detail-footer`, `list-detail-page-root-hands-down-no-height` |

@@ -636,10 +636,18 @@ whose request declares no JSON body (a multipart upload) adds an empty row and n
 `request.json()`, which throws on a form. To check a regenerated domain, compare each write
 handler's answer with its operation's `response` in `openapi/meta.json`: `store.create(`,
 `store.update(` or `removed` answered for a DTO other than the factory's `MockEntityStore<X>` is a
-generator defect. The multi-update (`PATCH /<entity>`, body `List<XUpdateDTO>`) and batch-update
-(`PATCH /<entity>/batch`, body `XBatchUpdateDTO` with an id list) handlers still read the body as
-one stored row, so their key is `undefined` and the write falls through to `store.create(body)`: a
-screen that drives either in mock mode needs a hand-written handler in the override region.
+generator defect. A keyed update whose request declares no body writes `{}` and never calls
+`request.json()`.
+
+**A write addressing several rows updates each of them and never creates one.** A multi-update
+(`PATCH /<entity>`, body `List<XUpdateDTO>`) updates every listed row by its key and answers the
+rows it updated where the operation declares a list of the store's DTO, a list sample otherwise. A
+batch update (`PATCH /<entity>/batch`, body `XBatchUpdateDTO`) applies its other fields to every row
+its `<idField>s` list names and answers what it declares (a void operation answers the empty
+envelope). A batch body with no `<idField>s` list writes nothing and `simplix meta` warns about it.
+`store.create(` in either handler, or a batch handler reading `body.<idField>`, is a generator
+defect. A batch delete still answers `{}` and removes nothing: a screen that drives one in mock
+mode needs a handler in the override region.
 
 **A handler answers inside the envelope only where its operation declares the envelope.** SimpliX
 Meta writes each handler's return type as the backend declares it, so a route returning
