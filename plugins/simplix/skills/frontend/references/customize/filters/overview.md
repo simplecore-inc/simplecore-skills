@@ -94,7 +94,8 @@ and then shows the picked account as a bare id, or loses its name, the moment th
 changes: nothing errors. Build the facet per column from the factory (`createUserFacet("<column>")`
 or the project's equivalent) and check every `facets: { <key>: <hook result> }` pairs a key with a
 facet made for that key. A generator config that names one facet hook per entity is the source of
-this defect: it needs a factory it can call with the column.
+this defect: name the factory in `scaffold.referencePickers.<entity>.facetFor`, and the generated
+list declares one facet per filtered column from it.
 
 ### ★ ChipFilter: Special Cases Only
 

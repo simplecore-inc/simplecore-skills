@@ -381,6 +381,9 @@ routed tree once in the app's provider stack. Labels take no `onPeek` prop and h
 - **A kind that nothing registers opens nothing.** A generator that derives the kind from a field
   stem (`currentPlanId` beside `currentPlanName` gives `currentPlan`) names no entity; map the stem
   in the project config's `references.peeks` and ask the backend to declare the reference in Meta.
+  A declared reference opens the target entity's camel-case name (`userRole`), so a registration
+  under another word (`role`) is mapped by an entry keyed by the entity (`{ userRole: "role" }`),
+  never by the stem, which a declared reference does not read.
   `peek-kind-nothing-registers` in `audit-frontend.mjs` fails on it.
 - **A link whose record can be gone says so before the press.** The app registers, beside each
   kind's peek, the kind's own list search narrowed to ids (the kit's `registerReferenceLookup` +

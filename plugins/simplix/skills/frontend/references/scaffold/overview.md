@@ -91,17 +91,39 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
 
 ## What the CLI judges and settles on a meta project
 
-- **A reference is drawn by the name its entity declares.** A record that arrives nested beside its key lists
-  every property of its entity, including ones the serializer may leave out, so a name path guessed from the field
-  names can resolve against the model and still draw the key. The scaffold takes the key's
-  `reference.nameField`, else the referenced entity's first `nameFields`; only a path it had to guess is marked and
-  printed as a warning. A reference whose entity declares no `nameFields` is a backend gap to raise, not a path to
-  keep. The board's sample rows nest the name (`user: { username }`), never one flat key spelled with a dot.
+- **A field is a reference because Meta declares it, never because of its name.** A field whose Meta carries
+  `reference` (an `entity`, or a `kindField` with its `kinds`) is drawn as `kind: "reference"` whatever its name and
+  whether or not anything names its record; the peek kind is the target entity in camel case (by kind: one per
+  served kind, a kind value that names no served entity left out of the map and drawn as plain text, never as a link
+  that opens nothing). Its name is settled in this order: the reference's own `reference.nameField`, a path from the
+  holding record (a field beside the key, `actorName`, or a path through a nested record, `plan.name`, taken as it is);
+  else a record nested under the key's stem, by the referenced entity's first `nameFields`; else the field beside it
+  named `<stem>Name` or `<stem>DisplayName`; else the referenced entity's first `nameFields` where the row carries a
+  field of that name, no other reference of the row targets that entity, and it is not the holding record's own name.
+  The last two are pairings by name and the scaffold prints each as a warning (declare `nameField` in the backend).
+  A declared reference nothing names is drawn in the detail as the target's label and the start of its id, still
+  opening the peek and asking whether the record is gone, and is left out of every list and holder sub-list. Only a
+  `...Id` Meta declares nothing for falls back to the old reading (a reference where a `<stem>Name` sibling exists,
+  else text), and the scaffold prints it as undeclared, since an older Meta document is the one case it serves.
+  A nested record lists every property of its entity, including ones the serializer may leave out, so a name path
+  guessed from the nested type's field names can resolve against the model and still draw the key; only such a guess
+  is marked. The board's sample rows nest the name (`user: { username }`), never one flat key spelled with a dot.
+- **The peek kind is the entity Meta names, and `references.peeks` maps it by that name.** A declared reference
+  opens the target entity's camel-case name; an entry keyed by that name maps it to the kind the app registers
+  (`{ userRole: "role" }`). A stem entry (`{ role: "role" }`) is read only for a key Meta declares nothing for, and
+  the scaffold warns where a stem entry names another kind than the declared reference opens.
+  `peek-kind-nothing-registers` in `audit-frontend.mjs` fails on a generated kind no registration names.
+- **A regenerated screen declares every domain package it imports.** A holder sub-list reads another domain's list
+  hook, so the scaffold adds each holder's domain package to the module's `package.json` beside the entity's own, and
+  `simplix generated --all <path>` writes the module manifest its render changed together with the named files; a
+  regeneration that left it out failed the module's typecheck with TS2307 until the dependency was declared by hand.
 - **The form is built from the create body.** Every field it requires is in the table, marked `required: true`,
   long text follows the contract's length, and a reference is edited through `scaffold.referencePickers`
-  (`{ <peekKind>: { hook, from, facet? } }`): `hook` searches the entity for a form picker, `facet` filters a list
-  over a key of that entity by the record's name. Both come from the framework's `createEntitySearch` and
-  `createEntityFacet`. A required field that is a list of records or a nested record has no generated control: the
+  (`{ <peekKind>: { hook, from, facet?, facetFor? } }`): `hook` searches the entity for a form picker, `facet` filters
+  a list over a key of that entity by the record's name. Both come from the framework's `createEntitySearch` and
+  `createEntityFacet`. A facet reads its picks back from one column (`<idField>.in`), so a fixed `facet` hook serves
+  only the column it was made for; `facetFor` names a factory the generated list calls once per filtered column at
+  module scope (`const useOwnerUserIdFacet = createUserFacet("ownerUserId")`), and wins over `facet`. A required field that is a list of records or a nested record has no generated control: the
   scaffold prints a warning naming it, and the form builds it in its submit.
 - **A field is drawn by the kind its Meta `format` names.** A number whose format is `credits`, `bytes` or
   `duration`, a text whose format is `excerpt`, and a `money` field with its currency and scale take that
