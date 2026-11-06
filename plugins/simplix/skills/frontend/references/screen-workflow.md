@@ -416,6 +416,15 @@ Read this before planning a screen or dispatching agents for screen work.
     names the field. Build it in the form's submit. A list row key (`...Id`) that the create body
     requires and that Meta declares no reference for gets a `check-screen` warning when the list
     file has no column for it (`screen-playbook.md` § Moving a screen from the template).
+39. **A template writes no em dash, in its output or in its comments.** Every line of a `.hbs`
+    template lands in a generated file, a `{{!-- --}}` comment included, so a template is checked
+    whole; a generator script is checked for the literals it emits. The UI kit's `check-em-dash.mjs`
+    (in its root lint) reads the kit's `templates/` folders and the CLI package's
+    `check-em-dash.mjs` (in the package lint) reads the CLI's bundled templates and generators;
+    both refuse U+2014 as the character, as a script or style sheet escape, and as an HTML entity.
+    A project's own `.simplix/templates/` has no such check unless the project's gate adds one: run
+    the kit's script on it as a second root (`node <kit-checkout>/<kit-scripts>/check-em-dash.mjs
+    .simplix/templates`).
 
 ## Cases
 

@@ -646,8 +646,15 @@ batch update (`PATCH /<entity>/batch`, body `XBatchUpdateDTO`) applies its other
 its `<idField>s` list names and answers what it declares (a void operation answers the empty
 envelope). A batch body with no `<idField>s` list writes nothing and `simplix meta` warns about it.
 `store.create(` in either handler, or a batch handler reading `body.<idField>`, is a generator
-defect. A batch delete still answers `{}` and removes nothing: a screen that drives one in mock
-mode needs a handler in the override region.
+defect. A batch delete (`DELETE /<entity>/batch`) reads its `<idField>s` query parameter, in the
+comma-joined form the generated client writes (`toQueryString` joins an array with commas) and in
+the repeated form an exploding client writes, drops empty members (the store matches `""` against a
+row keyed 0), removes every named row and answers what it declares: the rows it removed where it
+declares a list of the store's DTO, the empty envelope where it declares nothing. A batch delete
+with no `<idField>s` query parameter removes nothing and `simplix meta` warns about it. The
+OpenAPI-path generator emits the same reader for an array query parameter named `<idField>s`. A
+batch delete handler answering `{}` with no `store.remove(` beside a declared key list is a
+generator defect.
 
 **A handler answers inside the envelope only where its operation declares the envelope.** SimpliX
 Meta writes each handler's return type as the backend declares it, so a route returning
