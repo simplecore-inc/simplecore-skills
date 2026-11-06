@@ -275,6 +275,9 @@ const DEFAULTS = {
   // pressableControlClippedByItsContainer: the share of a control that must survive a
   // container that clips without scrolling. Any real cut is a defect, so only rounding is spared.
   minUncutRatio: 0.98,
+  // badgeCutByItsBox: what the design draws as a badge or a chip, which is read whole or not at all.
+  badgeSelector:
+    '[data-slot="status-badge"], [data-slot="badge"], [data-slot="chip"], [data-slot$="-badge"], [data-slot$="-chip"]',
 
   /**
    * `buttonWithoutBackground`: whether this design requires every button to carry a fill.
@@ -2444,6 +2447,59 @@ const pressableControlClippedByItsContainer = {
 
 
 /**
+ * A badge or a chip cut by a box that does not scroll, or by its own label.
+ *
+ * The defect it exists to catch: a table column declared at a fixed width for a value of "known
+ * size" (an enum, a yes or no), whose body cells truncate and take no part in the table's width.
+ * A badge whose label is longer than the column in one language (a channel name in Korean) is cut
+ * inside its cell, the table keeps its width, and a list that drops columns when its table outgrows
+ * its pane never sees an overflow. Plain text in the same cell ends at an ellipsis that says there
+ * is more; a badge is cut mid-word with nothing to say so.
+ *
+ * **What the rule asks.** For each badge: does an ancestor that clips without scrolling
+ * (`overflow: hidden` or `clip`) end before the badge does, or is the badge's own label wider than
+ * the badge? An ancestor that scrolls is not counted: the reader scrolls the badge into view.
+ * The fix is in the column, never in the badge: a column of badges takes its width as a floor that
+ * a longer label widens, so the table grows and drops a column or scrolls.
+ */
+const badgeCutByItsBox = {
+  id: "badgeCutByItsBox",
+  grade: "error",
+  title: "a badge or a chip cut by a box that does not scroll, or by its own label",
+  page: (o) => {
+    const findings = [];
+    const fixedClip = (v) => v === "hidden" || v === "clip";
+    const scrolls = (v) => v === "auto" || v === "scroll";
+    let compared = 0;
+    for (const el of document.querySelectorAll(o.badgeSelector)) {
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden" || s.display === "none") continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      compared += 1;
+      const text = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+      if (el.scrollWidth > el.clientWidth + 1) {
+        findings.push({ badge: text, cut: "its own label is wider than the badge" });
+        continue;
+      }
+      for (let n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        if (scrolls(cs.overflowX)) break;
+        if (!fixedClip(cs.overflowX)) continue;
+        const box = n.getBoundingClientRect();
+        const left = box.left + n.clientLeft;
+        const right = left + n.clientWidth;
+        if (r.left < left - 0.5 || r.right > right + 0.5) {
+          findings.push({ badge: text, cut: `by <${n.tagName.toLowerCase()}${n.getAttribute("data-slot") ? ` data-slot="${n.getAttribute("data-slot")}"` : ""}>`, past: Math.round(Math.max(left - r.left, r.right - right)) });
+          break;
+        }
+      }
+    }
+    return { compared, findings };
+  },
+};
+
+/**
  * The page's language attribute disagrees with the language its copy is written in.
  *
  * The defect it exists to catch: the locale switched to Korean, every label on the screen is
@@ -2924,6 +2980,7 @@ export const checks = [
   blockInsideParagraph,
   pressableControlsTakeThePress,
   pressableControlClippedByItsContainer,
+  badgeCutByItsBox,
   openPaneDrawsNothing,
   regionCrushedToASliver,
   pageFrozenAroundAScrollingRegion,
@@ -4242,6 +4299,30 @@ const FIXTURES = {
         `<style>body{margin:0;font:14px sans-serif;background:#fff}
         .rule{display:inline-block;width:1px;height:11px;background:#7f918f;color:#566765;font-size:0}</style>
         <span>Owner</span><span class=rule> · </span><span>Updated</span>`,
+    },
+  },
+  badgeCutByItsBox: {
+    broken: {
+      // The defect this was written from: a fixed-width enum column whose cells truncate, holding a
+      // badge whose label is longer than the column.
+      "a long badge in a fixed-width truncating cell":
+        `<style>body{margin:0;font:14px sans-serif}table{width:360px;border-collapse:collapse}
+        td{padding:8px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .fixed{width:120px;max-width:0}.b{display:inline-flex;padding:2px 8px;border-radius:9px;background:#eef}</style>
+        <table><tr><td>Mira Han</td><td class=fixed><span data-slot=status-badge class=b>PowerPoint 추가기능 경로</span></td></tr></table>`,
+      "a badge whose own label overflows it":
+        `<style>body{margin:0;font:14px sans-serif}.b{display:inline-block;width:60px;overflow:hidden;white-space:nowrap;padding:2px 8px;background:#eef}</style>
+        <span data-slot=badge class=b>이용약관과 개인정보 처리방침</span>`,
+    },
+    quiet: {
+      "the same badge in a column whose width is a floor":
+        `<style>body{margin:0;font:14px sans-serif}table{width:360px;border-collapse:collapse}
+        td{padding:8px 12px;white-space:nowrap}.floor{min-width:120px}.b{display:inline-flex;padding:2px 8px;border-radius:9px;background:#eef}</style>
+        <table><tr><td>Mira Han</td><td class=floor><span data-slot=status-badge class=b>PowerPoint 추가기능 경로</span></td></tr></table>`,
+      "a long badge inside a table that scrolls sideways":
+        `<style>body{margin:0;font:14px sans-serif}.box{width:200px;overflow-x:auto}table{border-collapse:collapse}
+        td{padding:8px 12px;white-space:nowrap}.b{display:inline-flex;padding:2px 8px;background:#eef}</style>
+        <div class=box><table><tr><td>Mira Han</td><td><span data-slot=status-badge class=b>PowerPoint 추가기능 경로</span></td></tr></table></div>`,
     },
   },
   pressableControlClippedByItsContainer: {

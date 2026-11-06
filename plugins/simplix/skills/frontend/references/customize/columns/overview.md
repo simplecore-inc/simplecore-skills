@@ -401,6 +401,7 @@ function MyList() {
 | `sortable` | `boolean` | Enable column sorting |
 | `width` | `number` | Fixed column width in pixels |
 | `minWidth` | `number` | The column's floor rather than its allowance - free text ellipsizes and the table spends leftover width here. Ignored when `width` is set |
+| `fitContent` | `boolean` | The cells draw their content whole (a badge, a chip): the declared `width` becomes a floor a longer value widens, the cell never truncates, and a table that outgrows its pane drops a tier or scrolls. On by default for `display="badge"` and `display="boolean"`; the console kit sets it for a fixed column whose rows draw badges |
 | `minTableWidth` | `number` | The narrowest table worth drawing this column in. Below it the column is not rendered at all. Only for a value the detail panel also shows |
 | `display` | `"badge" \| "boolean"` | Built-in display mode |
 | `format` | `"date" \| "datetime" \| "relative"` | Date formatting mode |
@@ -536,6 +537,8 @@ Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). D
 | **All other fields** | badges, status, enum, boolean, UUID | `center` | Visual balance |
 
 ### Column Width
+
+**A badge is drawn whole or not at all.** A fixed `width` column truncates its cells and keeps them out of the table's width, so a badge longer than the column in one language (a channel name in Korean) is cut mid-word inside its cell, the table keeps its width, and the drop-a-tier check never sees an overflow. A column of badges carries `fitContent`, which makes its width a floor; a table that then scrolls sideways is a named, focusable region with its hidden edge faded (the framework `Table` does this). `badgeCutByItsBox` in `audit-rendered.mjs` reads the painted page for a badge cut by a box that does not scroll, or by its own label.
 
 A column is as wide as its header, its face and its longest option label, in both languages. The kit gives each contract kind a width (an enum column is 120px whatever its option labels are), so a column whose header, code face or longest label is wider declares its own `width` in the list and in the board frame, or the text is clipped with an ellipsis. The heads a list draws at its default width are read from the page, and a column the entry lists that the page does not draw is a finding.
 
