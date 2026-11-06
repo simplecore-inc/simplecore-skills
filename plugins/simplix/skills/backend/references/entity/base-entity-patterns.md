@@ -186,6 +186,22 @@ private String searchIndex;
 - `@Filter` hides deleted records by default (Hibernate session filter)
 - `@FilterDef` is declared once on `BaseEntity` - individual entities do NOT need it
 - Service-layer soft delete is handled by `deleteById(id)` / `deleteAllByIds(ids)` from `SimpliXBaseService` - no manual `setDeleted()` needed
+- A read by id honours the filter too. Hibernate session filters reach queries only, and
+  `SimpleJpaRepository.findById` loads through `EntityManager.find`, so a soft-deleted row would stay
+  readable by id (detail, edit, update) while the list and `existsById` drop it. SimpliX's
+  repository base class `SimpliXJpaRepository`, which `SimpliXRepositoryFactoryBean` wires for every
+  repository, returns the row found by id only when it also passes the entity's enabled filters. It
+  holds only while the repositories are built by that factory: an `@EnableJpaRepositories` of the
+  project's own names `repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class` (the audit's
+  `jpa-repositories-without-simplix-factory`). Never add a `deleted` check at a read site.
+- **Never set `applyToLoadByKey = true` on the soft-delete `@FilterDef`** (the audit's
+  `filter-def-applied-to-load-by-key`). It makes `find` return nothing for a deleted row, and it also
+  filters every to-one association that targets the entity: measured on Hibernate 7.4, a row whose
+  `@ManyToOne` points at a soft-deleted parent (a note under a deleted account, a permission row of a
+  deleted role) throws `EntityFilterException` both in `find` and in a list query, so the screen
+  answers 500 where it should show the row.
+- `getReferenceById` returns an uninitialised proxy and is not judged by the filter; read with
+  `findById` when the row's visibility matters.
 
 ---
 

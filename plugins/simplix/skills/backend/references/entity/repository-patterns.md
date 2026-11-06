@@ -23,6 +23,12 @@ public interface {EntityName}Repository extends SimpliXBaseRepository<{EntityNam
 }
 ```
 
+The interface is implemented by `SimpliXJpaRepository` (the tree implementation for a tree entity)
+when the repositories are built by `SimpliXRepositoryFactoryBean`: the starter's own repository
+configuration uses it, and a project that declares `@EnableJpaRepositories` names it as
+`repositoryFactoryBeanClass`. That base class is what applies an entity's enabled `@Filter` to
+`findById` (`base-entity-patterns.md` § Soft Delete).
+
 ### Composite Keys - FORBIDDEN
 
 `@IdClass` and `@EmbeddedId` composite keys are **prohibited**. Every entity - including junction tables, time-series points, sync-state tuples, monitoring snapshots, and history tables - uses a single `String` primary key (`{entityName}Id`, UUID v7; `field-types.md` § ID Field) and expresses the business uniqueness of the composite columns as a `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`.

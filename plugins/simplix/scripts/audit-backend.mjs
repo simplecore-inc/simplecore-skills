@@ -327,6 +327,31 @@ function parameterAround(src, at) {
   return src.slice(start, end);
 }
 
+/**
+ * Every use of the annotation `@<name>` in `clean` (comments and strings blanked), with the text of
+ * its parenthesised arguments (empty when it has none) and the line it starts on.
+ */
+function annotationUses(clean, name) {
+  const out = [];
+  const rx = new RegExp(`@(?:[\\w.]+\\.)?${name}\\b`, "g");
+  let m;
+  while ((m = rx.exec(clean))) {
+    let k = m.index + m[0].length;
+    while (k < clean.length && /\s/.test(clean[k])) k++;
+    let args = "";
+    if (clean[k] === "(") {
+      let depth = 0;
+      for (let j = k; j < clean.length; j++) {
+        if (clean[j] === "(") depth++;
+        else if (clean[j] === ")") { depth--; if (depth === 0) { args = clean.slice(k + 1, j); break; } }
+      }
+    }
+    const line = clean.slice(0, m.index).split("\n").length;
+    out.push({ line, args, excerpt: clean.split("\n")[line - 1].trim().slice(0, 150) });
+  }
+  return out;
+}
+
 /** Body of a brace-balanced block starting at the first `{` at or after `from`. */
 function braceBody(src, from) {
   const i = src.indexOf("{", from);
@@ -3903,6 +3928,96 @@ public class PublicContentRestController {
           note: "a project that narrows the name pattern",
           source: `@Entity\npublic class Mail {\n    private String subject;\n}`,
           ctx: { audit: { i18nDisplayText: { namePattern: "(?:Name|Title)$" } } },
+        },
+      ],
+    },
+  },
+  {
+    id: "filter-def-applied-to-load-by-key",
+    invariant: "base-entity-patterns / soft delete",
+    level: "error",
+    desc: "A @FilterDef sets applyToLoadByKey = true. Hibernate then also applies the filter to every to-one association that targets the entity and throws EntityFilterException when the target row is filtered out, so a row that refers to a soft-deleted parent (a note under a deleted account) fails to load in a find and in every list query. SimpliXJpaRepository already applies an entity's enabled filters to findById, so leave the attribute at its default",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => annotationUses(stripCommentsAndStrings(c), "FilterDef")
+      .filter((u) => /\bapplyToLoadByKey\s*=\s*true\b/.test(u.args))
+      .map(({ line, excerpt }) => ({ line, excerpt })),
+    samples: {
+      file: "packages/domain-core/src/main/java/app/domain/core/entity/BaseEntity.java",
+      broken: `@MappedSuperclass
+@FilterDef(
+        name = SoftDeletable.FILTER_NAME,
+        parameters = @ParamDef(name = SoftDeletable.PARAM_IS_DELETED, type = Boolean.class),
+        defaultCondition = "deleted = false",
+        applyToLoadByKey = true
+)
+public abstract class BaseEntity<K> {
+}`,
+      fixed: `@MappedSuperclass
+@FilterDef(
+        name = SoftDeletable.FILTER_NAME,
+        parameters = @ParamDef(name = SoftDeletable.PARAM_IS_DELETED, type = Boolean.class),
+        defaultCondition = "deleted = false"
+)
+public abstract class BaseEntity<K> {
+}`,
+      hit: [
+        {
+          note: "fully qualified, on one line",
+          source: `@org.hibernate.annotations.FilterDef(name = "f", applyToLoadByKey=true)\npublic class Item {}`,
+        },
+      ],
+      miss: [
+        {
+          note: "the attribute set to its default",
+          source: `@FilterDef(name = "f", applyToLoadByKey = false)\npublic class Item {}`,
+        },
+        {
+          note: "the attribute named only in a comment",
+          source: `// never set applyToLoadByKey = true here\n@FilterDef(name = "f")\npublic class Item {}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "jpa-repositories-without-simplix-factory",
+    invariant: "#4 / repository-patterns",
+    level: "error",
+    desc: "@EnableJpaRepositories without repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class. Declaring it replaces the starter's own repository configuration, so the repositories are built on Spring Data's SimpleJpaRepository: findById then reads through EntityManager.find, which no Hibernate session filter reaches, and a soft-deleted row stays readable by id (detail, edit and update) while the list drops it; tree repositories lose their implementation too",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => annotationUses(stripCommentsAndStrings(c), "EnableJpaRepositories")
+      .filter((u) => !/\brepositoryFactoryBeanClass\s*=\s*(?:[\w.]+\.)?SimpliXRepositoryFactoryBean\.class\b/.test(u.args))
+      .map(({ line, excerpt }) => ({ line, excerpt })),
+    samples: {
+      file: "apps/app-server/src/main/java/app/server/config/DataSourceConfig.java",
+      broken: `@Configuration
+@EnableJpaRepositories(
+    basePackages = "app.domain",
+    entityManagerFactoryRef = "entityManagerFactory"
+)
+public class DataSourceConfig {
+}`,
+      fixed: `@Configuration
+@EnableJpaRepositories(
+    basePackages = "app.domain",
+    repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class,
+    entityManagerFactoryRef = "entityManagerFactory"
+)
+public class DataSourceConfig {
+}`,
+      hit: [
+        {
+          note: "no arguments at all",
+          source: `@Configuration\n@EnableJpaRepositories\npublic class DataSourceConfig {}`,
+        },
+        {
+          note: "another factory bean",
+          source: `@EnableJpaRepositories(basePackages = "app", repositoryFactoryBeanClass = JpaRepositoryFactoryBean.class)\npublic class C {}`,
+        },
+      ],
+      miss: [
+        {
+          note: "the factory named by its qualified name",
+          source: `@EnableJpaRepositories(repositoryFactoryBeanClass = dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean.class)\npublic class C {}`,
         },
       ],
     },

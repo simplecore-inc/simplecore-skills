@@ -396,6 +396,11 @@ in total, and give the slot back on every way a read ends (answered, failed, the
   `DeferredResult` a timeout past the wait as a backstop only.
 - **An exception set with `setErrorResult` is resolved on the async dispatch** by the same
   `@ControllerAdvice`, so a contract-shaped error body holds for a held read as for any other.
+- **SimpliX Meta publishes the value a held read answers with, never the wrapper.** `DeferredResult`,
+  `WebAsyncTask`, `Callable` and a `CompletionStage` (a `CompletableFuture` included) unwrap the way
+  `ResponseEntity` does, nested in either order. A Meta document that names `DeferredResult` as a type
+  was produced by a framework build without that unwrap: publish the framework again, restart the API
+  and regenerate, rather than declaring the DTO some other way.
 - **In-memory repositories have no row lock.** Two held reads of one queue woken together both take
   the same rows there; prove "taken once" on Postgres, and run the in-memory test's wakes on one thread.
 
