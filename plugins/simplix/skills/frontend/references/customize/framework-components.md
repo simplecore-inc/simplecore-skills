@@ -152,6 +152,15 @@ is opened again - the fix has to be navigated away from and back to before the n
 loads. Not knowing this reads the applied fix as one that did not take, and the next move
 is usually to change something that was already right.
 
+**A tooltip that opens on focus waits for the reader to move the focus, and Enter does not move
+it.** A drawer or a dialog moves the focus to its first control as it opens, and a trigger there
+whose tooltip opens on focus opens it every time the record does, placed where the button stood at
+that frame of the slide (a popper does not follow a transform animation), which can be over the
+panel's close. Browsers mark that programmatic focus `:focus-visible`, so the gate reads the last
+input instead, and only a key that moves the focus itself counts as the keyboard: Tab, the arrows,
+Home, End, a page step. A gate that counted any keydown let a record opened from its row with
+Enter pop the tooltip; `pointerdown` resets the gate, and so does every other key.
+
 ---
 
 ## Form Field Components

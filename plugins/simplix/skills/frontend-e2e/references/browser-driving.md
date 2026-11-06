@@ -234,6 +234,31 @@ column sliding back) can still be under way after a long wait: wait for running 
 (`document.getAnimations()`, an infinite spinner excluded) and finish what is left before reading.
 A reading that turns from clean to failing once it is taken at the right moment was never clean.
 
+**Probe the surface under its own root, and make the report name it.** A drawer and a dialog are
+portaled out of `main`, so a region probe rooted at `main` reads the list again while the record
+stands beside it: the "detail" signature equalled the list's on every drawer screen, and the
+comparison with the frame passed because the frame's list was read too. Root the opened state's
+probe at the surface (the drawer, the panel, the dialog), judge it against a contract of its own,
+and print what was read: the surface's kind and box and how it was opened. A runner that reads a
+state whose signature equals the previous state's has read nothing new, and fails.
+
+**Open the state the way a reader does.** A script `click()` sends no pointer events, so a
+last-input gate still reads the keyboard a focus probe left behind (its real Tab), and the surface's
+own focus move then opens a tooltip no pointer reader ever sees. Press with the driver's pointer at
+a point of the row that no control in it covers (a peek link or a copy button opens something
+else), and press once more from a fresh point only after the first opened nothing, saying so.
+
+**A closed overlay can stay drawn in a tab that runs no frames.** A tooltip set to `closed` whose
+exit animation never started is still in the DOM, fully opaque, where it was placed; a wait for
+running animations does not see it, because nothing is running. Wait until no popper content
+(`[data-radix-popper-content-wrapper] > *`) remains, and report by name whatever stayed: a covered
+control read under it is the overlay's, not the screen's.
+
+**A focus probe changes the page it reads.** Focusing a roving tab selects it, so a probe that
+walks the controls by focus leaves the page on its last tab (a list was left on another tab, whose
+rows open nothing, and the record reading that followed found no record). Open the page again at
+the address the state was read at before the next reading.
+
 ## A page's `innerText` is not what the page says
 
 **Reading a screen by dumping `innerText` picks up text no reader can see, and the loudest of
