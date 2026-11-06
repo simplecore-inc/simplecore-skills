@@ -113,7 +113,10 @@ Read this before planning a screen or dispatching agents for screen work.
      file deleted on purpose stays deleted (its base is kept). `--check` adds an exit code for
      stale, conflict and no-base files and for an edited file a clean merge would still move;
      `--json` prints the report as data; a path argument narrows any of them to those files or
-     directories.
+     directories. `--all <path...>` regenerates only the named files: each one's origin is
+     rendered with its writes captured and only the named files and their bases under
+     `.simplix/generated` are written, so a screen's other files and its story keep their state. A
+     named file with no recorded origin is reported and left alone. `--share` takes no paths.
    - An edited file with no base is adopted after a reviewed diff: `simplix generated --adopt
      <path...>` prints the diff between the file and its current render, and records that render as
      the base once a person confirms every difference is a deliberate customisation. `--yes`
@@ -123,7 +126,11 @@ Read this before planning a screen or dispatching agents for screen work.
      where it can be inferred.
    - Every scaffold option that changes the render (`--list-presentation`, `--view-toggle`,
      `--card-title`, `--text-filter`) is recorded in the file's origin, and a regeneration renders
-     from the origin alone. A decision made by hand without its flag is invisible to the CLI: an
+     from the origin alone. The menu placement (`--menu-group`, `--menu-icon`) is recorded after
+     them: it renders no generated file and replays as a no-op while the screen's entry is in the
+     menu file, and a removed entry goes back into the decided group with the decided icon. A file
+     stamped before the menu flags were recorded carries the short origin; record the full command
+     with `--origin`, which changes no render. A decision made by hand without its flag is invisible to the CLI: an
      untouched file regenerated from the origin (the board story) is drawn without it, and a template
      change over the same lines conflicts with the edited file. Scaffold with the flag. A cards list
      is the exception: its switch follows from `--list-presentation cards`, the origin records no
@@ -131,7 +138,9 @@ Read this before planning a screen or dispatching agents for screen work.
    - `simplix generated --origin '<command>' <paths>` rewrites the origin of generated files that
      the command renders, for a decision made by hand or recorded before its flag existed. Only
      the stamp line changes, so the files stay as edited and the next regeneration renders the new
-     origin and merges it into them. `<command>` is the arguments after `simplix` (for example
+     origin and merges it into them; `simplix generated --all <paths>` renders the same files from
+     the new origin at once, without touching the rest of the tree. `<command>` is the arguments
+     after `simplix` (for example
      `scaffold <entity> --module <m> --list-presentation cards`); the paths are generated files or
      directories holding them, resolved against the working directory. A path the command does not
      render, or a file without a stamp line, is refused and nothing is written. The option stands
@@ -374,6 +383,8 @@ Read this before planning a screen or dispatching agents for screen work.
     through the project-wide flag. A template change makes every screen rendered from the old
     template stale at once: the author tells whoever has an uncommitted screen to re-scaffold.
     Example: one agent's gate run reported a conflict on another agent's `<entity>.stories.tsx`.
+    To bring your own screen up to the templates, name its files: `simplix generated --all
+    <path...>` writes only them and their bases.
 33. **A list's columns are built from the fields the blocks draw.** `contract.columns(...)` over
     every field sums `minTableWidth` for columns that are never drawn, so the later columns never
     appear; pass only the drawn fields.
@@ -539,9 +550,9 @@ Read this before planning a screen or dispatching agents for screen work.
 - **Prevention.** To lift a hand edit into the template its file came from, write the file back to
   its recorded base (`.simplix/generated/<path>`, once `git diff HEAD -- <path>` shows nothing that
   is not yours), put the hand branch's data in the template's key, then run the file's origin command
-  (`add-page <kind> <name> ...`). `generated --all` is the wrong command in a shared checkout: it
-  also rewrites every other screen whose template another change touched. The report must read
-  untouched for the file afterwards.
+  (`add-page <kind> <name> ...`), or `generated --all <path>` for that file alone. A bare
+  `generated --all` is the wrong command in a shared checkout: it also rewrites every other screen
+  whose template another change touched. The report must read untouched for the file afterwards.
 
 ## A focus tint was the only focus mark, and forced colors removed it
 - **What happened.** The language selector, and every control written the same way, showed

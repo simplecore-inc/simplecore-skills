@@ -626,6 +626,21 @@ the override region of `src/mock/index.ts`, which then freezes that file), never
 `grep -rn "no sample stands in for" packages/*/src/generated-meta/mock/handlers.ts`, never by
 grepping a factory's doc comment, whose wording is not a contract.
 
+**A write keeps the store current and answers what its operation declares.** A create adds a row,
+an update addressed by its key updates it and a delete removes it, whatever the operation returns.
+The handler answers with the stored row only where the operation declares the store's own DTO; a
+create answering with a receipt or a session to open, or a delete answering with the job that
+carries it out, answers a `satisfies`-checked sample of that DTO, and a delete declaring the store's
+DTO answers with the row it removed. A delete declaring nothing keeps the empty envelope. A create
+whose request declares no JSON body (a multipart upload) adds an empty row and never calls
+`request.json()`, which throws on a form. To check a regenerated domain, compare each write
+handler's answer with its operation's `response` in `openapi/meta.json`: `store.create(`,
+`store.update(` or `removed` answered for a DTO other than the factory's `MockEntityStore<X>` is a
+generator defect. The multi-update (`PATCH /<entity>`, body `List<XUpdateDTO>`) and batch-update
+(`PATCH /<entity>/batch`, body `XBatchUpdateDTO` with an id list) handlers still read the body as
+one stored row, so their key is `undefined` and the write falls through to `store.create(body)`: a
+screen that drives either in mock mode needs a hand-written handler in the override region.
+
 **A handler answers inside the envelope only where its operation declares the envelope.** SimpliX
 Meta writes each handler's return type as the backend declares it, so a route returning
 `SimpliXApiResponse<X>` carries the envelope container and a route returning `X` (or
