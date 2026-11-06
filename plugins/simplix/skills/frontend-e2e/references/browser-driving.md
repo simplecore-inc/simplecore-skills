@@ -222,6 +222,18 @@ Vocabulary - what a total reads like, what counts as a row, what an empty state 
 `--options <json>` with documented defaults, so a product that writes its totals differently
 overrides them instead of editing the script.
 
+### A state is read once it stands, and the reading says which state it was
+
+A fixed wait after pressing a row is a guess about the slowest part of the page. A drawer that
+slides in only after the record's read answers was still outside the window 1.2 s after the press,
+so every "detail: no findings" a runner printed was a reading of the list with no record on it, and
+nothing in the output said so. Wait for the thing the state is about (the panel inside the window
+and not moving between two reads), and only then run the checks. A tab on no display also advances
+its frames only while something asks for them, so an animation a width change started (a list
+column sliding back) can still be under way after a long wait: wait for running finite animations
+(`document.getAnimations()`, an infinite spinner excluded) and finish what is left before reading.
+A reading that turns from clean to failing once it is taken at the right moment was never clean.
+
 ## A page's `innerText` is not what the page says
 
 **Reading a screen by dumping `innerText` picks up text no reader can see, and the loudest of
