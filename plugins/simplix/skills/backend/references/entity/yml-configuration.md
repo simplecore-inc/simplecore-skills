@@ -527,6 +527,25 @@ reference:
   idField: channelId      # Must match field name exactly
 ```
 
+### A reference added to a plain id field changes the service render
+
+A `reference` block on a String id field (`userId` naming `UserAccount`) leaves the DTOs' types and
+search paths as they were, but the service template then threads the id through `create`, `update` and
+`saveAndGetProjection` ("set FK ID field directly"). A promoted service that trimmed those methods (a
+read-only list, operator actions that never change the owner) conflicts on the next promote. So a
+reference is added together with its regeneration, never as a yml line alone:
+
+1. Add the block to every generator input of the entity (its `My*` inputs too) and
+   `@References(<Entity>.class)` on the entity field, which is what Meta reads.
+2. `yo simplix:generate <Entity> --force` and `yo simplix:promote <Entity> --module <promoteModule>` for
+   each input that has promoted files (`git ls-files` first: promoting an input that has none lays down
+   a whole new surface, which is then removed by name, not committed).
+3. For a conflict whose template side only touches methods the service removed on purpose, keep the
+   file and record the fresh render as its base (`../generator/promote-workflow.md` § Resolving a
+   conflict); promote then reports `current`.
+4. `yo simplix:generated` reports the services `edited`, not `conflict`. A reference committed without
+   these steps leaves the conflicts for whoever promotes the entity next.
+
 ### Wrong Import in Generated Code
 
 **Check**: `modulePath` is the one the entity's package gives (`base-entity-patterns.md` § Path convention). In the type-first layout the repository import is built from `modulePath`, so a `modulePath` that differs from the entity's package imports a repository package that does not exist:

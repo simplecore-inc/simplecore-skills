@@ -97,3 +97,13 @@ writing the labels anyway makes them fail as orphan keys, which reads as the opp
 The fix is in the tests, not in the entity: resolve the generic argument of a JSON-mapped
 field, whichever annotation maps it (`../entity/field-types.md` § JSON Fields), and walk the
 type it names.
+
+## A JSON list of value records is rendered as a relation
+
+An entity field holding a `List<SomeRecord>` in a JSON column (a typed list of check results, say) is
+read by the templates as a collection of related entities: the service and its test gain an
+`ObjectProvider<SomeRecordService>` for a service that does not exist, and the DTO's field type
+changes. A promote then conflicts, or writes a service that does not compile. Until the templates tell
+a JSON value from a relation, keep the field's promoted shape by hand and do not record the fresh
+render as the base: the conflict is the generator's defect, reported where the generator is kept.
+

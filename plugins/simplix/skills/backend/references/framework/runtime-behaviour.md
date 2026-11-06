@@ -203,6 +203,17 @@ frontend reads; an endpoint that must answer a bare body is documented by hand a
 hand-written client.
 Example: `public <Entity>Summary summary()` answers `{"total":5}` while Meta says `{"body":{"total":5}}`.
 
+## The server writes without null fields, so a required nullable field is written on purpose
+
+SimpliX's Jackson configuration leaves out every null field. A bare body held to an external schema
+that requires a key and allows it to be null (`subscription: null` on the free plan, `retryUntil: null`
+when nothing is known) therefore loses the key, and the client's parser refuses the body. Put
+`@JsonInclude(JsonInclude.Include.ALWAYS)` on each such field, and the opposite where the schema is a
+`oneOf` whose shapes forbid each other's keys: one record with every key written fails both shapes, so
+that record takes `NON_NULL` and writes only its own shape's fields. A contract test reads the body
+through the server's own converters (a `ServerJson`-style helper built from the same configuration),
+or it measures Jackson's defaults instead; a mutant that drops one `ALWAYS` turns it red.
+
 ## A transactional class is proxied by its interface
 
 `@Transactional` on a class that implements an interface yields a JDK proxy, so a test or a bean
@@ -328,6 +339,50 @@ no `Origin` (a desktop client, an installer) is untouched, and the global origin
   client), which also proves the security chain lets `OPTIONS` through.
 - **The refusal has two halves**: the foreign origin answers 403 and carries no allow header. A 403
   alone can be any other refusal.
+
+## A signed-in route's CORS is the chain's source, and a handler's `@CrossOrigin` cannot widen it
+
+The resource-server chain calls `.cors(cors -> cors.configurationSource(corsConfigurationSource))` with
+the bean SimpliX builds from `simplix.auth.cors` for `/**`, so its `CorsFilter` answers every
+preflight before any handler runs: an origin the shared list lacks is refused with 403 there, and a
+`@CrossOrigin` on the controller is never reached. The bean is `@ConditionalOnMissingBean(name =
+"corsConfigurationSource")`, so a project opens one path to one browser origin by declaring a bean of
+that name that answers the path's own configuration and delegates every other request to
+`SimpliXCorsConfigurations.source(auth.getCors())`.
+
+- **The path's configuration replaces the shared one, it does not merge with it.** It names its
+  origin, its methods, every request header the client sends (a custom token header included) and
+  every response header the script must read (`Retry-After`), or the browser refuses them.
+- **A development profile's `allowed-origin-patterns: "*"` does not reach the path**, so a foreign
+  origin is refused there locally too; elsewhere `"*"` still answers, which is why a local curl alone
+  proves nothing about the other paths.
+- **Prove it through the running server** (`RANDOM_PORT`): the preflight from the origin (200, its
+  allow headers), the same preflight from another origin (403), a plain request carrying the expose
+  header, and a control path outside the replaced one refusing the origin. A mutant that drops the
+  registration, the custom header or the expose header each turns one of those red.
+
+## A held read parks as a `DeferredResult`, and a standalone `MockMvc` needs the async dispatch
+
+A read the client lets the server hold (`wait` seconds until something arrives) returns a
+`DeferredResult`, so it holds neither a request thread nor a database connection: each read is its own
+short transaction, run when the read arrives, again when the write path reports after its commit that
+something was stored for it, and a last time when the wait ends. The last read is what keeps it
+correct where the wake cannot reach (another node, a missed notification): the read then answers late,
+never wrong. The read that a wake runs is off the request thread, so the account it reads for is
+captured when the read arrives; it never reads the security context. Bound the reads per account and
+in total, and give the slot back on every way a read ends (answered, failed, the client gone).
+
+- **A `DeferredResult` already set when the handler returns still starts async processing.** A
+  standalone `MockMvc` then answers an empty response with `isAsyncStarted()`; the body exists only
+  after `mvc.perform(asyncDispatch(result))`. A test helper dispatches whenever async started.
+- **`MvcResult.getAsyncResult(ms)` throws `IllegalStateException` when nothing set the result**, which
+  is the assertion that a read is still held. `MockAsyncContext` fires no timeouts, so the end of the
+  wait is driven by the code's own scheduler, never by the container's async timeout; give the
+  `DeferredResult` a timeout past the wait as a backstop only.
+- **An exception set with `setErrorResult` is resolved on the async dispatch** by the same
+  `@ControllerAdvice`, so a contract-shaped error body holds for a held read as for any other.
+- **In-memory repositories have no row lock.** Two held reads of one queue woken together both take
+  the same rows there; prove "taken once" on Postgres, and run the in-memory test's wakes on one thread.
 
 ## A defaulted address makes a keyless provider read as configured
 
