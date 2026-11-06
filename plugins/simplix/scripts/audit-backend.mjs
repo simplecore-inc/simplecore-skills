@@ -421,6 +421,69 @@ function encryptedFieldIndex(files) {
   _encryptedFieldIndex = map;
   return map;
 }
+let _jsonValueEnumIndex = null;
+/**
+ * Which value types declared in this repository hold a labelled enum their JSON would write as the
+ * label object, by the type's simple name.
+ *
+ * <p>A type counts when a record component or a field of it is typed by an enum that implements
+ * `LabeledEnum` and carries no `@JsonSerialize` of its own. Enums and value types are matched by
+ * simple name across the whole tree, as a JSON-mapped field names its value type bare.
+ *
+ * @param files every Java source in the repository
+ * @returns value type name -> the components or fields that would be stored as label objects
+ */
+function jsonValueEnumIndex(files) {
+  if (_jsonValueEnumIndex) return _jsonValueEnumIndex;
+  const sources = [];
+  const labeled = new Set();
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    const clean = stripCommentsAndStrings(src);
+    sources.push(clean);
+    for (const m of clean.matchAll(/\benum\s+(\w+)\s+implements\s+[^{]*\bLabeledEnum\b/g)) labeled.add(m[1]);
+  }
+  _jsonValueEnumIndex = jsonValueEnumsIn(sources, labeled);
+  return _jsonValueEnumIndex;
+}
+
+/** The value types of `sources` whose components or fields hold one of `labeled` without a serializer. */
+function jsonValueEnumsIn(sources, labeled) {
+  const map = new Map();
+  const unguarded = (segment) => {
+    const typed = segment.trim().match(/^((?:@[\w.]+(?:\([^)]*\))?\s*)*)(?:final\s+)?(\w+)\s+(\w+)$/);
+    return typed && labeled.has(typed[2]) && !/@JsonSerialize\b/.test(typed[1]) ? typed[3] : null;
+  };
+  for (const clean of sources) {
+    for (const m of clean.matchAll(/\brecord\s+(\w+)\s*\(/g)) {
+      let depth = 1;
+      let i = m.index + m[0].length;
+      let part = "";
+      const parts = [];
+      for (; i < clean.length && depth > 0; i++) {
+        const ch = clean[i];
+        if (ch === "(") depth++;
+        if (ch === ")") depth--;
+        if (depth === 0) break;
+        if (ch === "," && depth === 1) { parts.push(part); part = ""; } else part += ch;
+      }
+      parts.push(part);
+      const held = parts.map(unguarded).filter(Boolean);
+      if (held.length) map.set(m[1], held);
+    }
+    for (const m of clean.matchAll(/\bclass\s+(\w+)[^{]*\{/g)) {
+      if (/\b@Entity\b/.test(clean)) break;
+      const held = [];
+      for (const f of clean.slice(m.index).matchAll(/((?:@[\w.]+(?:\([^)]*\))?\s*)*)private\s+(?:final\s+)?(\w+)\s+(\w+)\s*[;=]/g)) {
+        if (labeled.has(f[2]) && !/@JsonSerialize\b/.test(f[1])) held.push(f[3]);
+      }
+      if (held.length) map.set(m[1], held);
+      break;
+    }
+  }
+  return map;
+}
 let _fieldIndex = null;
 /**
  * Which fields each class in this repository declares, by its simple name.
@@ -1422,6 +1485,67 @@ const RULES = [
           note: "a second surface generated over the same entity from its own yml",
           source: `public class MyThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
           ctx: { generatorInputs: new Map([["Thing", ["AdminThingRestController", "MyThingRestController"]]]) },
+        },
+      ],
+    },
+  },
+  {
+    id: "json-value-labeled-enum-stored-as-label",
+    invariant: "field-types",
+    level: "error",
+    desc: "An entity's JSON column holds a value type whose labelled-enum component or field carries no `@JsonSerialize` - the column is written through the application's ObjectMapper, whose enum serializer writes each constant as the API's `{label, value}` object in the storing request's language. Serialize the component by name (`@JsonSerialize(using = ToStringSerializer.class)`) and answer the API with a DTO of its own (entity/field-types.md § An enum inside a JSON value)",
+    appliesTo: (p) => /\/entity\/[^/]+\.java$/.test(p.split(path.sep).join("/")),
+    check: (c, rel, ctx) => {
+      const values = ctx?.jsonValueEnums;
+      const clean = stripCommentsAndStrings(c);
+      if (!values || !values.size || !/@Entity\b/.test(clean)) return [];
+      const hits = [];
+      for (const m of clean.matchAll(/\bprivate\s+([\w<>,\s?]+?)\s+(\w+)\s*[;=]/g)) {
+        const before = clean.slice(0, m.index);
+        const start = Math.max(before.lastIndexOf(";"), before.lastIndexOf("{"), before.lastIndexOf("}"));
+        const annotations = before.slice(start + 1);
+        if (!/@JdbcTypeCode\s*\(\s*SqlTypes\.JSON\b|@Type\s*\(\s*JsonType\.class/.test(annotations)) continue;
+        for (const name of m[1].match(/\b[A-Z]\w*\b/g) ?? []) {
+          const held = values.get(name);
+          if (held) hits.push({ line: before.split("\n").length, excerpt: `${m[2]} stores ${name}, whose ${held.join(", ")} would be written as label objects` });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/domain-user/src/main/java/app/domain/user/entity/Report.java",
+      ctx: { jsonValueEnums: jsonValueEnumsIn([
+        "public record CheckResult(@FieldLabel(\"{entities.CheckResult.check}\") Check check, Status status) {}",
+        "public enum Check implements LabeledEnum { NETWORK }",
+        "public enum Status implements LabeledEnum { PASSED }",
+      ], new Set(["Check", "Status"])) },
+      broken: `@Entity\npublic class Report {\n    @JdbcTypeCode(SqlTypes.JSON)\n    @Column(name = "checks", nullable = false)\n    private List<CheckResult> checks;\n}`,
+      fixed: `@Entity\npublic class Report {\n    @JdbcTypeCode(SqlTypes.JSON)\n    @Column(name = "labels")\n    private Map<String, String> labels;\n}`,
+      hit: [
+        {
+          note: "a class-shaped value type mapped with the Hypersistence JsonType",
+          source: `@Entity\npublic class Report {\n    @Type(JsonType.class)\n    private Settings settings;\n}`,
+          ctx: { jsonValueEnums: jsonValueEnumsIn([
+            "public class Settings {\n    private Check check;\n    private String note;\n}",
+          ], new Set(["Check"])) },
+        },
+      ],
+      miss: [
+        {
+          note: "the components serialize by name",
+          source: `@Entity\npublic class Report {\n    @JdbcTypeCode(SqlTypes.JSON)\n    private List<CheckResult> checks;\n}`,
+          ctx: { jsonValueEnums: jsonValueEnumsIn([
+            "public record CheckResult(@JsonSerialize(using = ToStringSerializer.class) Check check,\n        @FieldLabel(\"{x}\") @JsonSerialize(using = ToStringSerializer.class) Status status) {}",
+          ], new Set(["Check", "Status"])) },
+        },
+        {
+          note: "the value type held in a field that is not a JSON column",
+          source: `@Entity\npublic class Report {\n    @Transient\n    private CheckResult last;\n}`,
+        },
+        {
+          note: "an enum that is not labelled",
+          source: `@Entity\npublic class Report {\n    @JdbcTypeCode(SqlTypes.JSON)\n    private List<Plain> rows;\n}`,
+          ctx: { jsonValueEnums: jsonValueEnumsIn(["public record Plain(Kind kind) {}"], new Set(["Check"])) },
         },
       ],
     },
@@ -4376,7 +4500,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files), storedPaths: storedPathIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files), storedPaths: storedPathIndex(files), jsonValueEnums: jsonValueEnumIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();

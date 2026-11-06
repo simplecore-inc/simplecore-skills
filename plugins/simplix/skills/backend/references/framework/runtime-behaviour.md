@@ -442,3 +442,35 @@ A test that posts one body twice and asserts one stored row and a success passes
 second post replaces the first, because a replacement also leaves one row. Re-send the same key (a
 sequence number, an idempotency key) with a different body and assert the stored or returned content
 is the first one; a replace-on-duplicate then fails it.
+
+## A person's own setting written through a versioned read fails the later of two writes
+
+A self-service write (`PATCH /me/locale`, the profile, notification preferences) that reads the
+account with `findById`, sets a field and saves it relies on the row's `@Version`. Screens send such
+writes several at a time: a language picker mounted in more than one place, a sign-in that
+synchronises the stored choice while a tool sets another. Two that read the row together both pass
+their own checks; the later commit fails with `ObjectOptimisticLockingFailureException`, which the
+global handler answers as 500, and a pair that does not collide leaves the row with whichever
+committed last while a side effect inside the transaction (an identity-provider sync) may hold the
+other.
+
+- **Read the row under its lock for the person's own writes**: a repository method
+  `@Lock(LockModeType.PESSIMISTIC_WRITE) @Query("select u from <Entity> u where u.<id> = :id")`, used
+  by every self-write. Concurrent writes then run in turn, each answers 200, and the row and the side
+  effect agree. Keep `findById` for reads, and keep the versioned write plus re-read for background
+  writers (a first-call provisioning) that must never wait on a user's request.
+- **Count before fixing**: the server log's `server_failure status=500 ... OptimisticLockException`
+  lines name the path, and the request mappings logged in the same millisecond name the second
+  writer.
+- **The test drives two writes on the migrated schema and holds both inside the transaction** (a
+  latch in the side effect that waits for the other write or a timeout), then asserts both succeed,
+  the version moved twice, and the row equals the side effect's last value; with `findById` it fails
+  with the production exception. Seed the field with a third value: a write equal to the stored value
+  is no change, issues no UPDATE and cannot collide, so a seed equal to one of the two writes lets the
+  unlocked version pass.
+- **An encrypted column makes such a slice test order-dependent.** `AesEncryptionConverter` keeps its
+  service in a static field that only a full application context sets, so a slice that loads the
+  entity passes after a `@SpringBootTest` class ran in the same JVM and fails alone. Give the
+  converter a service with a key of the class's own in `@BeforeAll` (`SimpleKeyProvider` with a
+  static key, `ReflectionTestUtils.setField(AesEncryptionConverter.class, "encryptionService", ...)`),
+  restore the previous value in `@AfterAll`, and run the class alone once before trusting it.

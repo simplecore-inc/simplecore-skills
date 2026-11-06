@@ -464,6 +464,28 @@ private List<String> tags;
 private ChannelSettings settings;
 ```
 
+### An enum inside a JSON value is stored by name, and the API reads another type
+
+The JSON column is written through the application's `ObjectMapper`, and SimpliX registers a
+serializer for every enum on it that writes a constant as the label object an API answer carries
+(`{"label": ..., "value": ...}`), in the language of the request that stored the row. A record or
+POJO kept in a JSON column that holds a `LabeledEnum` therefore stores translated labels unless its
+components say otherwise. Reading still works (the enum deserializer accepts the object and the
+bare name), which is why it goes unnoticed until somebody reads the column.
+
+- **The stored value type serializes its enum components by name**: put
+  `@JsonSerialize(using = ToStringSerializer.class)` on each enum component (a `LabeledEnum` never
+  overrides `toString`, so it writes `name()`), and say why in the type's javadoc.
+- **The API answers a DTO of its own** (a static class in the entity's `{Entity}DTOs`, `@Data`, with
+  `@FieldLabel` on each field), so the answer keeps the standard enum objects the screens read. The
+  projection's mapper copies the stored record into it field by field.
+- **Prove the stored text, not only the round trip**: a test that writes the value through the
+  repository and reads the column as text (`select <column>::text`) fails while the label objects
+  are stored; a test that only reads the entity back passes either way.
+- A record kept in a JSON column also needs `entities.<Record>` and `entities.<Record>.<field>`
+  labels in every locale (the JSON type translation test), in the projection bundle when no entity
+  table backs it.
+
 ---
 
 ## Encrypted Fields (PII)
