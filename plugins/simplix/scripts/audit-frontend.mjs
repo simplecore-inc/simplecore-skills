@@ -2985,6 +2985,61 @@ window.history.replaceState(null, "", window.location.pathname + window.location
     },
   },
   {
+    id: "sign-in-callback-fails-on-another-tabs-answer",
+    invariant: "#80",
+    level: "review",
+    desc: "A sign-in callback that calls `completeSignIn` and never reads why it failed (`signInFailure` on the framework's `AuthError`). A confirmation or password reset link from a mail opens in a new tab: the identity provider finishes its step there and sends that tab back with a code for the authorization another tab started (`not-pending`: this tab holds no verifier), and sends the tab that started it back with `temporarily_unavailable` / `authentication_expired` (Keycloak's request to start again). Both show \"sign-in could not be finished\" while the provider already holds the person's session. Start a new authorization from this tab in those two cases, once per tab (a session storage record under the app's store prefix, taken by the next callback), and show every other failure. Never move the verifier to `localStorage` to make the other tab finish it",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      // A file that only declares the client's shape (an interface member) calls nothing.
+      const call = /\.\s*completeSignIn\s*\(/g;
+      if (/\bsignInFailure\b/.test(c)) return [];
+      const hits = [];
+      const lines = c.split("\n");
+      let m;
+      while ((m = call.exec(c)) !== null) {
+        const line = c.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: (lines[line - 1] ?? "").trim() });
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/<auth-ui>/src/sign-in-complete.tsx",
+      broken: `export function useSignInCompletion({ oidc, openSession, navigate }: Options) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    oidc.completeSignIn(window.location.href)
+      .then(({ tokens, returnTo }) => { openSession(tokens); navigate(returnTo ?? "/"); })
+      .catch(() => setFailed(true));
+  }, [oidc, openSession, navigate]);
+  return { failed };
+}`,
+      fixed: `export async function finishSignIn({ oidc, openSession, storePrefix, callbackUrl, restartParams }: Options) {
+  const restarted = takeRestartRecord(storePrefix);
+  try {
+    const { tokens, returnTo } = await oidc.completeSignIn(callbackUrl);
+    openSession(tokens);
+    return { kind: "landed", returnTo };
+  } catch (error) {
+    const { signInFailure, issuerError } = error as AuthError;
+    const restart = signInFailure === "not-pending"
+      || (issuerError?.error === "temporarily_unavailable" && issuerError.description === "authentication_expired");
+    if (restarted || !restart || !recordRestart(storePrefix)) throw error;
+    await oidc.signIn({ returnTo: takeParkedPath(storePrefix), params: restartParams });
+    return { kind: "restarting" };
+  }
+}`,
+      miss: [
+        {
+          note: "the client's own declaration, which calls nothing",
+          source: `export interface SignInClient<T> {
+  completeSignIn(callbackUrl: string): Promise<{ tokens: T; returnTo?: string }>;
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "list-search-mapped-by-hand",
     invariant: "#32 / #79",
     level: "error",

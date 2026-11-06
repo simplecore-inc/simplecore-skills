@@ -1362,3 +1362,45 @@ Enforcement: review - a builder returning `undefined` for two callers is the ord
 ## #79 Every screen is generated from kit templates, then customised
 
 SKILL.md item 79 carries the steps. The cases behind each rule, the lint fence and the gaps are in `screen-workflow.md`; the preflight a change reaching several screens runs is `screen-preflight.md`, and the traps a screen move meets are in `screen-playbook.md`.
+
+## #80 A sign-in callback never fails because the answer reached a tab that did not start it
+
+**The shape.** The authorization code flow keeps its verifier and state in `sessionStorage`, which
+belongs to one tab. A mailed link (an address confirmation after sign-up, a password reset) opens in
+a new tab. Keycloak verifies the address there and continues the authentication in that tab, so it
+redirects the new tab to the app's callback with `code` and the *first* tab's `state`; the new tab
+holds no pending sign-in and the exchange cannot run. Keycloak's page in the first tab polls for the
+session (`authChecker.js`) and, once the other tab finished, sends the first tab to the callback with
+`error=temporarily_unavailable&error_description=authentication_expired`, its documented request to
+start the sign-in again. A callback that treats any rejection as failure shows "sign-in could not be
+finished" in both tabs, and only "Back to sign in" signs the person in, without a prompt, because the
+identity provider already holds the session.
+
+**The fix is a restart, once per tab.** Read why the exchange failed (the framework's `AuthError`
+carries `signInFailure`: `issuer-error`, `not-pending`, `malformed-response`, `token-refused`, and
+`issuerError` with the redirect's `error` and `error_description`). On `not-pending`, or on
+`issuer-error` with exactly `temporarily_unavailable` plus `authentication_expired`, start a normal
+authorization from this tab: with the provider's session it returns straight to the callback with a
+code this tab can exchange, and without one the person sees the ordinary sign-in page. A bare
+`temporarily_unavailable` is the provider being unavailable and is shown. Guard the restart with a
+record in `sessionStorage` under the app's store prefix, written before the redirect and taken by
+the next callback: a module-level flag resets on the full navigation the restart is, so the
+`authentication_expired` path could loop. A tab whose storage cannot be read counts as restarted and
+shows the failure. Pass the shell's language (and the site's colour scheme) to the restart, never
+`prompt=create`. The restarted tab lands on the address parked in this tab or the app's home; the
+first tab's `returnTo` went with its pending entry.
+
+**What it does not reach.** A link opened in another browser (no session cookie there) is verified
+on the provider's own page and never reaches the callback; a used or expired link likewise ends on
+the provider's page. Those are the provider theme's to word, not the callback's.
+
+**Never move the verifier to `localStorage`** so the other tab can finish the exchange: it widens a
+per-tab secret to every tab and every script of the origin for the length of the sign-in, to fix a
+case a restart already covers.
+
+**Driving it.** Measure the restart from the tab's own storage, not from the screen: record at
+document start whether the pending entry and the restart record exist, for each hop through the
+callback. A driver that opens the mailed link within about two seconds of the confirmation page
+loading races Keycloak's poll (the theme inserts `authChecker.js` after mount, and a session that
+already exists then stops the poll), so the first tab never moves; wait as a person would before
+opening the link.
