@@ -281,6 +281,16 @@ Four things to do around the switch, in order:
    typecheck immediately after adding a prop to a framework component **names product files
    and says the prop does not exist** - and the product is not where it is wrong. Run the
    framework package's own build, then typecheck again.
+   **A unit test is the third reader, and it reads `dist/` too unless told otherwise.** Vitest
+   runs a test in the server environment, whose resolve conditions do not include `source`, so a
+   module's test that imports a linked kit or framework part loads that package's last build,
+   which nothing refreshes when the apps read it through `source`. It fails on a defect fixed in
+   the source days ago, and its stack points at source lines that no longer hold that code (the
+   build's source map). The app's Vite config sets `ssr.resolve.conditions: ["source",
+   ...defaultServerConditions]`; a package that runs tests and does not depend on Vite gives its
+   `vitest.config.ts` the same list written out (`["source", "module", "node",
+   "development|production"]`). When a test's stack names a source line that does not hold the
+   code it describes, that is this, not a cache.
 3. **Run `check-duplicate-contexts.mjs` immediately** (invariant #60). Linking IS the
    resolution change that invariant is about, so it matters more here than at a version
    bump: a split copy takes the chrome off every page while the build stays green.
