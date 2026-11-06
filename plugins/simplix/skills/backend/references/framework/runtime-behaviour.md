@@ -362,3 +362,51 @@ second fails on the unique constraint instead of answering the replay.
   lookup and the insert. Expect one row, one writer and one reader; with the lock after the return it
   fails on the unique constraint.
 
+
+## The application zone also sets how every instant is written on the wire
+
+`simplix.date-time.default-timezone` is more than the zone calendar dates are computed in.
+`SimpliXDateTimeAutoConfiguration` sets the JVM default zone to it and configures the JSON converters
+with it, so an `Instant` field leaves the server written with that zone's offset: with `UTC` it reads
+`2026-11-06T00:00:00Z`, with `Asia/Seoul` the same instant reads `2026-11-06T09:00:00+09:00`. Stored
+values (`timestamp with time zone`) do not change, and RFC 3339 `date-time` allows either form.
+
+- **Set the server zone to the zone the apps draw dates in** (the frontend's `VITE_APP_TIME_ZONE` or
+  its equivalent), from one deployment variable both read, and keep a repository check that fails when
+  the two disagree. A server left on `UTC` while the screens read `Asia/Seoul` writes a consent given at
+  08:10 in Seoul as the day before, and every `LocalDate` the server derives (a trial's last day, the
+  day an allowance renews) is off the same way. A string a service derives with `Instant.toString()`
+  stays `Z` whatever the zone, so one response can carry both forms.
+- **Changing the zone of a running deployment changes the wire form of every instant at once.** Tell
+  the clients' owners before the restart: a client or a test that matches a trailing `Z`, or compares
+  timestamps as strings, sees the change though no value moved. A test that pins the wire form
+  configures the mapper with an explicit zone (as a contract test's `ServerJson.configuration("UTC")`
+  does), so it keeps passing and proves nothing about the deployment's zone.
+- **A zone kept in a settings table is a second source.** An `ApplicationZone`-style resolver that
+  reads a site or installation setting seeded from the property at first boot keeps the old zone after
+  the property changes; say which readers use which source.
+
+## A size cap is judged before the body is bound, not after
+
+`@RequestBody` reads the whole body into the DTO before the method runs, and nothing in the
+servlet stack limits a JSON body by default, so a cap checked in the service has already paid for the
+memory and the parse. An endpoint whose contract answers 413 for an oversized body (a diagnostic
+bundle, a pasted log) takes the request stream instead and reads it bounded.
+
+- **Refuse on the declared `Content-Length` first, then read at most cap + 1 bytes**
+  (`InputStream.readNBytes(cap + 1)`) and refuse when the read came back longer; only then parse with
+  the application's `ObjectMapper` and validate with the injected `jakarta.validation.Validator`.
+  Measure the cap in bytes, not characters: a log tail under the contract's character limit in a
+  three-byte script (Korean) is three times the bytes.
+- **Keep the OpenAPI shape on the operation**: `@Operation(requestBody = @RequestBody(content =
+  @Content(schema = @Schema(implementation = <Dto>.class))))` with the OpenAPI annotation, and a
+  one-line class javadoc saying why the body is a stream. The audit's `request-body-without-validated`
+  leaves that attribute alone.
+- **Prove both refusals separately.** A test with an oversized body and a `Content-Length` passes even
+  without the length check, because the bounded read refuses it too; the length check is proven by a
+  body stream that counts its reads and must read zero bytes. The bounded read is proven by a body with
+  no declared length, which must stop one byte past the cap.
+- **A contract test's refusal loop asserts which rule refused.** A schema validator that reports a
+  keyword it does not implement (`maxItems`) as a violation makes every "the contract refuses this"
+  assertion pass for the wrong reason; assert the violations hold none of the validator's own
+  "unsupported" messages, and teach the validator the keyword.
