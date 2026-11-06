@@ -279,15 +279,30 @@ Example: `GET .../search?page=0&size=3&sort=noSuchField.desc` answers `200 {type
 
 ## A test class with a context of its own keeps it for the whole test JVM
 
-Spring's test context cache keeps every context it built until the test JVM exits, so each class
-whose configuration differs (its own `@Import`, its own nested `@TestConfiguration`, its own
-properties) adds a context the heap holds beside every full-application test. One more schema-test
-class is enough to tip it: the symptom is an `OutOfMemoryError` while a different, unrelated class
-loads its context (a resource download test, an actuator test), and which class fails moves between
-runs. Measure it by excluding the new class with an init script
-(`tasks.withType(Test) { filter { excludeTestsMatching '*<NewClass>' } }`); when the suite is green
-without it, close the class's context after it runs with
-`@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)`.
+Spring's test context cache keeps up to 32 contexts until the test JVM exits, so each class whose
+configuration differs (its own `@Import`, its own nested `@TestConfiguration`, its own properties)
+adds a context the heap holds beside every other one: a `@DataJpaTest` slice holds a whole JPA
+metamodel and a connection pool, and Gradle starts a test JVM with 512 MB unless the module sets
+`maxHeapSize`. The symptom is an `OutOfMemoryError: Java heap space` while a different, unrelated
+class loads its context (often a full-application test, which needs the most), sometimes the test
+executor itself dying; which class fails moves between runs.
+
+- **Measure it, two readings in one run, from an init script** so the tree is not touched:
+  `-Dlogging.level.org.springframework.test.context.cache=DEBUG` on the test JVM writes the cache's
+  `size`, `hitCount` and `missCount` at every lookup into each class's result XML (the console shows
+  none of it), and a loop of `jcmd <pid> GC.class_histogram` (it forces a full GC) followed by
+  `GC.heap_info` gives the live heap beside the count of `org.hibernate.internal.SessionFactoryImpl`
+  and `HikariDataSource` instances. A live heap that climbs with the session factory count, and a
+  `missCount` close to the number of context-using classes, say the cache holds contexts nothing
+  reuses.
+- **Cap the cache once, in the test convention every module applies**:
+  `systemProperty 'spring.test.context.cache.maxSize', '1'` on `tasks.withType(Test)`. The context
+  the cache lets go is closed with its pool, consecutive classes with one configuration still share
+  one, and the heap a test JVM needs no longer grows with the number of classes. Closing contexts
+  class by class with `@DirtiesContext` holds only until the next class with a configuration of its
+  own, and a larger heap only moves the limit.
+- **`@DirtiesContext(classMode = AFTER_CLASS)` stays only where a context must close for a reason of
+  its own**, such as containers no other class reads, and the javadoc names that reason.
 
 **And a class that failed runs first on the next Gradle run**, which is when a test that leaves rows
 in the shared test database breaks another class that reads a whole table (`findAll()`): the order
@@ -523,6 +538,16 @@ other.
   with the production exception. Seed the field with a third value: a write equal to the stored value
   is no change, issues no UPDATE and cannot collide, so a seed equal to one of the two writes lets the
   unlocked version pass.
+- **A write with no side effect is held in a collaborator it calls after the read**: the catalogue
+  that judges an opt-out, or the clock a counted limit reads after its lock. A clock that counts down
+  a latch of the number of writers and waits for it (or a fraction of a second) lets every writer
+  that counts without the lock count before any commits, while writers under the lock read it one
+  after another.
+- **A slice that runs a service mapping an entity with `ModelMapper` imports the framework's mapper
+  configuration** (`@ImportAutoConfiguration(SimpliXModelMapperAutoConfiguration.class)`). A plain
+  `new ModelMapper()` refuses a DTO whose `<reference>Id` field matches both the entity's id column
+  and its reference's id ("matches multiple source property hierarchies"), while the framework's
+  configured mapper maps it.
 - **An encrypted column makes such a slice test order-dependent.** `AesEncryptionConverter` keeps its
   service in a static field that only a full application context sets, so a slice that loads the
   entity passes after a `@SpringBootTest` class ran in the same JVM and fails alone. Give the
