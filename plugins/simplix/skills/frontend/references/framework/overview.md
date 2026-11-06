@@ -282,15 +282,22 @@ Four things to do around the switch, in order:
    and says the prop does not exist** - and the product is not where it is wrong. Run the
    framework package's own build, then typecheck again.
    **A unit test is the third reader, and it reads `dist/` too unless told otherwise.** Vitest
-   runs a test in the server environment, whose resolve conditions do not include `source`, so a
-   module's test that imports a linked kit or framework part loads that package's last build,
-   which nothing refreshes when the apps read it through `source`. It fails on a defect fixed in
-   the source days ago, and its stack points at source lines that no longer hold that code (the
-   build's source map). The app's Vite config sets `ssr.resolve.conditions: ["source",
-   ...defaultServerConditions]`; a package that runs tests and does not depend on Vite gives its
-   `vitest.config.ts` the same list written out (`["source", "module", "node",
-   "development|production"]`). When a test's stack names a source line that does not hold the
-   code it describes, that is this, not a cache.
+   resolves a test under `node` with the server conditions (`ssr.resolve.conditions`) and a test
+   under `jsdom` or `happy-dom` with the client conditions (`resolve.conditions`), and neither
+   default includes `source`, so a module's test that imports a linked kit or framework part loads
+   that package's last build, which nothing refreshes when the apps read it through `source`. It
+   fails on a defect fixed in the source days ago, and its stack points at source lines that no
+   longer hold that code (the build's source map). **Each environment reads only its own list**,
+   measured on Vitest 4.1: the server list alone leaves a jsdom test on `dist`, the client list
+   alone leaves a node test there, and only both reach `source` in both. `simplix add-module` and
+   `simplix add-domain` write a `vitest.config.ts` with both lists written out (`["source",
+   "module", "browser", "development|production"]` and `["source", "module", "node",
+   "development|production"]`, Vite's defaults with `source` in front, spelled out because the
+   package does not depend on Vite); a unit made before that gets the same file by hand, and
+   `audit-frontend.mjs` reports one without it (`test-config-without-source-condition`). An app's
+   Vite config sets `ssr.resolve.conditions: ["source", ...defaultServerConditions]` for its own
+   node tests. When a test's stack names a source line that does not hold the code it describes,
+   that is this, not a cache.
 3. **Run `check-duplicate-contexts.mjs` immediately** (invariant #60). Linking IS the
    resolution change that invariant is about, so it matters more here than at a version
    bump: a split copy takes the chrome off every page while the build stays green.

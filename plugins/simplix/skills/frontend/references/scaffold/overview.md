@@ -626,6 +626,18 @@ the override region of `src/mock/index.ts`, which then freezes that file), never
 `grep -rn "no sample stands in for" packages/*/src/generated-meta/mock/handlers.ts`, never by
 grepping a factory's doc comment, whose wording is not a contract.
 
+**A handler answers inside the envelope only where its operation declares the envelope.** SimpliX
+Meta writes each handler's return type as the backend declares it, so a route returning
+`SimpliXApiResponse<X>` carries the envelope container and a route returning `X` (or
+`ResponseEntity<X>`) carries `X` alone; the generated handler wraps its body in the spec profile's
+wrapper for the first and answers the body as is for the second, which is what the server sends.
+That is read from the operation, never from a path, a tag or a configured list of app-contract
+routes. An operation declaring nothing keeps the empty envelope. A collection route with no record
+route beside it that declares one record (a catalog, a settings document, `/me`) answers the first
+stored row, never the list. To check a regenerated domain, compare each handler's `wrapEnvelope(`
+against its operation's `response` in `openapi/meta.json`: a mismatch in either direction is a
+generator defect, never a handler to edit.
+
 **Committing a regeneration in a shared working tree stages the generated paths by name, never the
 package's status listing.** The package also holds hand-written files the generator never touches
 (mock scenarios and their tests, seeds), and another agent may be mid-edit in them: listing

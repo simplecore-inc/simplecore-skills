@@ -9028,6 +9028,81 @@ function packageTypesFindings() {
   return findings;
 }
 
+/**
+ * Workspace units whose Vitest tests would import a linked package's build rather than its source.
+ *
+ * <p>A package's exports name its TypeScript under `source` and its build under `import`. Vitest
+ * resolves a test under `node` with the server conditions (`ssr.resolve.conditions`) and a test
+ * under `jsdom` or `happy-dom` with the client conditions (`resolve.conditions`), and neither default
+ * carries `source`. A test then loads the last build of every linked package it imports, which
+ * nothing refreshes while the apps read those packages through `source`: it fails on a defect fixed
+ * days ago, or passes against code the screen no longer runs, and its stack names source lines that
+ * do not hold the code it describes. `simplix add-module` and `simplix add-domain` write a
+ * `vitest.config.ts` naming `source` in both lists; a unit made before that, or one that dropped a
+ * list, is what this reports.
+ *
+ * <p>Only units under `modules/` and `packages/` are read: they do not depend on Vite and their
+ * config is a plain object, while an app's Vite config takes its client conditions from a shared
+ * config helper the text here cannot follow. A unit with no test file, or whose test script is not
+ * Vitest, has nothing this can mislead.
+ *
+ * @returns one finding per unit and missing list
+ */
+function testConfigSourceFindings() {
+  const findings = [];
+  const configNames = ["vitest.config.ts", "vitest.config.mts", "vitest.config.js", "vitest.config.mjs",
+    "vite.config.ts", "vite.config.mts", "vite.config.js", "vite.config.mjs"];
+  const hasTest = (dir) => {
+    if (!fs.existsSync(dir)) return false;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(entry.name) && hasTest(path.join(dir, entry.name))) return true;
+      } else if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(entry.name)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const namesSource = (list) => list !== undefined && /["'`]source["'`]/.test(list);
+  for (const base of ["modules", "packages"]) {
+    for (const unit of workspaceUnitDirs(base)) {
+      const manifest = path.join(unit, "package.json");
+      if (!fs.existsSync(manifest)) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(fs.readFileSync(manifest, "utf8"));
+      } catch {
+        continue;
+      }
+      if (!/\bvitest\b/.test(String(parsed.scripts?.test ?? ""))) continue;
+      if (!hasTest(path.join(unit, "src"))) continue;
+      const configName = configNames.find((name) => fs.existsSync(path.join(unit, name)));
+      if (!configName) {
+        findings.push({
+          file: path.relative(ROOT, manifest),
+          excerpt: "no vitest.config.ts, so every test reads linked packages' dist - "
+            + "write the one simplix add-module writes (source in resolve.conditions and ssr.resolve.conditions)",
+        });
+        continue;
+      }
+      const config = path.join(unit, configName);
+      const text = fs.readFileSync(config, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+      const ssr = /\bssr\s*:\s*\{\s*resolve\s*:\s*\{[^}]*?\bconditions\s*:\s*\[([^\]]*)\]/.exec(text);
+      const rest = ssr ? text.slice(0, ssr.index) + text.slice(ssr.index + ssr[0].length) : text;
+      const client = /\bresolve\s*:\s*\{[^}]*?\bconditions\s*:\s*\[([^\]]*)\]/.exec(rest);
+      const missing = [];
+      if (!namesSource(client?.[1])) missing.push("resolve.conditions (jsdom tests)");
+      if (!namesSource(ssr?.[1])) missing.push("ssr.resolve.conditions (node tests)");
+      if (missing.length === 0) continue;
+      findings.push({
+        file: path.relative(ROOT, config),
+        excerpt: `names no "source" in ${missing.join(" or ")} - those tests read linked packages' dist`,
+      });
+    }
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Locale rules (JSON-based, separate collection)
 // ---------------------------------------------------------------------------
@@ -9797,6 +9872,85 @@ const COLLECTION_RULES = [
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
   }
 }
+`,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "test-config-without-source-condition",
+    invariant: "#5",
+    level: "review",
+    desc: "A workspace unit runs Vitest tests and its test config names no `source` condition in `resolve.conditions` (read by a test under jsdom or happy-dom) or in `ssr.resolve.conditions` (read by a test under node), or it has no test config at all - so its tests import the last build of every linked package rather than the source the apps run, fail on defects fixed days ago or pass against code the screen no longer runs, and print stacks naming source lines that do not hold the code they describe. `simplix add-module` and `simplix add-domain` write a config naming `source` in both lists",
+    collect: testConfigSourceFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/admin/site/package.json": `{ "name": "@acme/site", "scripts": { "test": "vitest run --passWithNoTests" } }
+`,
+          "modules/admin/site/src/area.test.ts": `import { it } from "vitest";
+it("reads", () => {});
+`,
+          "modules/admin/site/vitest.config.ts": `import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  ssr: { resolve: { conditions: ["source", "module", "node", "development|production"] } },
+});
+`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/admin/site/package.json": `{ "name": "@acme/site", "scripts": { "test": "vitest run --passWithNoTests" } }
+`,
+          "modules/admin/site/src/area.test.ts": `import { it } from "vitest";
+it("reads", () => {});
+`,
+          "modules/admin/site/vitest.config.ts": `import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  resolve: { conditions: ["source", "module", "browser", "development|production"] },
+  ssr: { resolve: { conditions: ["source", "module", "node", "development|production"] } },
+});
+`,
+        },
+      },
+      miss: [
+        {
+          note: "a unit with no test file, which no test config can mislead",
+          files: {
+            "modules/site/package.json": `{ "name": "@acme/site", "scripts": { "test": "vitest run --passWithNoTests" } }
+`,
+            "modules/site/src/index.ts": `export {};
+`,
+          },
+        },
+        {
+          note: "a unit whose tests run under node --test, which reads no Vite config",
+          files: {
+            "packages/theme/package.json": `{ "name": "@acme/theme", "scripts": { "test": "node --test" } }
+`,
+            "packages/theme/src/theme.test.mjs": `import test from "node:test";
+test("reads", () => {});
+`,
+          },
+        },
+        {
+          note: "the server list written first and a comment naming the client list, which is still read from code",
+          files: {
+            "packages/domain-site/package.json": `{ "name": "@acme/site", "scripts": { "test": "vitest run --passWithNoTests" } }
+`,
+            "packages/domain-site/src/mock.test.ts": `import { it } from "vitest";
+it("reads", () => {});
+`,
+            "packages/domain-site/vitest.config.ts": `import { defineConfig } from "vitest/config";
+
+// resolve: { conditions: [] } is what the default would be.
+export default defineConfig({
+  ssr: { resolve: { conditions: ["source", "module", "node", "development|production"] } },
+  resolve: { dedupe: ["react"], conditions: ["source", "module", "browser", "development|production"] },
+});
 `,
           },
         },
