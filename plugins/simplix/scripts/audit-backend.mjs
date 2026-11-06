@@ -86,6 +86,21 @@ function collectSources(root = ROOT) {
 }
 
 /**
+ * Every test-source Java file of the backend at `root`, for the few rules whose defect lives in a
+ * test's own configuration (a slice that declares its own repositories) and is a defect there: such a
+ * rule sets `readsTestSources: true`. Every other rule keeps reading main sources alone.
+ *
+ * @param root the backend project root
+ * @returns absolute paths of the `src/test/java` sources
+ */
+function collectTestSources(root = ROOT) {
+  const files = [];
+  walk(path.join(root, "src"), files);
+  for (const dir of SRC_ROOTS) walk(path.join(root, dir), files);
+  return files.filter((f) => f.includes(`${path.sep}src${path.sep}test${path.sep}java${path.sep}`));
+}
+
+/**
  * The `audit` section of the project's `.claude/simplix.json`: the product's own policies, which
  * this script never guesses. A missing file or section is the empty policy.
  *
@@ -3982,8 +3997,9 @@ public abstract class BaseEntity<K> {
     id: "jpa-repositories-without-simplix-factory",
     invariant: "#4 / repository-patterns",
     level: "error",
-    desc: "@EnableJpaRepositories without repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class. Declaring it replaces the starter's own repository configuration, so the repositories are built on Spring Data's SimpleJpaRepository: findById then reads through EntityManager.find, which no Hibernate session filter reaches, and a soft-deleted row stays readable by id (detail, edit and update) while the list drops it; tree repositories lose their implementation too",
-    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    readsTestSources: true,
+    desc: "@EnableJpaRepositories without repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class. Declaring it replaces the starter's own repository configuration, so the repositories are built on Spring Data's SimpleJpaRepository: findById then reads through EntityManager.find, which no Hibernate session filter reaches, and a soft-deleted row stays readable by id (detail, edit and update) while the list drops it; tree repositories lose their implementation too. Test sources are read as well: a slice configuration that declares its own repositories builds them on SimpleJpaRepository the same way, and every slice test of a read by id then passes against the wrong base",
+    appliesTo: (p) => /\.java$/.test(p),
     check: (c) => annotationUses(stripCommentsAndStrings(c), "EnableJpaRepositories")
       .filter((u) => !/\brepositoryFactoryBeanClass\s*=\s*(?:[\w.]+\.)?SimpliXRepositoryFactoryBean\.class\b/.test(u.args))
       .map(({ line, excerpt }) => ({ line, excerpt })),
@@ -4008,6 +4024,11 @@ public class DataSourceConfig {
         {
           note: "no arguments at all",
           source: `@Configuration\n@EnableJpaRepositories\npublic class DataSourceConfig {}`,
+        },
+        {
+          note: "a test slice configuration that declares its own repositories",
+          file: "packages/domain-core/src/test/java/app/domain/DomainTestConfiguration.java",
+          source: `@SpringBootApplication\n@EnableJpaRepositories(basePackageClasses = DomainBasePackage.class)\npublic class DomainTestConfiguration {}`,
         },
         {
           note: "another factory bean",
@@ -4194,7 +4215,7 @@ public class LedgerProperties {
     id: "entity-default-sort-differs-across-controllers",
     invariant: "controller/class-level-list-metadata",
     level: "review",
-    desc: "Two controllers over one entity declare different `@SimpliXDefaultSort` values (an admin list by `name asc`, the customer's own list by `createdAt desc`). SimpliX Meta writes one `defaultSort` per entity, so which controller wins depends on registration order: every `simplix meta` run can flip the entity's default sort in `meta.json` and the generated list config with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same default sort where the lists mean the same order (a record table read by its own time stamp), or keep the difference on purpose and restore that hunk after each regeneration until Meta carries a sort per endpoint. Only the later controller in path order is reported, naming the first",
+    desc: "Two controllers over one entity declare different `@SimpliXDefaultSort` values (an admin list by `name asc`, the customer's own list by `createdAt desc`). SimpliX Meta writes one `defaultSort` per entity, so which controller wins depends on registration order: every `simplix meta` run can flip the entity's default sort in `meta.json` and the generated list config with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same default sort where the lists mean the same order (a record table read by its own time stamp), or keep the difference on purpose and restore that hunk after each regeneration, on disk as well as in the commit, until Meta carries a sort per endpoint. Only the later controller in path order is reported, naming the first",
     appliesTo: (p) => p.endsWith(".java"),
     check: (c, rel, ctx) => entityDeclarationDiffers(c, rel, ctx?.defaultSorts, defaultSortOf,
       (own, first) => `${own.entity} sorts by ${own.value} here and by ${first.value} at ${first.rel}:${first.line}`),
@@ -4231,7 +4252,7 @@ public class LedgerProperties {
     id: "entity-list-figures-differ-across-controllers",
     invariant: "controller/class-level-list-metadata",
     level: "review",
-    desc: "Two controllers over one entity declare different `@SimpliXListFigures` status counts or aggregates (an operators' ledger counted by entry type and summed by amount, the customer's own summed by remaining amount and amount). Each controller's operations carry their own figures, but SimpliX Meta also writes one `statusCounts` and one `aggregates` on the entity, and which controller wins depends on registration order: a `simplix meta` run can flip that entity block in `meta.json` with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same figures where the lists mean the same summary, or keep the difference on purpose and leave that hunk out of each regeneration's commit until Meta keys entity figures per endpoint. Only the later controller in path order is reported, naming the first",
+    desc: "Two controllers over one entity declare different `@SimpliXListFigures` status counts or aggregates (an operators' ledger counted by entry type and summed by amount, the customer's own summed by remaining amount and amount). Each controller's operations carry their own figures, but SimpliX Meta also writes one `statusCounts` and one `aggregates` on the entity, and which controller wins depends on registration order: a `simplix meta` run can flip that entity block in `meta.json` with no source change, and the diff shows a hunk nobody wrote. Give both controllers the same figures where the lists mean the same summary, or keep the difference on purpose and restore that hunk after each regeneration, on disk as well as in the commit, until Meta keys entity figures per endpoint. Only the later controller in path order is reported, naming the first",
     appliesTo: (p) => p.endsWith(".java"),
     check: (c, rel, ctx) => entityDeclarationDiffers(c, rel, ctx?.listFigures, listFiguresOf,
       (own, first) => `${own.entity} declares ${own.value} here and ${first.value} at ${first.rel}:${first.line}`),
@@ -4353,6 +4374,16 @@ function selftestMechanisms() {
         return found.length === 2
           && found[0] === path.join("modules", "site", "src", "main", "java", "app", "web", "SiteRestController.java")
           && found[1] === path.join("src", "main", "java", "app", "web", "AreaRestController.java");
+      }),
+    },
+    {
+      name: "collection: test sources are collected apart, for the rules that read them",
+      pass: () => withTree({
+        "src/main/java/app/web/AreaRestController.java": "class A {}",
+        "modules/site/src/test/java/app/SiteSliceConfiguration.java": "class B {}",
+      }, (dir) => {
+        const found = collectTestSources(dir).map((f) => path.relative(dir, f));
+        return found.length === 1 && found[0] === path.join("modules", "site", "src", "test", "java", "app", "SiteSliceConfiguration.java");
       }),
     },
     {
@@ -4544,6 +4575,9 @@ function selftest() {
       // The other shapes of the defect a rule claims. A rule widened to a second broken form is
       // proved on the first alone unless the second is written down here and asserted to fire.
       for (const extra of s.hit ?? []) {
+        if (extra.file && !rule.appliesTo(extra.file)) {
+          problems.push(`appliesTo() rejects the path of another broken form (${extra.note}): ${extra.file}`);
+        }
         const hits = rule.check(extra.source, extra.file ?? s.file, extra.ctx ?? sampleCtx);
         if (!hits.length) problems.push(`did NOT fire on another broken form: ${extra.note}`);
       }
@@ -4618,13 +4652,14 @@ if (files.length === 0) {
 const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), formulas: formulaEntityIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath(), dtoNames: dtoNameIndex(files), defaultSorts: defaultSortIndex(files), listFigures: listFiguresIndex(files), storedPaths: storedPathIndex(files), jsonValueEnums: jsonValueEnumIndex(files) };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
 const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
+const testFiles = collectTestSources();
 const results = new Map();
 let suppressedCount = 0;
 
 for (const rule of RULES) {
   if (ruleFilter && !ruleFilter.includes(rule.id)) continue;
   const bucket = { rule, hits: [] };
-  for (const abs of scanned) {
+  for (const abs of rule.readsTestSources ? [...scanned, ...testFiles] : scanned) {
     const rel = path.relative(ROOT, abs);
     if (!rule.appliesTo(rel)) continue;
     let content;

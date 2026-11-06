@@ -203,9 +203,43 @@ private String searchIndex;
 - `getReferenceById` returns an uninitialised proxy and is not judged by the filter; read with
   `findById` when the row's visibility matters.
 
----
+### Where the filter is not on
 
-## Domain Events
+The filter is switched on per session, by an aspect before each repository or base-service call,
+and only a transaction binds a session. **A repository read with no transaction open runs on a
+session of its own that the aspect never reached**, so `findById`, `findAll`, `existsById`, counts
+and derived queries all return deleted rows there. With `open-in-view: false` that includes every
+controller, a security filter, a permission evaluator (method security runs before the service's
+transaction opens), an `@EventListener` published outside a transaction, and the code of a job
+between its transactions.
+
+- **A read that must not see deleted rows runs inside a transaction**: ask a `SimpliXBaseService`
+  (class-level `@Transactional(readOnly = true)`), the shape a generated controller uses
+  (`service.existsById(id)`), or wrap it in the job's own `TransactionTemplate`. Never call the
+  repository from the controller.
+- **An access decision reads outside a transaction, so it judges deletion in the query itself.** A
+  permission read that joins a role or an account the caller names carries the predicate in its
+  JPQL, in the positive form so it holds with and without the session filter:
+  `AND (p.roleId IS NULL OR EXISTS (SELECT r.roleId FROM Role r WHERE r.roleId = p.roleId AND r.deleted = false))`.
+  The negative form (`NOT EXISTS ... deleted = true`) inverts inside a transaction, where the
+  filter hides the deleted rows from the subquery.
+- **Census it as a command.** List every call on a repository of a soft-deletable entity whose
+  method and class carry no `@Transactional`, then read each caller by hand: a lambda passed to a
+  `TransactionTemplate`, a private method reached from a transactional one and a listener published
+  inside a transaction are covered, and no annotation scan can see them. Prove the gap once on the
+  migrated schema with the aspect loaded (`@EnableAspectJAutoProxy` and the aspect and its manager
+  imported into the slice), a row deleted in one transaction and read with none open.
+
+### Work that must still act on a deleted row
+
+A customer's own request (an account deletion, a data export) is honoured whatever an operator
+did to the row meanwhile, so the job reads that row **by key**: `EntityManager.find`, which session
+filters never reach, behind one helper on the project's filter manager
+(`findByKeyIncludingDeleted(type, id)`). Switching the filter off does not serve: the aspect
+re-enables it before every repository call when none is enabled, so `disableFilter()` followed by a
+repository read still hides the row. The job completes the request only once it has acted on a row
+it read, and fails the attempt (leaving the request open for review) when the key names no row; a
+completion recorded over an empty read reports work that never happened.
 
 ### Configuration
 
