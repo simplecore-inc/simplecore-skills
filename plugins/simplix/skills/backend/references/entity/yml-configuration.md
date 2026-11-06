@@ -536,7 +536,9 @@ read-only list, operator actions that never change the owner) conflicts on the n
 reference is added together with its regeneration, never as a yml line alone:
 
 1. Add the block to every generator input of the entity (its `My*` inputs too) and
-   `@References(<Entity>.class)` on the entity field, which is what Meta reads.
+   `@References(<Entity>.class)` on the entity field, which is what Meta reads
+   (`@References(entity = "<Entity>")` where the class would close a module cycle;
+   `../review/reference-field-patterns.md`).
 2. `yo simplix:generate <Entity> --force` and `yo simplix:promote <Entity> --module <promoteModule>` for
    each input that has promoted files (`git ls-files` first: promoting an input that has none lays down
    a whole new surface, which is then removed by name, not committed).

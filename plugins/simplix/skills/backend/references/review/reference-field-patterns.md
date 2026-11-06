@@ -163,6 +163,51 @@ Meta then publishes the field's reference (target entity, its id and name field)
 field mapped to it. The audit's `id-collection-without-references` fails an `@ElementCollection`
 of `String` named `*Ids` without it.
 
+### Target in a module the holder cannot depend on: `@References(entity = "<Entity>")`
+
+The class form needs the target's class on the holder's compile path. Where the target's module
+already depends on the holder's (an account module naming the plan its billing module reads accounts
+from), the class form closes a module cycle. Name the target by the simple name of the entity SimpliX
+Meta serves instead:
+
+```java
+@Formula(CurrentPlanFormulas.USER_PLAN_ID)
+@References(entity = "<Entity>")
+private String currentPlanId;
+```
+
+Set exactly one of `value` and `entity`; prefer the class wherever the dependency exists, since the
+compiler checks it. Meta resolves the name among the served entities (those with a
+`SimpliXBaseController`) and fails its build, naming the annotated field, when both or neither is set,
+when no served entity has that simple name, or when two served entities share it (both classes named;
+name the target by class then). A name never resolves to a silently missing reference.
+
+### A value whose target depends on the row: `@ReferencesByKind`
+
+When only some rows' value names a record (an actor id that is an account for a person's actor type
+and nothing for a system actor; a job's subject that is a different entity per job type), declare the
+kinds that name a record and leave the rest out: a kind with no entry is drawn by its recorded name,
+never as a link that cannot resolve.
+
+```java
+@ReferencesByKind(kindField = "<kindField>", kinds = {
+        @ReferencesByKind.Kind(value = "<KIND_A>", entity = "<EntityA>"),
+        @ReferencesByKind.Kind(value = "<KIND_B>", entity = "<EntityB>")})
+private String <stem>Id;
+```
+
+Each `value` is a constant of the kind field's enum (a typo publishes a kind no row carries), and a
+kind's entity is one the console can open; one served only on a self-scoped portal surface is left out.
+
+### A screen draws a reference by its sibling name
+
+The frontend CLI stamps a `<stem>Id` reference as a reference cell only when the same DTO carries a
+string `<stem>Name` (or `<stem>DisplayName`) beside it; without one the field is drawn as text whatever
+Meta says. So a reference added for a screen comes with that sibling on the list and detail DTOs, named
+by the id's stem (`authorId` → `authorName`, `ownerUserId` → `ownerUserName`, `creditAccountId` →
+`creditAccountName`), produced the way the project produces person and record names (a join-derived
+`@Formula` family needs no column, migration or backfill).
+
 ## Self-Reference Pattern (Tree Entities)
 
 ### Entity Definition
