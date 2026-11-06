@@ -599,3 +599,23 @@ other.
   converter a service with a key of the class's own in `@BeforeAll` (`SimpleKeyProvider` with a
   static key, `ReflectionTestUtils.setField(AesEncryptionConverter.class, "encryptionService", ...)`),
   restore the previous value in `@AfterAll`, and run the class alone once before trusting it.
+
+## Auditing stamps read the system time, never the clock a test moves
+
+`@CreatedDate` and `@LastModifiedDate` are written by Spring Data's auditing handler, which reads the
+system time unless the application names a `DateTimeProvider`. A service that judges a row by its
+creation time against an injected `Clock` (a sweep deleting checks older than a day, a daily limit
+counted from `createdAt`) then compares two clocks. A slice test that starts its clock at a fixed
+instant passes only while that instant is close to the real time, and goes red on every commit once
+the date moves past it: a fixed `2026-11-06T09:00Z` clock with a one-day cutoff failed from 18:03 KST
+that day, because the real `createdAt` was younger than any cutoff the test clock produced.
+
+- Start the test clock from the real time (`Instant.now().truncatedTo(SECONDS)`), and put the slice's
+  auditing on the same clock with a test `BeanPostProcessor` that calls
+  `AuditingHandler.setDateTimeProvider(() -> Optional.of(clock.instant()))`; production code stays as
+  it is.
+- Prove the independence by starting the clock at the real time, days after it and a year before it:
+  only a test whose auditing follows its clock passes the earlier start.
+- To find the exposure, list the repository methods and comparisons over `createdAt` / `updatedAt`
+  that take a caller's instant, then the slice tests that reach them with a fixed clock; a test that
+  mocks the repository sets the stamp by hand and is not exposed.
