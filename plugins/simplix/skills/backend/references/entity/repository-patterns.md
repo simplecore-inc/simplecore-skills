@@ -27,7 +27,10 @@ The interface is implemented by `SimpliXJpaRepository` (the tree implementation 
 when the repositories are built by `SimpliXRepositoryFactoryBean`: the starter's own repository
 configuration uses it, and a project that declares `@EnableJpaRepositories` names it as
 `repositoryFactoryBeanClass`. That base class is what applies an entity's enabled `@Filter` to
-`findById` (`base-entity-patterns.md` § Soft Delete).
+`findById` (`base-entity-patterns.md` § Soft Delete). A test slice that declares its own
+`@EnableJpaRepositories` names the factory too; without it the slice runs on Spring Data's
+`SimpleJpaRepository`, so a soft-deleted row stays readable by id there and no soft-delete read test
+in that slice can fail for the right reason.
 
 ### Composite Keys - FORBIDDEN
 
