@@ -410,3 +410,35 @@ bundle, a pasted log) takes the request stream instead and reads it bounded.
   keyword it does not implement (`maxItems`) as a violation makes every "the contract refuses this"
   assertion pass for the wrong reason; assert the violations hold none of the validator's own
   "unsupported" messages, and teach the validator the keyword.
+
+## A refusal the security chain sends picks its body by the handler, never by a path list
+
+A project that serves a second error shape beside the SimpliX envelope (a client contract with bare
+bodies, marked by an annotation its controller advice is scoped to) has two places that write a
+refusal: the advice, for errors inside a controller, and the security chain's entry point and
+access-denied handler, for the 401 and 403 sent before any controller runs. When the chain picks the
+shape from a configured list of paths, the list falls behind the annotation the first time a
+controller joins the contract: its unauthenticated calls answer the envelope while its own refusals
+answer the contract, and nothing fails, because each half is correct for the paths it knows.
+
+- **Derive the chain's set from the handler mappings.** Read every `RequestMappingInfoHandlerMapping`
+  bean's `getHandlerMethods()`, keep the entries whose bean type carries the marker annotation
+  (`AnnotatedElementUtils.hasAnnotation`), and match a request's path against their
+  `getPatternValues()`, which already include a prefix added with `PathMatchConfigurer.addPathPrefix`.
+  The mappings are built after the security beans, so read them on the first request that needs them
+  and cache only a non-empty answer. There is then no property to keep beside the annotation.
+- **Hold it to the contract document with a test, not to itself.** Read the contract's operations that
+  are not `security: []`, and assert each path is served by a marked controller or sits in a named,
+  closed list of paths the server answers elsewhere, so a newly served path fails until it leaves the
+  list. Then send each served operation through the running chain without a token and with a token no
+  issuer signed, and assert the contract's 401 body, with a control path that keeps the envelope.
+- **A chain that asks only for a sign-in never sends its 403 on those paths**: an authenticated caller
+  is refused inside the controller, where the advice answers. Drive the context's access-denied handler
+  bean directly for the 403 a later chain rule would send, and say that is what the test does.
+
+## A re-sent request is proven idempotent with different content, never the same
+
+A test that posts one body twice and asserts one stored row and a success passes as well when the
+second post replaces the first, because a replacement also leaves one row. Re-send the same key (a
+sequence number, an idempotency key) with a different body and assert the stored or returned content
+is the first one; a replace-on-duplicate then fails it.

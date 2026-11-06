@@ -554,6 +554,15 @@ Never call argless `LocalDate.now()` / `LocalDateTime.now()` / `LocalTime.now()`
 2. **A broader owner's default zone** - when the project models one and no narrower owner applies (for example a `defaultTimeZone` on a domain policy).
 3. **App timezone** - the single configured fallback, and the whole order in a project that models no zone of its own. Never hardcode a zone literal (`ZoneId.of("Asia/Seoul")`) - inject it from configuration. Sole exception: `ZoneOffset.UTC` where the storage contract itself is UTC (statistics buckets, retention batches), with a justifying comment on the constant.
 
+**A settings row seeded from the app timezone at first boot is a copy, not an owner.** An installation
+default written once from `simplix.date-time.default-timezone` keeps the zone the first start ran
+under; when the deployment's zone later changes, the API writes instants and counts calendar days in
+the new zone while every reader that ranks the row above the property counts in the old one, and
+nothing says which is right. A zone rung is an owner only when somebody chose it for that owner (a
+site's own field); a value copied from configuration is shown read-only and rewritten at every start,
+and the resolver reads the configuration. A static check over main sources that refuses a zone
+identifier literal and a read of such a setting outside its initializer keeps it that way.
+
 Every `Instant ↔ LocalDate`/`LocalTime` conversion names its zone in code: `instant.atZone(zone).toLocalDate()`, `date.atStartOfDay(zone).toInstant()`. Time-sensitive components (schedulers, evaluators) take an injected `java.time.Clock` through their single explicit constructor (see AP-26). User/browser timezones are display-only and never influence stored values. Anti-pattern: AP-28. These zone rules bind ALL Java code including schedulers and infrastructure.
 
 ---
