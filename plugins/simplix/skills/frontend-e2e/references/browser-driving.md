@@ -333,7 +333,12 @@ locale pass answers the account read (`/user/me`) as the locale under test, matc
 The account's saved locale decides the language, not the browser's storage: a pass that sets only
 `localStorage["i18n:locale"]` measures one language twice. Set it through the account
 (the project's own locale endpoint) or answer the account read as above, and let
-`compare-rendered.mjs`'s language warning confirm it.
+`compare-rendered.mjs`'s language warning confirm it. A locale write answered 200 right after a
+browser sign-in can be undone by the app's next load (the account read answered the old locale and
+the app rewrote its stored choice), so read `<html lang>` after a reload and set it again until it
+holds, failing the run when it never does; a run that trusts the 200 reads one language twice and
+reports no finding. Read every screen in each language: a section title that repeats its own field's
+label, or a header clipped by its longer label, can exist in one language only.
 
 A scripted press names exactly one element, and the runner that presses refuses a selector matching
 several. `querySelector` takes the first match, so a press written by tone or position

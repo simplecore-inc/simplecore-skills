@@ -184,6 +184,14 @@ column is not rendered at all - no header, no cells, no entry in the columns dro
   with the leading and the sorted columns that set can outgrow a tablet pane, and the list falls
   to cards at 1024 with no width it was designed for. Give it the running width of the table up to
   it, or use a kit that tiers every column after the leading ones (console-core `ladderColumns`).
+- **A fixed block of leading columns is an always-drawn set too, and a scrollbar is enough to break
+  it.** A list that drew its first four columns, the sorted one and the row actions at every width
+  held a 1024 pane by one pixel (886 of 887) and fell to cards where a classic scrollbar takes 15px
+  of layout width. Widths trimmed to fit are not the fix, since the next screen meets the same
+  margin. Let every column after the naming one ladder, the leading block last and from its end
+  (console-core `tableColumnsOf`), so the table narrows before it overflows and cards are left to a
+  pane that cannot hold the naming, sorted and kept columns with the actions. Read a table list at
+  its pane width and 15px less (a viewport of 1009 for 1024) before calling it a table at 1024.
 - **The secondary line under a row's name is the narrow form of those columns.** Where a board
   stacks 「code · rank · source」 into a caption, those become columns when there is room - and the
   caption has to drop what the columns took, or every row prints its values twice. Measure the
