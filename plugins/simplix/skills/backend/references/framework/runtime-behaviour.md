@@ -250,6 +250,14 @@ project can (map the refusal in the project's advice), and the framework change 
 owns the snapshot.
 Example: publishing from a framework checkout three hours ahead of the last snapshot ships three hours of unreviewed API to every build on the machine.
 
+**A running application started from Gradle (`bootRun`) reads those jars from `~/.m2` in place**, so a
+publish under it replaces the classes it has not loaded yet. Nothing fails at the publish; minutes
+later the first request that needs an unloaded class answers 500 with `NoClassDefFoundError` (an
+`ErrorCode` inner class), and the error handling that should report it fails in turn, so every
+search answers with an unrelated error. Announce a restart before the publish and restart the
+application right after it; never leave it running across a publish.
+Example: two publishes at 20:24 and 20:27 broke every searchable request of the dev API from 20:29 until its restart.
+
 ## Overriding `configureMessageConverters(List)` drops Spring's defaults
 
 A `WebMvcConfigurer` that adds anything to the list in `configureMessageConverters(List)` makes
@@ -629,9 +637,12 @@ computes it inside its own select. Two common reads never run that select.
   transaction maps the instance the persistence context already holds, which carries the formula as
   it was loaded (null for a new row). The create answers without the name the list shows a moment
   later. Flush and refresh the written row before mapping the answer (a helper such as
-  `reread(entityManager, Type.class, id)` that calls `flush()` and `refresh()`), in every service
-  whose entity carries a formula and whose write returns the record; a test proves it by reading
-  the formula off the write's own answer, which is red without the refresh.
+  `reread(entityManager, Type.class, id)` that calls `flush()` and `refresh()`). The fix belongs in
+  the service template's `saveAndGetProjection`, so every generated create and update answers with
+  the row as read again; a service whose customised write path no longer renders that method takes
+  the same lines by hand. A test proves it per formula family by reading the formula off the
+  write's own answer (a create, and an update that changes the formula's input), red without the
+  refresh.
 - **A native query mapped onto the entity.** `select * ... for update skip locked` returning
   `List<Entity>` fails on every call with 「Unable to find column position by name」 once the entity
   gains a formula, which turns a job claim or an expiry sweep into a failure at run time. Lock the ids

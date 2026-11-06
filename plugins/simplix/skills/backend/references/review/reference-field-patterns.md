@@ -208,6 +208,16 @@ by the id's stem (`authorId` → `authorName`, `ownerUserId` → `ownerUserName`
 `creditAccountName`), produced the way the project produces person and record names (a join-derived
 `@Formula` family needs no column, migration or backfill).
 
+Where the holding record already carries the name under another property (`actorUsername` beside
+`actorId`, `ownerName` beside `creditAccountId`) or nests the referenced record (`plan` beside
+`planId`), declare it instead of renaming: `@References(value = Plan.class, nameField = "plan.name")`
+or `@ReferencesByKind(..., nameField = "actorUsername")`, one name for every kind. The value is a
+wire-name path of the DTO the reference is published on, never a field of the target alone. SimpliX
+Meta publishes it as `reference.nameField` on each DTO that carries the path; a DTO an operation
+answers with that carries the reference but not the path fails the Meta build, while a search DTO
+or a request body publishes the key without a name. A record with no name a person would recognise
+(a hold, a job) declares none and is drawn by its id.
+
 ## Self-Reference Pattern (Tree Entities)
 
 ### Entity Definition
