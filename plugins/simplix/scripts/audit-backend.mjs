@@ -4044,6 +4044,100 @@ public class DataSourceConfig {
     },
   },
   {
+    id: "data-source-built-beside-the-bean",
+    invariant: "runtime-behaviour",
+    level: "error",
+    desc: "A connection pool built inside a method that does not return it as the DataSource bean: DataSourceProperties.initializeDataSourceBuilder().build(), DataSourceBuilder ... .build() or new HikariDataSource(...) handed to a JdbcTemplate, a SqlSessionFactory or anything else. That pool is no bean, so the context never closes it and its housekeeper thread outlives every context, and it is not the DataSource the transaction manager binds, so each statement through it autocommits outside the surrounding transaction. Take the DataSource bean as a parameter instead",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const builds = /\binitializeDataSourceBuilder\s*\(|\bDataSourceBuilder\s*\.\s*create\s*\(|\bnew\s+HikariDataSource\s*\(/;
+      const lines = clean.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (!builds.test(lines[i])) continue;
+        // The enclosing method: the nearest header above whose return type is read.
+        let returnType = null;
+        for (let j = i; j >= 0; j--) {
+          const header = lines[j].match(/^\s*(?:(?:public|protected|private|static|final|synchronized)\s+)*([\w.<>?,\s]+?)\s+\w+\s*\([^;]*$/);
+          if (header && !/^\s*(?:return|new|else|if|for|while|switch|catch)\b/.test(lines[j]) && /\{\s*$|\)\s*$|,\s*$/.test(lines[j])) {
+            returnType = header[1].trim().split(/\s+/).pop();
+            break;
+          }
+        }
+        const returnsThePool = returnType && /(?:^|\.)(?:\w*DataSource)$/.test(returnType)
+          && /^\s*(?:return\b|\w+\s*=|\w[\w<>]*\s+\w+\s*=)/.test(lines[i]);
+        if (!returnsThePool) hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 150) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "starter/src/main/java/app/starter/TreeRepositoryAutoConfiguration.java",
+      broken: `@AutoConfiguration
+public class TreeRepositoryAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JdbcTemplate jdbcTemplate(DataSourceProperties dataSourceProperties) {
+        return new JdbcTemplate(dataSourceProperties.initializeDataSourceBuilder().build());
+    }
+}`,
+      fixed: `@AutoConfiguration
+public class TreeRepositoryAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnSingleCandidate(DataSource.class)
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}`,
+      hit: [
+        {
+          note: "a session factory given its own pool",
+          source: `public class MyBatisAutoConfiguration {
+    @Bean
+    public SqlSessionFactory sqlSessionFactory(DataSourceProperties dataSourceProperties) throws Exception {
+        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
+        sessionFactory.setDataSource(dataSourceProperties.initializeDataSourceBuilder().build());
+        return sessionFactory.getObject();
+    }
+}`,
+        },
+        {
+          note: "a Hikari pool made inline for a template",
+          source: `public class Reports {
+    public JdbcTemplate reportsTemplate(String url) {
+        return new JdbcTemplate(new HikariDataSource(config(url)));
+    }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "the DataSource bean itself, built from the properties",
+          source: `public class DataSourceConfig {
+    @Bean
+    @ConfigurationProperties("app.datasource")
+    public HikariDataSource dataSource(DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+    }
+}`,
+        },
+        {
+          note: "a second DataSource bean built from a builder",
+          source: `public class ReportsDataSourceConfig {
+    @Bean
+    public DataSource reportsDataSource() {
+        DataSource reports = DataSourceBuilder.create().url(url).build();
+        return reports;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "labeled-enum-label-bypass",
     invariant: "#16",
     level: "error",

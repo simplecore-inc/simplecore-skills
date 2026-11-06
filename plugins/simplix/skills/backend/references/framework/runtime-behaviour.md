@@ -27,6 +27,7 @@ symptom.
 19. [A public route's CORS is the handler's, and a standalone dispatcher cannot answer its preflight](#a-public-routes-cors-is-the-handlers-and-a-standalone-dispatcher-cannot-answer-its-preflight)
 20. [A defaulted address makes a keyless provider read as configured](#a-defaulted-address-makes-a-keyless-provider-read-as-configured)
 21. [A gate that locks only where it limits leaves its idempotency read racing](#a-gate-that-locks-only-where-it-limits-leaves-its-idempotency-read-racing)
+22. [A connection pool built beside the DataSource bean is never closed and joins no transaction](#a-connection-pool-built-beside-the-datasource-bean-is-never-closed-and-joins-no-transaction)
 
 ---
 
@@ -303,6 +304,45 @@ executor itself dying; which class fails moves between runs.
   own, and a larger heap only moves the limit.
 - **`@DirtiesContext(classMode = AFTER_CLASS)` stays only where a context must close for a reason of
   its own**, such as containers no other class reads, and the javadoc names that reason.
+- **A closed context can stay in that live heap through soft references, and the histogram counts
+  them.** Spring Boot keeps static `ConcurrentReferenceHashMap` caches keyed by a context's
+  `Environment` (`OnAvailableEndpointCondition.accessResolversCache` and
+  `exposureOutcomeContributorsCache`, `DataSourcePoolMetrics$CachingDataSourcePoolMetadataProvider.cache`),
+  with soft entries, so each closed full-application context stays reachable and the live heap after
+  `GC.class_histogram` climbs about 30 to 50 MB per class. The JVM clears soft references before it
+  throws `OutOfMemoryError`, so that climb is not a leak. Run the same measurement a second time with
+  `-XX:SoftRefLRUPolicyMSPerMB=0` on the test JVM (soft references cleared at every collection) as
+  the control: what stays there is strongly held. That flag is a measurement setting, never the
+  convention's.
+- **Read what holds a closed context from a heap dump** when the control still climbs:
+  `jcmd <pid> GC.heap_dump <file>` (a JUnit `TestExecutionListener` registered through
+  `META-INF/services` in the export only can take it at `testPlanExecutionFinished`), then
+  `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/hprof-paths.py" <file> org.hibernate.internal.SessionFactoryImpl 20`
+  for the shortest strong path from a GC root to each session factory (`soft` as the fourth argument
+  follows soft referents too; `strings` as the fifth decodes pool names and JDBC URLs). A static field
+  overwritten by each new context (an entity listener's injected `EntityManagerFactory` or
+  `ApplicationEventPublisher`) holds one closed context at most; a pool whose housekeeper thread is
+  still running holds one per class that started it, which is the cumulative kind.
+
+## A connection pool built beside the DataSource bean is never closed and joins no transaction
+
+A bean that builds its own pool (`DataSourceProperties.initializeDataSourceBuilder().build()`,
+`DataSourceBuilder.create()...build()`, `new HikariDataSource(...)`) and hands it to a
+`JdbcTemplate` or a `SqlSessionFactory` gives the application a second pool. It is not a bean, so the
+context never closes it and its `HikariPool-N:housekeeper` thread outlives every context; and it is
+not the DataSource the JPA transaction manager binds, so every statement through it autocommits: a
+`TransactionTemplate` around `jdbcTemplate.update(...)` rolls nothing back. The starter's own
+`JdbcTemplate` takes the DataSource bean (`@ConditionalOnSingleCandidate(DataSource.class)`: with
+several DataSources the primary one, with several and no primary none, and the application declares
+its own).
+
+- **The sign** is two `HikariPool-N - Starting` lines for one context in the log, the second on the
+  first `JdbcTemplate` call, with only the first ever reaching `Shutdown completed`.
+- **The proof** is a context test: `jdbcTemplate.getDataSource()` is the `DataSource` bean, a
+  `JdbcTemplate` write inside a `TransactionTemplate` that sets rollback-only leaves no row, and after
+  the context closes the pool the template used reports `isClosed()`.
+- The audit's `data-source-built-beside-the-bean` flags each build outside a method returning the
+  DataSource bean.
 
 **And a class that failed runs first on the next Gradle run**, which is when a test that leaves rows
 in the shared test database breaks another class that reads a whole table (`findAll()`): the order
