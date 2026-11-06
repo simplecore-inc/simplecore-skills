@@ -966,7 +966,7 @@
       "id": "launch-for-run",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `launch`/`bring up`. A server or a container 「실행한다」; a screen element 「표시한다·연다」",
+      "reason": "A literal English `launch`/`bring up`/`show`. A server or a container 「실행한다」; a screen element, or digits and a code on screen, 「표시한다·연다」",
       "find": [
         "서버를 띄",
         "컨테이너를 띄",
@@ -979,18 +979,23 @@
         "대화상자를 띄",
         "화면을 띄",
         "창을 띄",
-        "만 띄우면"
+        "만 띄우면",
+        "숫자를 띄",
+        "코드를 띄",
+        "번호를 띄"
       ],
       "replace": null,
       "hit": [
         "서버를 띄운다",
         "토스트로 띄우고",
-        "합계만 띄우면 분쟁이 된다"
+        "합계만 띄우면 분쟁이 된다",
+        "앱에서 새 숫자를 띄워 넣으세요"
       ],
       "miss": [
         "연을 띄운다",
         "배를 띄우다",
-        "눈에 띄는 변화"
+        "눈에 띄는 변화",
+        "새 숫자를 표시해 넣으세요"
       ]
     },
     {
