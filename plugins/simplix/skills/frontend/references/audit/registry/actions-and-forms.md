@@ -286,6 +286,23 @@ domain exports each entity's path as `<entity>EntityPath`; import it rather than
 
 Forms are not commands: a form's refusal belongs on the field (`useCrudFormSubmit`).
 
+A `failed` function whose sentence carries `{{reason}}` gets `undefined` when the server sent no
+sentence; give it a fallback word from the catalog (`reason ?? t("noReason")`) in one place the
+screens share, or the toast ends on an empty colon.
+
+## Site kit reads, waits, jumps and links (site-core)
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | A site app (`site-clarity`) draws a read, a waiting action, a document's jump and a link to another origin through the kit |
+| **Package** | `@simplix-react-ui-kits/site-clarity` (`page`, `action`, `legal`, `link` segments) |
+| **Audit** | `waiting-action-written-twice`, `link-press-assigned-by-hand`, `read-failure-reads-as-empty` (counts `<SiteRead>`), `locale-narrowed-to-two-tags` (review) |
+
+- **A region drawn from a read** is `<SiteRead read={query} failed={t("readFailed")} empty={t("none")} isEmpty={...}>{(data) => ...}</SiteRead>`: the failure first, nothing while the first answer is on its way (no empty table or zero series flashes), the empty sentence, then the region. Child reads are asked for beside the parent's, not inside the region, or they wait for it.
+- **A waiting action** is one spec with `pending: run.pending ? t("sending") : undefined`; the kit draws it disabled with that progress sentence as its reason. Never two specs on the wait, and never the button's own label as the reason.
+- **A document page** (`DocLayout`) draws its own jump select from `toc` below the medium tier when the page passes no `jump`; `useDocJump()` is the scroll that honours reduced motion. The `static-page --variant doc` template lays one down.
+- **A link to another origin** (an installer file, the identity provider's pages) is a plain `href`: the site shell's router link (`routesInPage`) leaves a press on another origin, a download or a new window to the browser. Never `preventDefault()` plus `window.location.assign`.
+
 ## Awaitable Cache Invalidation (useInvalidateEntity)
 
 | Field | Value |
