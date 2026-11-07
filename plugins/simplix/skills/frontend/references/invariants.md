@@ -761,6 +761,14 @@ the project's own gate vocabulary. A rule that fires on the correct cases teache
 reader to ignore it. Find these by driving the screens as an account that lacks the
 thing, and watch for a refusal dialog with nothing behind it.
 
+**A write that must hold an action dialog open is the mutation, not a command wrapper.** A write run through
+`useCommand` or `runWithToast` never rejects, so it cannot keep the dialog open until the server has answered or keep a
+typed reason after a refusal. The dialog's submit returns the mutation's promise (with the project's own-refusal meta) and
+a refusal rejects into the dialog. Five shapes are mechanical and project-agnostic: a generated secondary read without
+`suppressErrorDialog` (or a `read-dialog:` comment saying why it keeps the dialog), a sub-list with no `onRowClick` (or a
+`row-record: none` comment), a forced list key from an optional chain, a dialog submit that returns nothing, and a count
+hook that hides its failure; a project adds them to its screen rules.
+
 ## #62 A screen with no list beside it still lays out in columns
 
 SKILL.md item 62 states this invariant in full; it has no longer form here.
