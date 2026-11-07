@@ -34,7 +34,7 @@ function ProductsRoute() {
 
 Key rules:
 - `createFileRoute` path must match the file system path with trailing slash
-- `validateCrudSearch` handles `?view=`, `?id=` search params
+- `validateCrudSearch` handles the `id`, `mode`, `tab` and `filters` search params (`filters` is an object of string or string[] values, written `?filters[status.in]=A&filters[status.in]=B`; the list opts in with `useCrudList({ addressedFilters })`, and the framework README section "CRUD search params" has the rest). A search validator is proven through the real serializer, `stringifySearch` then `parseSearch` then `validateCrudSearch`: a validator test alone passed while the serializer turned the object into `[object Object]`.
 - The `onNavigate` callback uses the **same route path** (without trailing slash) as `to:`
 - Route component name = Section + "Route" (`<Section>Route`, as the example above names its products route)
 - Import page from the module package's `/pages` subpath
