@@ -117,6 +117,16 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   hook, so the scaffold adds each holder's domain package to the module's `package.json` beside the entity's own, and
   `simplix generated --all <path>` writes the module manifest its render changed together with the named files; a
   regeneration that left it out failed the module's typecheck with TS2307 until the dependency was declared by hand.
+- **A holder tab never closes a package dependency cycle, and a screen names the holders it drops.** A holder whose
+  module already depends on the screen's module (it fills a slot the screen's module offers) gets no tab, and the
+  scaffold warns with the ring; the dependency step refuses any workspace dependency that would close a cycle.
+  `scaffold.holders.<entity>.exclude` in `simplix.config.ts` lists the holders a screen leaves out, by holding entity
+  (`"<holderEntity>"`) or as `"<holderEntity>.<field>"`, so a regeneration never brings a curated-away tab back.
+- **A regenerated page never imports a file nothing laid down.** `simplix generated --all <path>` also lays down each
+  file its render creates for the first time that a regenerated file imports relatively (a crud page's
+  `page.blocks.tsx`), tracked like any render and never over a file on disk, and fails naming the file and the import
+  when a reached file still imports a relative path no file provides; a page rewritten to import `./page.blocks` with
+  no stub beside it drew a blank app.
 - **The form is built from the create body.** Every field it requires is in the table, marked `required: true`,
   long text follows the contract's length, and a reference is edited through `scaffold.referencePickers`
   (`{ <peekKind>: { hook, from, facet?, facetFor? } }`): `hook` searches the entity for a form picker, `facet` filters
@@ -228,8 +238,15 @@ one-sided names (the facts the trees cannot state); `--package <dir>` points at 
 
 **`simplix cycles [roots...]`** reports every import cycle among the source files under the roots (default
 `checks.cycles.roots`), with the edges the bundler keeps. A cycle makes the dev server reload the whole page on a
-hot update, and a path the resolver cannot follow is reported as unresolved and also fails the run. Run it in the
-project lint, and after moving a file between a module and a package.
+hot update, and a path the resolver cannot follow is reported as unresolved and also fails the run. It also fails on
+a dependency cycle between the workspace packages' `package.json` files, which a build that orders the packages
+refuses. Run it in the project lint, and after moving a file between a module and a package.
+
+**`simplix --root <dir> <command>`** names the project from anywhere. Without it, a command that reads the project's
+config takes the nearest directory at or above the working directory holding `simplix.config.ts`, and fails with one
+line where there is none: a sibling `pnpm-workspace.yaml` (another app beside the web project) is never taken for the
+project. Commands that set a workspace up (`add-domain`, `add-module`, `add-app`, `init-ui`, `validate`) fall back to
+the nearest `pnpm-workspace.yaml` when no config exists.
 
 **`simplix kit-fence`** (with `--lint <file>` and `--write`) is described in `../screen-workflow.md` rule 7.
 
