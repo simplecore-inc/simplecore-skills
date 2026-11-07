@@ -351,6 +351,20 @@ fields:
 | `nameField` | String | Display field for dropdown |
 | `multiple` | Boolean | `false` for ManyToOne, `true` for ManyToMany |
 
+### A key the server writes
+
+An account the server records from the signed-in caller (`grantedBy`, `revokedBy`, an author or
+actor id) is a reference like any other, so it carries the `reference` block, and the entity field
+carries `@References` with the `nameField` of the property that holds the person's name. Its views
+leave out `edit`: with `edit`, the create and update DTOs render the key, and the service template
+writes it from the request body (`saveAndGetProjection(..., createDTO.getGrantedById())`), which
+hands the caller the field whose whole value is that the caller cannot set it.
+
+A scalar key keeps its own name in the DTOs whether or not it ends in `Id`: the DTO template treats
+the field as an association (`grantedById` searched on `grantedBy.userId`) only when the entity
+field's type is an entity. A project template that still decides by the `Id` suffix renders a key
+such as `grantedBy` as an association; judge it by the field's `typeKind` instead.
+
 ---
 
 ## Sort Order Configuration
