@@ -1393,6 +1393,32 @@ function underGlobalErrorDialog(rel) {
   return inApp ? apps.has(inApp[1]) : any;
 }
 
+let entityPathExportCache = null;
+/**
+ * The entity paths the project's SimpliX Meta domains export, path to export name
+ * (`"/api/v1/admin/usage/cost-breaker"` to `costBreakerEntityPath`), read from every
+ * `packages/<domain>/src/generated-meta/endpoints/*.ts`. Empty for a project that generates no
+ * Meta domain, which leaves the rules that read it silent there.
+ */
+function entityPathExports() {
+  if (entityPathExportCache) return entityPathExportCache;
+  const found = new Map();
+  const packagesDir = path.join(ROOT, "packages");
+  if (fs.existsSync(packagesDir)) {
+    for (const pkg of fs.readdirSync(packagesDir)) {
+      const endpointsDir = path.join(packagesDir, pkg, "src", "generated-meta", "endpoints");
+      if (!fs.existsSync(endpointsDir)) continue;
+      for (const file of fs.readdirSync(endpointsDir)) {
+        if (!file.endsWith(".ts")) continue;
+        const src = fs.readFileSync(path.join(endpointsDir, file), "utf8");
+        for (const m of src.matchAll(/^export const (\w+EntityPath) = ["']([^"']+)["'];/gm)) found.set(m[2], m[1]);
+      }
+    }
+  }
+  entityPathExportCache = found;
+  return found;
+}
+
 let generatedEnumCache = null;
 function generatedEnumNames() {
   if (generatedEnumCache) return generatedEnumCache;
@@ -6218,8 +6244,9 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     level: "review",
     desc: "Endpoint path assembled by hand - the codegen emits a get<Op>Url helper, and a hand-written twin drifts silently the next time the route moves",
     appliesTo: isSource,
-    // Cache-key prefixes are literal by contract (useInvalidateEntity takes the prefix, not a
-    // URL), and a public asset endpoint with no generated operation has no helper to import.
+    // A cache-key prefix is not a URL (useInvalidateEntity takes the prefix), and a public asset
+    // endpoint with no generated operation has no helper to import. Where a Meta domain exports
+    // the prefix as `<entity>EntityPath`, invalidation-path-typed-beside-its-export names it.
     // What this catches is a literal path handed to fetch, an <a href>, or a transport. A file
     // the codegen writes (its banner says not to edit it) is where the helpers are defined, so
     // the literal there is the source every caller should import, never a twin of it.
@@ -6235,7 +6262,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       fixed: `const response = await fetch(getExportAreaUrl({ areaId }));`,
       miss: [
         {
-          note: "a cache-key prefix is a literal by contract, not a URL a helper could supply",
+          note: "a cache-key prefix is not a URL a helper could supply",
           source: `const invalidate = useInvalidateEntity("/api/v1/areas");`,
         },
         {
@@ -8957,6 +8984,172 @@ export const areaFilter = z.object({ name: z.string().optional() });`,
       ],
     },
   },
+  {
+    id: "invalidation-path-typed-beside-its-export",
+    invariant: "#30",
+    level: "review",
+    desc: "A cache invalidation names an entity's route as a typed string while the entity's SimpliX Meta domain exports that path as `<entity>EntityPath`. The typed copy keeps refreshing the old route after the controller moves, and nothing fails: the screen just goes on showing what the write replaced. Import the export (`useInvalidateEntity(costBreakerEntityPath)`, or `invalidate: [costBreakerEntityPath]` on `useCommand`)",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p) && !/\/generated(?:-meta)?\//.test(p) && !/\.test\.tsx?$/.test(p),
+    check: (c) => {
+      const exported = entityPathExports();
+      if (exported.size === 0) return [];
+      const hits = [];
+      const lines = c.split("\n");
+      lines.forEach((line, i) => {
+        // The exact route an export names, typed anywhere: handed to `useInvalidateEntity`, put
+        // in a `useCommand` invalidate list, or held in a constant (`const ENTITY_PATH = "..."`)
+        // that one of those reads. An exact match only, so a longer route under it is left alone.
+        for (const m of line.matchAll(/["'`](\/[^"'`$\s]+)["'`]/g)) {
+          const name = exported.get(m[1]);
+          if (name) hits.push({ line: i + 1, excerpt: `"${m[1]}" is exported as ${name}` });
+        }
+      });
+      return hits;
+    },
+    samples: (() => {
+      const domain = {
+        "packages/domain-usage/src/generated-meta/endpoints/costBreaker.ts": `/**
+ * Generated from SimpliX Meta. Do not edit manually.
+ */
+
+/** The route every read of this entity is cached under; hand it to a cache invalidation instead of typing it. */
+export const costBreakerEntityPath = "/api/v1/admin/usage/cost-breaker";
+`,
+      };
+      return {
+        file: "modules/usage/src/widgets/cost-breaker/actions.tsx",
+        broken: { files: domain, source: `const BREAKER_PREFIX = "/api/v1/admin/usage/cost-breaker";\nconst invalidate = useInvalidateEntity(BREAKER_PREFIX);` },
+        fixed: { files: domain, source: `const invalidate = useInvalidateEntity(costBreakerEntityPath);` },
+        miss: [
+          {
+            note: "a longer route under the exported one, which a request builder owns",
+            files: domain,
+            source: `const url = "/api/v1/admin/usage/cost-breaker/search";`,
+          },
+          {
+            note: "a project whose domains export no entity path, where the literal is the only spelling",
+            source: `const invalidate = useInvalidateEntity("/api/v1/admin/usage/cost-breaker");`,
+          },
+          {
+            note: "a prefix no domain exports, such as another service's audit route",
+            files: domain,
+            source: `const invalidateAudit = useInvalidateEntity("/api/v1/common/audit-events");`,
+          },
+          {
+            note: "the generated endpoint module that declares the export",
+            file: "packages/domain-usage/src/generated-meta/endpoints/costBreaker.ts",
+            files: domain,
+            source: `export const costBreakerEntityPath = "/api/v1/admin/usage/cost-breaker";\nconst invalidate = useInvalidateEntity("/api/v1/admin/usage/cost-breaker");`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
+    id: "module-manifest-stub-nothing-reads",
+    invariant: "#67",
+    level: "review",
+    desc: "A module declares the `ModuleManifest` interface and a manifest object an older `simplix add-module` wrote: an id, a navigation label, an icon and a path that no framework package, kit or app reads, re-exported from the module barrel. It goes stale silently (labels and paths of a route no app has), and every reader takes it for the module's navigation. Delete `src/manifest.ts` and its re-export from `src/index.ts`; `simplix validate` warns about the same file",
+    appliesTo: (p) => inModules(p) && /\/src\/manifest\.ts$/.test(p),
+    check: (c) => lineHits(c, /\binterface\s+ModuleManifest\b/),
+    samples: {
+      file: "modules/editor/src/manifest.ts",
+      broken: `export interface ModuleManifest {
+  id: string;
+  navigation: { label: string; icon: string; path: string; order: number };
+}
+
+export const editorManifest: ModuleManifest = {
+  id: "editor",
+  navigation: { label: "Editor", icon: "Layout", path: "/editor", order: 10 },
+};`,
+      fixed: `export const editorRoutes = ["/editor"] as const;`,
+      miss: [
+        {
+          note: "a manifest.ts that declares something an app reads, under another name",
+          source: `export interface EditorRoutes { readonly list: string }\nexport const editorRoutes: EditorRoutes = { list: "/editor" };`,
+        },
+        {
+          note: "the interface named in an app, outside any module",
+          file: "apps/console/src/manifest.ts",
+          source: `export interface ModuleManifest { id: string }`,
+        },
+      ],
+    },
+  },
+  {
+    id: "command-written-out-by-hand",
+    invariant: "#40 / #9",
+    level: "review",
+    desc: "A user's command written out step by step: run the write, toast the outcome, refresh, and toast the refusal from a `catch`. Every copy picks its own error reading (`getErrorMessage` puts a stand-in sentence where the server said nothing, `caught instanceof Error` drops a refusal that is not an Error) and its own dialog flag, so one refusal reaches the reader twice on one screen and without its reason on the next. `useCommand(useGeneratedHook, { done, failed, invalidate })` from `@simplix-react/ui` runs the five steps once, with the server's sentence as the reason and the app's error dialog off; `runWithToast(action, { done, failed })` does the same for a verb that is not one mutation",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p) && !/\/generated(?:-meta)?\//.test(p),
+    check: (c) => {
+      // A form is the other rule's: its refusal belongs on the field, not in any toast.
+      const isForm = /\bCrudForm\b/.test(c) || (c.match(/\bFormFields\.\w+/g) ?? []).length >= 2;
+      if (isForm) return [];
+      // A write or an awaited verb, with a success toast for it.
+      if (!/\.mutateAsync\s*\(|\bawait\s+\w+\s*\(/.test(c)) return [];
+      if (!/addToast\s*\(\s*\{[^}]*type\s*:\s*"success"/.test(c)) return [];
+      const hits = [];
+      const failure = /(?:\.catch\s*\(|\bcatch\s*(?:\([^)]*\))?\s*\{)[\s\S]{0,400}?addToast\s*\(\s*\{[^}]*type\s*:\s*"error"/g;
+      let m;
+      while ((m = failure.exec(c)) !== null) {
+        const at = m.index + m[0].lastIndexOf("addToast");
+        hits.push({ line: c.slice(0, at).split("\n").length, excerpt: "a command's refusal toasted by hand beside its success toast; run it through useCommand or runWithToast" });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/billing/src/widgets/payment-event/actions.tsx",
+      broken: `export function usePaymentEventActions() {
+  const retry = useRetryPaymentEvent({ mutation: { meta: { suppressErrorDialog: true } } });
+  const run = async (action: () => Promise<unknown>, done: string, failed: string) => {
+    try {
+      await action();
+      addToast({ type: "success", message: done });
+    } catch (caught) {
+      addToast({ type: "error", message: serverMessage(caught) ?? failed });
+    }
+  };
+  return { retry: (id: string) => run(() => retry.mutateAsync({ id }), t("retried"), t("retryFailed")) };
+}`,
+      fixed: `export function usePaymentEventActions() {
+  const retry = useCommand(useRetryPaymentEvent, {
+    done: t("retried"),
+    failed: t("retryFailed"),
+    invalidate: [paymentEventEntityPath],
+  });
+  return { retry: (id: string) => retry.run({ id }) };
+}`,
+      miss: [
+        {
+          note: "a form, whose refusal the form-refusal rule names",
+          source: `export function ThingForm() {
+  const save = useUpdateThing();
+  const submit = () => void save.mutateAsync({}).then(() => addToast({ type: "success", message: "ok" })).catch(() => addToast({ type: "error", message: "no" }));
+  return <CrudForm onSubmit={submit}><FormFields.TextField /><FormFields.NumberField /></CrudForm>;
+}`,
+        },
+        {
+          note: "a read whose failure is toasted, with no write and no success toast",
+          source: `export function useExport() {
+  return async () => {
+    try {
+      saveBlob(await fetchReport());
+    } catch {
+      addToast({ type: "error", message: t("exportFailed") });
+    }
+  };
+}`,
+        },
+        {
+          note: "a command that toasts its success and lets the error dialog report the refusal",
+          source: `const save = useSaveThing();
+const run = () => save.mutateAsync({}).then(() => addToast({ type: "success", message: t("saved") }));`,
+        },
+      ],
+    },
+  },
 ];
 
 /**
@@ -10209,6 +10402,7 @@ function resetCaches() {
   generatedModelIndex = null;
   exportedFunctionCache = null;
   generatedEnumCache = null;
+  entityPathExportCache = null;
   globalDialogCache = null;
   localeFindingsCache = null;
   localeKeyCache.clear();
