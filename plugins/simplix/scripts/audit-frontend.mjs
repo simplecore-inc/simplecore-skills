@@ -2027,6 +2027,43 @@ const row = first.data?.content[0];` }],
     },
   },
   {
+    id: "running-command-action-not-pending",
+    invariant: "#9",
+    level: "review",
+    desc: "A site action whose press runs a command (`onSelect: () => void cancel.run(...)`, `runWithToast(...)`) and says nothing while it runs: no `pending` in the same spec, so the button stays pressable through the request and a second press sends the command again (a second tab, a second refund request). Give the spec `pending: run.pending ? t(\"cancelling\") : undefined`; the site kit draws it refused with that sentence while the answer is awaited",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c) => {
+      const hits = [];
+      for (const m of c.matchAll(/onSelect:\s*\(\)\s*=>\s*(?:void\s+)?(?:\w+\.run\(|runWithToast\()/g)) {
+        // The spec the press sits in: from the nearest `{ id:` before it to the brace that closes it.
+        const open = c.lastIndexOf("{ id:", m.index);
+        if (open < 0) continue;
+        let depth = 0;
+        let close = -1;
+        for (let at = open; at < c.length; at += 1) {
+          if (c[at] === "{") depth += 1;
+          else if (c[at] === "}") {
+            depth -= 1;
+            if (depth === 0) {
+              close = at;
+              break;
+            }
+          }
+        }
+        if (close < m.index) continue;
+        if (/\bpending\s*:/.test(c.slice(open, close))) continue;
+        hits.push({ line: c.slice(0, m.index).split("\n").length, excerpt: c.slice(open, Math.min(close + 1, open + 140)).replace(/\s+/g, " ") });
+      }
+      return hits;
+    },
+    samples: {
+      file: "apps/<app>/src/pages/<section>/page.tsx",
+      broken: `actions={[{ id: "undo", label: t("undo"), tone: "secondary", onSelect: () => void undo.run() }]}`,
+      fixed: `actions={[{ id: "undo", label: t("undo"), tone: "secondary", onSelect: () => void undo.run(), pending: undo.pending ? t("undoing") : undefined }]}`,
+      miss: [{ note: "a press that only opens a question", source: `actions={[{ id: "cancel", label: t("cancel"), onSelect: () => setOpen("cancel") }]}` }],
+    },
+  },
+  {
     id: "page-header-store-nothing-draws",
     invariant: "#31",
     level: "review",
