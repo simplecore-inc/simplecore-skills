@@ -290,6 +290,32 @@ A `failed` function whose sentence carries `{{reason}}` gets `undefined` when th
 sentence; give it a fallback word from the catalog (`reason ?? t("noReason")`) in one place the
 screens share, or the toast ends on an empty colon.
 
+## A failed read is told in one place
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | Which surface tells the reader a read failed: the part that draws the read, or the app's error dialog |
+| **Package** | `@simplix-react/headless` (`LIST_READ_META`), the console kit's entity segment (`RECORD_READ_META`, `listTotal`) |
+| **Audit** | the `adapt-orval-list` test in headless; the kit's `widget-templates` and `record-list-total` tests; `confirmed-verb-followed-by-nothing` (review) |
+
+A read whose failure a part draws carries `meta.suppressErrorDialog`, and the console query client
+leaves it out of the error dialog. `adaptOrvalList` (and `adaptForcedList`, which wraps it) gives
+every list read `LIST_READ_META`, because the list table draws `emptyReason: "error"` as its own
+state; the generated detail passes `RECORD_READ_META` to its get hook, because the record draws a
+failed read as its danger notice. A read with no state of its own (an edit form's prefill, a
+figure, a picker's options) carries no meta and keeps the dialog. A screen that reads through
+`useCrudList` without drawing `list.emptyReason` passes `queryOptions: { meta: { suppressErrorDialog: false } }`.
+
+While a list's read has not answered (first page in flight, failing, stalled with no rows), its
+total is unknown, not 0: every place that draws a list's total (the total badge, the filter bar's
+`count` with `countLoading`, `CrudList.Pagination`'s `total`, a holder tab's `count`) reads
+`listTotal(list)`, which answers `undefined` then. `CrudList.Pagination` draws an unknown total as
+`list.rangeUnknown` and offers no next page.
+
+A confirmation in front of a command stays open on its running label until the command settles:
+`useActionConfirm`'s `onConfirm` returns the run's promise, or the config passes `running`
+(`confirmed-verb-followed-by-nothing` flags a discarded promise with neither).
+
 ## Site kit reads, waits, jumps and links (site-core)
 
 | Field | Value |

@@ -1815,6 +1815,48 @@ const segments = STATUS.map((value) => ({ key: value, tone: markToneOf(EMAIL_TON
     },
   },
   {
+    id: "confirmed-verb-followed-by-nothing",
+    invariant: "#46",
+    level: "review",
+    desc: "A `useActionConfirm` whose `onConfirm` throws away the run's promise (`=> void run(...)`) and passes no `running`. The confirmation then has nothing to follow, closes the moment the reader says yes, never draws its running label and lets the next press start a second run. Return the promise (`onConfirm: (row) => command.run(...)`) so the dialog stays open on the running label until it settles, or pass the command's `running: command.pending`",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => {
+      const hits = [];
+      for (const call of c.matchAll(/useActionConfirm(?:<[^>]*>)?\(\s*\{/g)) {
+        // The config object: from its brace to the brace that closes it.
+        let depth = 0;
+        let end = call.index + call[0].length - 1;
+        for (; end < c.length; end++) {
+          if (c[end] === "{") depth++;
+          else if (c[end] === "}" && --depth === 0) break;
+        }
+        const config = c.slice(call.index, end + 1);
+        if (/\bonConfirm\s*:\s*\([^)]*\)\s*=>\s*void\b/.test(config) && !/\brunning\s*:/.test(config)) {
+          const line = lineOfIndex(c, call.index);
+          hits.push({ line, excerpt: c.split("\n")[line - 1].trim().slice(0, 140) });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/actions.tsx",
+      broken: `const resetConfirm = useActionConfirm<Row>({
+  title: t("resetTitle"),
+  onConfirm: (row) => void reset.run({ id: row.id }),
+});`,
+      fixed: `const resetConfirm = useActionConfirm<Row>({
+  title: t("resetTitle"),
+  onConfirm: (row) => reset.run({ id: row.id }),
+});`,
+      miss: [
+        { note: "a discarded promise followed through running", source: `const c = useActionConfirm<Row>({
+  running: reset.pending,
+  onConfirm: (row) => void reset.run({ id: row.id }),
+});` },
+      ],
+    },
+  },
+  {
     id: "page-opened-at-written-by-hand",
     invariant: "#3",
     level: "review",
