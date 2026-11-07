@@ -127,7 +127,9 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   scaffold prints a warning naming it, and the form builds it in its submit.
 - **A field is drawn by the kind its Meta `format` names.** A number whose format is `credits`, `bytes` or
   `duration`, a text whose format is `excerpt`, and a `money` field with its currency and scale take that
-  contract kind, and the kit draws the same kind in the list, the detail, the figure tiles and the board frame,
+  contract kind; `signedCredits` (a ledger amount) is the `credits` kind with `signed: true`, a credit
+  drawn positive and a debit negative. An enum value's `tone` and a boolean's `tones` reach the field
+  table as `tones` and the status figure tiles, so no screen keeps a hand tone map for them, and the kit draws the same kind in the list, the detail, the figure tiles and the board frame,
   so a value reads "80 credits" in every place instead of "80" in one and "80 credits" in another. A `number`
   where a typed kind exists is a defect. A rate between two counts is written with the kit's `ratioText`.
   Where Meta states no format for an amount of credits or bytes, the missing format is a backend gap to raise
@@ -136,7 +138,8 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   (a missing or unmarked required field, a required list of records or nested record that the form never names, long
   text on one line, a reference form field with no picker, a name path other than the settled one, a flat key in a
   frame's sample rows); it warns on a guessed name and on a list that draws no column for a key (`...Id`) the create
-  body requires and Meta declares no reference for. It runs after
+  body requires and Meta declares no reference for. A field-table entry whose kind contradicts the Meta `format`
+  (a credit amount drawn as `number`, a ledger amount without `signed: true`) is an error too. It runs after
   `scaffold` and `generated --all`, so a gap that compiled and rendered is found before a browser.
 - **`simplix generated [path...]`** narrows the report to those files or directories. A screen whose content is the
   intended one against a template change that conflicts with it is kept with
@@ -172,6 +175,9 @@ and when an author runs it; `pnpm exec simplix <command> --help` lists the flags
   the reader types a part of (the generator otherwise leaves text fields to the keyword search). These flags
   are recorded in the file's origin, so a regeneration renders the same list;
   `simplix generated --origin` changes a recorded origin (`../screen-workflow.md` rule 2).
+- `--status-badge <field>` names the enum field the detail header draws as the record's badge, where the design
+  entry chooses one other than the field named `status`, `state` or `standing`; a field that is not one of the
+  record's enums is refused. It is recorded in the origin like the list flags.
 - `--native` and `--app` write the mobile screen set; this document does not cover mobile.
 
 **`simplix add-page <kind> <name>`** writes a page that is not an entity list. The kind is `record-page`, `dashboard-page`,
@@ -376,7 +382,9 @@ If either differs, run `simplix validate --fix`.
 npx simplix add-module <domain-name> -y
 ```
 
-Creates `modules/<domain-name>/` with FSD layer structure (`--no-i18n` skips the locale setup, `-y` takes every default):
+Creates `modules/<domain-name>/` with FSD layer structure (`--no-i18n` skips the locale setup, `-y` takes every default).
+It writes no `manifest.ts`: nothing reads a module manifest, and `simplix validate` warns about a `ModuleManifest`
+stub an older `add-module` left (delete the file and its re-export from `src/index.ts`):
 - `src/features/` - feature logic
 - `src/widgets/` - reusable UI components
 - `src/pages/` - page-level components (added by scaffold)
@@ -387,7 +395,7 @@ Creates `modules/<domain-name>/` with FSD layer structure (`--no-i18n` skips the
 what that app alone uses** - its shell, its error screens, the layout patterns its pages
 share, its route files. Moving a widget out of an app into a module afterwards does not give
 it what the generator gives a module: the `source` conditions in `package.json`, the
-manifest, the locale wiring, the barrels, and the widget shape the scaffold writes. **Start
+locale wiring, the barrels, and the widget shape the scaffold writes. **Start
 from what `simplix scaffold <entity> --module <name>` produced and edit that**, rather than
 producing something elsewhere and relocating it.
 

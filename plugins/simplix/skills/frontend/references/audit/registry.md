@@ -44,6 +44,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **Row Action Standardization** - Every row action icon uses the same base color, the delete action included; removing an association is the `"unlink"` type
 - **SearchPopover (Unified Searchable Assignment)** - Unified searchable assignment popover (trigger + search + flat/grouped items) - replaces hand-rolled Popover+Command
 - **SelectField Compact Mode** - `FormFields.SelectField compact` for table-cell / toolbar selects - modules never import raw Select primitives
+- **Command runner (useCommand / runWithToast)** - A user's command runs through `useCommand(useGeneratedMutationHook, { done, failed, invalidate })` from `@simplix-react/ui`: one toast per outcome with the server's reason, no second error dialog; never a hand-written mutate, toast, invalidate, catch-and-toast chain
 - **Awaitable Cache Invalidation (useInvalidateEntity)** - `useInvalidateEntity` returns `() => Promise<void>` and calls `queryClient.invalidateQueries(...)` directly (n
 - **SaveButton (Unified Save Button with isDirty + Validation)** - Save button with isDirty / isSaving / validation-count state built in - no hand-rolled primary save Button
 - **Enum SelectField options - derive from the generated enum, not a hardcoded array** - When a `SelectField` offers the FULL set of an enum's values, derive options from the generated domain enum co

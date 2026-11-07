@@ -122,7 +122,16 @@ in the project's `CLAUDE.md`, never here.
   contract, so a source rule cannot tell it from any other text field; a project that has the
   helper adds its own source check against a direct read.
 - A holder tab (a list inside a record's detail) draws the columns of the holder's own list, never
-  every field of the DTO.
+  every field of the DTO. The CLI hands the template `holderColumnsHooks`, parallel to `holders`:
+  `{ hook, from, field }` names the holder's `use<Holder>Columns` and the import that reaches it (its
+  widget folder in the same module, the other module's `/widgets` entry otherwise) and the key that
+  points at the open record, which the tab omits. A holder whose list exports no column hook has
+  `null` there and gets no tab until its own list is generated.
+- The CLI's other screen variables that come from SimpliX Meta: `entityPathExport` (the domain's
+  `<entity>EntityPath`, which an invalidation imports from `packageName`; the literal `entityPath`
+  stays for a domain not generated from Meta), `columns` (the list's drawn fields in arrival order,
+  for its `COLUMNS` constant), per field `signed` and `tones`, `figureTiles.status.tones` and an
+  aggregate figure's `signed`, and `statusBadgeField` from `--status-badge`.
 - Two holders of one entity (notes held by their subject and by their author) share a list hook
   and an access rule, so the detail imports them once: the CLI hands the template `holderImports`,
   one statement per package with each name once, and a detail template iterates it rather than

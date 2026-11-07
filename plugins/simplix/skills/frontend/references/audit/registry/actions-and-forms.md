@@ -251,6 +251,41 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
 <FormFields.SelectField compact ... />
 ```
 
+## Command runner (useCommand / runWithToast)
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | Run a user's command (a write behind a button, a row action, a dialog's confirm) through one hook |
+| **Package** | `@simplix-react/ui` (`serverMessage` from `@simplix-react/api`) |
+| **Source** | `simplix-react/packages/ui/src/crud/form/use-command.ts` |
+| **Audit** | `command-written-out-by-hand` (review) |
+
+`useCommand` takes the generated mutation HOOK, not its result: the app's error dialog is switched
+off through the hook's options (`meta.suppressErrorDialog`), which a result can no longer change.
+It toasts `done` on success, toasts `failed` on a refusal with `serverMessage(caught)` as the
+reason (a string `failed` stands in only where the server sent no sentence; a function gets the
+reason, the variables and the error), refreshes `invalidate` once the server has answered either
+way, and resolves `{ ok, data | error }` without ever rejecting. `keepDialog: true` leaves the
+dialog on for the rare command whose refusal the screen does not report.
+
+```tsx
+const signOutDevice = useCommand(useDeleteMyDevice, {
+  done: (_, { deviceId }) => t("signedOut", { device: nameOf(deviceId) }),
+  failed: (reason) => t("signOutFailed", { reason }),
+  invalidate: [getGetAllMyDevicesQueryKey()],
+});
+<Button disabled={signOutDevice.pending} onClick={() => void signOutDevice.run({ deviceId })} />;
+
+// A verb that is not one mutation (a download, two writes in a row):
+await runWithToast(() => exportReport(id), { done: t("exported"), failed: t("exportFailed") });
+```
+
+`invalidate` takes an entity path (a prefix, as `useInvalidateEntity`) or a query key. A Meta
+domain exports each entity's path as `<entity>EntityPath`; import it rather than typing the route
+(`invalidation-path-typed-beside-its-export` names a typed copy).
+
+Forms are not commands: a form's refusal belongs on the field (`useCrudFormSubmit`).
+
 ## Awaitable Cache Invalidation (useInvalidateEntity)
 
 | Field | Value |
@@ -262,6 +297,10 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
 ### Behavior
 
 `useInvalidateEntity` returns `() => Promise<void>` and calls `queryClient.invalidateQueries(...)` directly (no deferral); the returned promise resolves once the refetch settles.
+
+Its prefix is the generated `<entity>EntityPath` where the domain is generated from SimpliX Meta
+(`useInvalidateEntity(costBreakerEntityPath)`), never the route typed again: the typed copy keeps
+refreshing the old route after the controller moves, and nothing fails.
 
 ### Rationale
 

@@ -46,6 +46,33 @@ layer (SKILL.md invariant #1). `src/mutator.ts` with `getMutator("boot")` and th
 the list adapter and the mock seeds below hold for it unchanged. Commands for both paths →
 `scaffold/overview.md`.
 
+Each entity's endpoint module also exports the collection its routes share as
+`<entity>EntityPath` (`costBreakerEntityPath = "/api/v1/admin/usage/cost-breaker"`). It is the
+prefix every read of the entity is cached under: a cache invalidation imports it
+(`useInvalidateEntity(costBreakerEntityPath)`, `useCommand(..., { invalidate: [costBreakerEntityPath] })`)
+and never types the route again. An entity whose routes share no segment exports none.
+
+## The app boot the framework supplies
+
+An app's `main.tsx`, `app/index.tsx` and `polyfills.ts` are written by `simplix init` and wire
+framework parts only; an app adds its own mock install and error pages and nothing else.
+
+- **Router** - `createRouter({ routeTree, basepath: import.meta.env.BASE_URL, ...flatSearch })`, with
+  `createTanstackRouterAdapter(router)` provided through `RouterContext` above `RouterProvider`
+  (both from `@simplix-react/ui`). `flatSearch` keeps a list screen's URL state as plain strings
+  instead of TanStack's JSON-quoted default; a hand-written serializer, parser or adapter object in
+  an app is a copy of these.
+- **Boot order** - `stopMocking({ storePrefix: AUTH_STORE_PREFIX })` (`@simplix-react/mock`) when mocking
+  is off, `auth.rehydrate()` before the first render, and no render when the page is reloading.
+- **Fills** - `installClipboardFallback()` and `installRandomUUIDFallback()` (`@simplix-react/ui`) for a
+  page outside a secure context; neither replaces an API the browser has.
+- **OIDC sign-out** - `createOidcClient` keeps the ID token of the last sign-in or refresh under
+  `<storageKey>:id-token` and `signOutUrl()` names it, so an app keeps no ID-token helper of its own
+  and a sign-out after a failed refresh still ends the issuer's session without a confirmation page.
+- **Access** - the access policy is `createSelfAccessPolicy({ endpoint, fetchFn: auth.fetchFn })` from
+  `@simplix-react-ext/simplix-boot-access`, which carries the user across (a policy without one leaves
+  every route guard waiting) and records the self read's refusal for `useSelfAccessRefusal()`.
+
 ## How the codegen path derives its API layer
 
 Generic framework signatures (`defineApi`, `deriveEntityHooks`, `deriveMockHandlers`)
