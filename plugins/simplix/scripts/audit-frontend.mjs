@@ -1787,6 +1787,21 @@ const segments = STATUS.map((value) => ({ key: value, tone: markToneOf(EMAIL_TON
     },
   },
   {
+    id: "session-read-once-per-render",
+    invariant: "#61",
+    level: "review",
+    desc: "A component decides what to draw from `auth.isAuthenticated()` called while it renders. That reads the session once and subscribes to nothing, so a sign-out in another tab (or a refresh that failed) leaves the screen drawing an account nobody holds until something else re-renders it. Read the session through the auth store's hook (`const { isAuthenticated } = useAuth()` from `@simplix-react/auth/react`); a route guard's `beforeLoad` and an event handler read the instance, since they run at the moment they ask",
+    appliesTo: (p) => (inApps(p) || inModules(p) || inPackages(p)) && /\.tsx$/.test(p) && isSource(p) && !/\/routes\//.test(p),
+    check: (c) => lineHits(c, /\bauth\.isAuthenticated\(\)/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/app/layouts/root-layout.tsx",
+      broken: `return auth.isAuthenticated() ? <SignedInWindow /> : <VisitorWindow />;`,
+      fixed: `const { isAuthenticated } = useAuth();
+return isAuthenticated ? <SignedInWindow /> : <VisitorWindow />;`,
+      miss: [{ note: "the hook's own answer", source: `const { isAuthenticated } = useAuth();` }],
+    },
+  },
+  {
     id: "instant-written-through-a-made-up-field",
     invariant: "#36 / #42",
     level: "review",
