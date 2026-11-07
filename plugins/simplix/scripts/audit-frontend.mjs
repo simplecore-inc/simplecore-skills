@@ -1640,6 +1640,198 @@ const IMPORTANT_OUTLINE_REMOVAL =
 
 const RULES = [
   {
+    id: "fields-table-read-by-index",
+    invariant: "#53 / #36",
+    level: "error",
+    desc: "A contract field table read by position (`GrantDetailFields[3]`). The table's order is the generator's arrival order, so the index names whichever field arrived there today: a section titled for one field draws another, and a regeneration that adds a field moves every index after it without a type error. Name the fields instead: `contract.detailFields(fields, [\"reason\"], row)`, `contract.detailSections(SECTIONS, fields, row, { title })` or `pickFields(fields, names)` from the console kit",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p) && !/\/generated(?:-meta)?\//.test(p),
+    check: (c) => lineHits(c, /\b[A-Z]\w*Fields\s*\[\s*\d+\s*\]/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `const reasonSection = { key: "reason", fields: [contract.detailField(GrantDetailFields[3], row)] };`,
+      fixed: `const reasonSection = { key: "reason", fields: contract.detailFields(GrantDetailFields, ["reason"], row) };`,
+      miss: [{ note: "an index into a row array, not a field table", source: "const first = rows[0];" }],
+    },
+  },
+  {
+    id: "holder-columns-cast-to-never",
+    invariant: "#44",
+    level: "review",
+    desc: "A holder tab's columns cast `as never`. The cast hides that the tab's list is typed with a different row than the columns, so a column that reads a field the holder's row lacks compiles and draws an empty cell. Type the tab's `useCrudList` with the holder's row (`useCrudList<HolderRow>(adaptForcedList<HolderRow>(...))`) and pass the holder's own `use<Holder>Columns(undefined, { omit: [key] })`, as the console kit's detail template does",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isTsx(p),
+    check: (c) => lineHits(c, /\bcolumns\s*:\s*\w+\s+as\s+never\b/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `const eventColumns = usePaymentEventColumns();
+const tab = { key: "events", list: { list: events, columns: eventColumns as never } };`,
+      fixed: `const eventColumns = usePaymentEventColumns(undefined, { omit: ["subscriptionId"] });
+const tab = { key: "events", list: { list: events, columns: eventColumns } };`,
+      miss: [{ note: "a cast elsewhere on the line is another rule's business", source: `const order = useOrder({ data: updates as never });` }],
+    },
+  },
+  {
+    id: "widget-blocks-passthrough",
+    invariant: "#79 / #67",
+    level: "review",
+    desc: "A generated detail, form or list reads its own blocks hook (`useDetailBlocks()`, `use<Entity>Parts()`) and passes each key through. Those widgets are generated once and then edited in place, so the hook is a second place for the same screen's decisions, and the wiring around it is copied per screen. Write the departure into the widget itself and delete the hook and its file; only a list page reads `page.blocks.tsx`, once, through the generated `crud-page`",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && /\/widgets\/[^/]+\/(?:detail|form|list)\.tsx$/.test(p),
+    check: (c) => lineHits(c, /\buse(?:Detail|Form|List)Blocks\s*\(|\buse[A-Z]\w*Parts\s*\(\s*\)/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `const own = useDetailBlocks();
+return <RecordDetail title={own.title ?? recordName} tabs={own.tabs ? own.tabs(generated) : generated} />;`,
+      fixed: `const tabs = [...generated, ...history.tab(words.changes)];
+return <RecordDetail title={recordName} tabs={tabs} />;`,
+      miss: [{ note: "a page reading its page blocks", source: `const blocks = usePageBlocks({ search, onNavigate });` }],
+    },
+  },
+  {
+    id: "scheme-parameter-spelled-out",
+    invariant: "#9",
+    level: "review",
+    desc: "The colour scheme parameter written as the literal `\"ui_scheme\"`. The site that hands the reader's choice over and the sign-in or account page that reads it must agree on one name, and three literals in three packages agree only by luck. Import `SCHEME_PARAM` (and `pickSiteScheme`, `markSiteScheme`) from the site kit's `shell` segment",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /["'`]ui_scheme["'`]/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/shared/scheme.ts",
+      broken: `const hint = new URLSearchParams(search).get("ui_scheme");`,
+      fixed: `import { SCHEME_PARAM } from "@simplix-react-ui-kits/site-clarity/shell";
+const hint = new URLSearchParams(search).get(SCHEME_PARAM);`,
+      miss: [{ note: "the language parameter beside it", source: `url.searchParams.set("ui_locales", locale);` }],
+    },
+  },
+  {
+    id: "instant-written-through-a-made-up-field",
+    invariant: "#36 / #42",
+    level: "review",
+    desc: "One instant or day written by inventing a contract field for it (`contract.recordName([{ name: \"x\", kind: \"instant\" }], row)`, `contract.value({ name: \"x\", kind: \"date\" }, { x })`). It works, reads as a record name or a drawn value, and invites the raw value next time nobody remembers the trick. `contract.instantText(iso)` and `contract.dateText(day)` write the value in the installation's zone and the reader's language; `contract.text(field, row)` writes any declared field as text",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /\.recordName\(\s*\[\s*\{[^\]]*kind\s*:\s*"(?:instant|date)"|\.value\(\s*\{\s*name\s*:\s*"[^"]+"\s*,\s*kind\s*:\s*"(?:instant|date)"\s*\}/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `const renews = contract.value({ name: "currentPeriodEnd", kind: "instant" }, { currentPeriodEnd: iso });`,
+      fixed: `const renews = contract.instantText(iso);`,
+      miss: [{ note: "a declared field drawn by its own table entry", source: `const at = contract.value(PERIOD_END_FIELD, row);` }],
+    },
+  },
+  {
+    id: "drawn-value-stringified",
+    invariant: "#36",
+    level: "error",
+    desc: "A drawn contract value passed to `String(...)`. `contract.value` answers a badge, a figure, a reference or an excerpt as an object for most kinds, and `String` of it is `[object Object]` on the screen. `contract.text(field, row)` (or `recordValueText(value)`) writes what the value reads as",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /\bString\(\s*contract\.value\(/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/page.blocks.tsx",
+      broken: `const title = t("notice.title", { reason: String(contract.value(REASON_FIELD, row)) });`,
+      fixed: `const title = t("notice.title", { reason: contract.text(REASON_FIELD, row) });`,
+      miss: [{ note: "a raw row value", source: `const id = String(row.breakerId);` }],
+    },
+  },
+  {
+    id: "page-opened-at-written-by-hand",
+    invariant: "#3",
+    level: "review",
+    desc: "The page's opening minute written out (`Math.floor(Date.now() / 60000) * 60000`) to hold a figure's window still. Each copy picks its own step and its own hook, and the next one forgets the hook. `usePageOpenedAt()` from the console kit's `datetime` segment holds the minute for the page; `useZoneRange(kind, n)`, `useZoneToday()` and `useRollingWindow(ms)` give today, a calendar window and a rolling one in the installation's zone",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isSource(p),
+    check: (c) => lineHits(c, /Math\.floor\(\s*Date\.now\(\)\s*\/\s*60_?000\s*\)\s*\*\s*60_?000/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/page.blocks.tsx",
+      broken: `const [opened] = useState(() => new Date(Math.floor(Date.now() / 60000) * 60000));`,
+      fixed: `const opened = usePageOpenedAt();`,
+      miss: [{ note: "a different rounding with its own reason", source: `const bucket = Math.floor(Date.now() / BUCKET_MS);` }],
+    },
+  },
+  {
+    id: "count-read-as-a-one-row-page",
+    invariant: "#48",
+    level: "review",
+    desc: "A count taken as the `totalElements` of a one-row list read, unwrapped by hand. Each copy decides on its own whether a failed or unread count is 0 or absent, and a 0 nobody counted reads as \"none\". `useListCount(useList<Entities>, params, enabled)` from the console kit's `api` segment answers the total, and nothing while unread, after a failure or when not asked",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isSource(p),
+    check: (c) => (/totalElements/.test(c) ? lineHits(c, /\bpage\s*:\s*0\s*,\s*size\s*:\s*1\b/, notCommentLine) : []),
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `const seen = useListUserAccounts({ page: 0, size: 1, [SEEN_SINCE]: since });
+const count = seen.data?.totalElements;`,
+      fixed: `const count = useListCount(useListUserAccounts, { [SEEN_SINCE]: since });`,
+      miss: [{ note: "a first page that is not a count", source: `const first = useListUserAccounts({ page: 0, size: 1 });
+const row = first.data?.content[0];` }],
+    },
+  },
+  {
+    id: "changes-tab-built-by-hand",
+    invariant: "#76",
+    level: "review",
+    desc: "A record's changes tab assembled by hand (`{ key: \"changes\", label, count, changes: { history } }`). Copies differ in key, label and in whether they hide the tab from a reader who may not read the audit log, which opens a tab onto a refusal. Spread `history.tab(emptyBody)` from the console kit's `useChangeHistory`: one key, the kit's word, and no tab at all where the log is unreadable",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isTsx(p),
+    check: (c) => lineHits(c, /\bchanges\s*:\s*\{\s*history\b/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `const tabs = [...generated, { key: "history", label: t("tabHistory"), count: changes.total, changes: { history: changes, emptyBody } }];`,
+      fixed: `const tabs = [...generated, ...changes.tab(emptyBody)];`,
+      miss: [{ note: "the kit's tab spread in", source: `const tabs = [...generated, ...history.tab()];` }],
+    },
+  },
+  {
+    id: "count-notice-built-by-hand",
+    invariant: "#48 / #73",
+    level: "review",
+    desc: "A page notice raised by a count and narrowing the list to what it counts, written out key by key (`when: n > 0`, `title: t(..., { count })`, `onAction: () => list.filters.commitValue(...)`). `countNotice({ key, kind, count, narrow, words }, list.filters)` from the console kit's `page` segment writes the shape once, and its action lands on exactly the rows it counts",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isSource(p),
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!/\bwhen\s*:\s*\w+\s*>\s*0\s*,/.test(lines[i])) continue;
+        const block = lines.slice(i, i + 8).join("\n");
+        if (/\{\s*count\b/.test(block) && /\.commitValues?\(/.test(block)) hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/page.blocks.tsx",
+      broken: `notices: (list) => [
+  {
+    key: "jobs-failed",
+    kind: "danger",
+    when: failed > 0,
+    title: t("failedNotice.title", { count: failed }),
+    onAction: () => list.filters.commitValue("status.in", ["FAILED"]),
+  },
+],`,
+      fixed: `notices: (list) => [countNotice({ key: "jobs-failed", kind: "danger", count: failed, narrow: { field: "status.in", value: ["FAILED"] }, words: { t, prefix: "failedNotice" } }, list.filters)],`,
+      miss: [{ note: "a notice raised by a flag, with no count and no narrowing", source: `{ key: "offline", kind: "warning", when: offline > 0, title: t("offline") }` }],
+    },
+  },
+  {
+    id: "tone-map-passed-by-hand",
+    invariant: "#53",
+    level: "review",
+    desc: "An enum's badge tones handed to `useRecordContract` from a map the screen writes. The generator writes the tones SimpliX Meta declares on each enum value into the field table, and the contract draws them; a hand map is a second source that drifts from the tile and the dashboard drawing the same value. Declare the tone on the backend enum and delete the map; pass `tones` only for a value Meta cannot know",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isSource(p),
+    check: (c) => lineHits(c, /\buseRecordContract\(\s*"[^"]+"\s*,\s*\{\s*tones\s*:/, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/list.tsx",
+      broken: `const contract = useRecordContract("backgroundJob", { tones: JOB_TONES });`,
+      fixed: `const contract = useRecordContract("backgroundJob");`,
+      miss: [{ note: "pickers, not tones", source: `const contract = useRecordContract("userNote", { searches: { subjectId: userSearch } });` }],
+    },
+  },
+  {
+    id: "parts-joined-by-hand",
+    invariant: "#9",
+    level: "review",
+    desc: "A line's parts joined with a middle dot by hand (`[a, b].filter(Boolean).join(\" · \")`). `joinParts(a, b)` from the console kit's `layout` segment drops every blank part, including a number 0 written as text, and names the separator once",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /\.filter\(\s*Boolean\s*\)\s*\.join\(\s*["'] · ["']\s*\)/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/pages/home/activity-card.tsx",
+      broken: `const sub = [entry.actor, entry.target].filter(Boolean).join(" · ");`,
+      fixed: `const sub = joinParts(entry.actor, entry.target);`,
+      miss: [{ note: "a join with another separator", source: `const path = parts.filter(Boolean).join("/");` }],
+    },
+  },
+  {
     id: "page-header-store-nothing-draws",
     invariant: "#31",
     level: "review",

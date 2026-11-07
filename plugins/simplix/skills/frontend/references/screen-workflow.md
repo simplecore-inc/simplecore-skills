@@ -96,10 +96,14 @@ Read this before planning a screen or dispatching agents for screen work.
 2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
    edited. The CLI rewrites an untouched file, and merges a template change into an edited one
    three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is
-   reported, never written unless `--write-conflicts` asks for markers. A page is laid down whole by
-   its type's template and imports no blocks file. A departure file (`page.blocks.tsx`, written once
-   when `scaffold` or `add-page` is given `--blocks`) holds the decisions that belong to one screen
-   only, and is not rendered again.
+   reported, never written unless `--write-conflicts` asks for markers. A detail, a form and a
+   list are laid down whole by their templates and edited in place; they read no blocks hook, and a
+   `useDetailBlocks()` or `use<Entity>Parts()` passthrough in one is deleted (the audit's
+   `widget-blocks-passthrough`). A list page (`crud-page`) reads its `page.blocks.tsx` once, typed
+   by the kit's `CrudPageBlocks`, and wires every key in the template; the CLI lays the empty stub
+   down where a page has none and never renders it again. Another page kind's departure file
+   (`page.blocks.tsx`, written once when `add-page` is given `--blocks`) holds the decisions that
+   belong to one screen only, and is not rendered again.
    - `simplix generated` lists every generated file and story as `untouched`, `edited` or `stale`
      (untouched, but the current templates render something else). It fails only for a page file
      (page, crud-page or list-page under `src/pages/<page>/`, or the root layout) that lacks the
@@ -425,6 +429,31 @@ Read this before planning a screen or dispatching agents for screen work.
     A project's own `.simplix/templates/` has no such check unless the project's gate adds one: run
     the kit's script on it as a second root (`node <kit-checkout>/<kit-scripts>/check-em-dash.mjs
     .simplix/templates`).
+
+40. **A screen reaches for the console kit's helper before it writes the shape by hand.** The audit
+    rule in brackets names the hand form of each:
+    - a detail's fields and sections by name: `contract.detailFields(fields, names, row)` and
+      `contract.detailSections(SECTIONS, fields, row, { title, omitEmpty })`, never an index into
+      the field table (`fields-table-read-by-index`);
+    - one instant or day as text: `contract.instantText(iso)`, `contract.dateText(day)`, and any
+      field as text with `contract.text(field, row)` (`instant-written-through-a-made-up-field`,
+      `drawn-value-stringified`); a name with a separator: `contract.recordName(fields, row,
+      { separator })`;
+    - badge tones from SimpliX Meta: the generator writes each enum value's tone into the field
+      table, and `useRecordContract` draws it; `tones` overrides one field for a value Meta cannot
+      know (`tone-map-passed-by-hand`); a dashboard mark takes `markToneOf(statusTone)`;
+    - a holder tab draws the holder list's own `use<Holder>Columns(undefined, { omit: [key] })` over
+      a `useCrudList<HolderRow>`, never a copied field table or a cast (`holder-columns-cast-to-never`);
+    - a list's column choice is its `COLUMNS` constant, reordered or trimmed by hand;
+    - the changes tab is `history.tab(emptyBody)` from `useChangeHistory` (`changes-tab-built-by-hand`);
+    - a count-raised notice is `countNotice(spec, list.filters)` (`count-notice-built-by-hand`);
+      a count is `useListCount(hook, params, enabled)` (`count-read-as-a-one-row-page`); the figure
+      row's counts are `useFigureTiles(...).counts`, whose status values default to the contract
+      field's options;
+    - the page's time windows are `usePageOpenedAt()`, `useZoneRange(kind, n)`, `useZoneToday()` and
+      `useRollingWindow(ms)` (`page-opened-at-written-by-hand`); a line's parts are `joinParts(...)`
+      (`parts-joined-by-hand`); a help card's reference table is `HelpTable`; the colour scheme
+      parameter is the site kit's `SCHEME_PARAM` (`scheme-parameter-spelled-out`).
 
 ## Cases
 
