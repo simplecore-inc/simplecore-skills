@@ -1846,6 +1846,27 @@ const row = first.data?.content[0];` }],
     },
   },
   {
+    id: "waiting-action-written-twice",
+    invariant: "#9",
+    level: "review",
+    desc: "A site action written twice on a wait, once refused and once to press (`creating ? { id: \"send\", disabled: true, reason } : { id: \"send\", onSelect }`). The site kit's action takes `pending`, the sentence saying what the wait is for, and draws itself refused with it while it is set: one spec, and the two copies cannot drift in label, tone or id. Copies written by hand also tend to give the button's own label as the reason, which tells the reader nothing. Write `{ id, label, onSelect, pending: run.pending ? t(\"sending\") : undefined }`",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => {
+      const re = /\b[\w.]*(?:[pP]ending|[sS]aving|[sS]ending|[lL]eaving|[wW]ithdrawing|[wW]aiting)\s*\?\s*\{\s*id:\s*"([^"]+)"[^{}]*\bdisabled:\s*true[^{}]*\}\s*:\s*\{\s*id:\s*"\1"/g;
+      return [...c.matchAll(re)].map((m) => ({ line: c.slice(0, m.index).split("\n").length, excerpt: m[0].replace(/\s+/g, " ").slice(0, 140) }));
+    },
+    samples: {
+      file: "apps/<app>/src/pages/<page>/page.tsx",
+      broken: `actions={[
+  create.isPending
+    ? { id: "send", label: t("send"), tone: "primary", disabled: true, reason: t("send") }
+    : { id: "send", label: t("send"), tone: "primary", onSelect: send },
+]}`,
+      fixed: `actions={[{ id: "send", label: t("send"), tone: "primary", onSelect: send, pending: create.pending ? t("sending") : undefined }]}`,
+      miss: [{ note: "a refusal that is a state of the record, not a wait", source: `paid ? { id: "topUp", label, href } : { id: "topUp", label, disabled: true, reason: t("needsPlan") }` }],
+    },
+  },
+  {
     id: "page-header-store-nothing-draws",
     invariant: "#31",
     level: "review",
