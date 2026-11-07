@@ -1967,6 +1967,24 @@ const row = first.data?.content[0];` }],
     },
   },
   {
+    id: "link-press-assigned-by-hand",
+    invariant: "#9",
+    level: "review",
+    desc: "A link whose press is cancelled and replaced by `window.location.assign(...)` (`onSelect: (event) => { event.preventDefault(); window.location.assign(url); }`). It is how a page works around a router link that routes every plain press, for an address on another origin (a file, the identity provider's page). The site kit's link leaves such a press to the browser (`routesInPage`: another origin, a download, a new window), so the page hands the address as a plain `href` and the copy goes",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) =>
+      [...c.matchAll(/\.preventDefault\(\);?\s*window\.location\.assign\(/g)].map((m) => ({ line: c.slice(0, m.index).split("\n").length, excerpt: m[0].replace(/\s+/g, " ") })),
+    samples: {
+      file: "apps/<app>/src/pages/download/page.tsx",
+      broken: `action: { id: "mac", label, href: file.url, onSelect: (event) => {
+  event.preventDefault();
+  window.location.assign(file.url);
+} },`,
+      fixed: `action: { id: "mac", label, href: file.url },`,
+      miss: [{ note: "a fallback when a window the page opened was blocked, not a link press", source: `if (tab === null) {\n  window.location.assign(link.url);\n  return;\n}` }],
+    },
+  },
+  {
     id: "page-header-store-nothing-draws",
     invariant: "#31",
     level: "review",
