@@ -162,6 +162,17 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   tree answers, `../screen-workflow.md` rule 35) and run `generated` again. Adopting it would record the stale
   render as the base.
 
+- **A template change that adds an export to a generated widget** puts it at the end of the file and reaches the screen
+  through an import line the kit already owns, never through the framework import line that screens edit by hand:
+  every screen's own edit of a line is a merge conflict when the template touches the same line. Choose the insertion
+  point by counting `simplix generated` conflicts for each candidate (one change moved the lists from 22 conflicts to 17
+  that way), and read the preview (`simplix generated`, read-only) before the regeneration, not after. A file laid down
+  once and not regenerated (a widget folder's `index.ts`) needs the new export added by hand.
+- **A conflict is resolved in the file by writing the merged text, never by letting markers into the tree.** The
+  report prints the merge with its markers in its output; the dev servers read the files live and a marker blanks the
+  app. Resolve, then `simplix generated --rebase -y --adopt <path...>`, then run `simplix generated <path...>` and read
+  `merge current`.
+
 ## The commands beside the numbered steps
 
 Screen work uses more of the CLI than the four generators of the steps below. Each entry says what the command does
