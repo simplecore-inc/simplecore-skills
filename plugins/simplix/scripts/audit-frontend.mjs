@@ -1755,6 +1755,38 @@ export const Providers = ({ children }) => <ConsoleProviders i18nAdapter={i18nAd
     },
   },
   {
+    id: "dashboard-status-tone-table-written-by-hand",
+    invariant: "#53",
+    level: "review",
+    desc: "A dashboard card keeps its own table of status values and chart marks (`[\"ACTIVE\", \"success\"]`). The value's badge on its own screen already has a tone (the module's tone map, or the one SimpliX Meta declares on the enum), and a second table is how one state is drawn amber on the dashboard and red in the list it leads to. List the values in the card's order and take each mark from the module's map through the console kit's `markToneOf`",
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isSource(p),
+    check: (c) => lineHits(c, /\[\s*"[A-Z][A-Z0-9_]*"\s*,\s*"(?:success|info|warning|danger|neutral|accent|series-[1-3])"\s*\]/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/pages/home/<topic>-card.tsx",
+      broken: `const STATUS: readonly (readonly [string, MarkTone])[] = [
+  ["DELIVERED", "success"],
+  ["SUPPRESSED", "warning"],
+];`,
+      fixed: `const STATUS = ["DELIVERED", "SUPPRESSED"] as const;
+const segments = STATUS.map((value) => ({ key: value, tone: markToneOf(EMAIL_TONES.status[value] ?? "neutral") }));`,
+      miss: [{ note: "a sort pair of a field and a direction", source: `const SORT = ["createdAt", "desc"] as const;` }],
+    },
+  },
+  {
+    id: "series-tone-written-out",
+    invariant: "#9",
+    level: "review",
+    desc: "The rotating series mark written out at a call site (`series-${(i % 3) + 1}`). The console kit's `seriesTone(index)` is that rotation and the default of `SegmentBar` and `MeterList`, so an entry that wants the rotation leaves its `tone` out, and one that needs the index's mark for another part calls `seriesTone`",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /`series-\$\{/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/pages/home/<topic>-card.tsx",
+      broken: "entries={rows.map((one, i) => ({ ...one, tone: `series-${(i % 3) + 1}` as MarkTone }))}",
+      fixed: `entries={rows.map((one) => ({ ...one }))}`,
+      miss: [{ note: "the kit helper", source: `const tone = seriesTone(index);` }],
+    },
+  },
+  {
     id: "instant-written-through-a-made-up-field",
     invariant: "#36 / #42",
     level: "review",
