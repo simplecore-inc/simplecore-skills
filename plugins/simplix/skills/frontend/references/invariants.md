@@ -434,6 +434,13 @@ a badge leads to opens BY DEFAULT on exactly the set the badge counts - a badge 
 landing on a default view showing 0 rows is a wiring defect. Tab/nav counts read
 `totalElements` from a `size: 1` list query (cache-shared with the list).
 
+**A tile's number and its link come from one filters object.** The list's address carries filters
+(`?filters[status.in]=FAILED`, `search.filters`), narrowed to the keys the destination's own list declares
+(`<Entity>ListAddress.narrow`), and the count is read with the request `filtersToRequestParams` builds from the same
+object, so the two cannot drift. A number picked off a status count states exactly `<field>.in` of that value; a tile
+whose condition equals a destination tab's forced params links to `?tab=` and never sets both on one field. A card head
+that opens a list by its bare address is named as a whole-list head, with its reason, in a test that reads every head.
+
 Enforcement: review - whether a count is a set the viewer must act on, and whether the screen it leads to opens on exactly that set, needs the meaning of the count and the default filter of its destination.
 
 ## #49 Always-open master-detail boards
