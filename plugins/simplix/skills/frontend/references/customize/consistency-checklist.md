@@ -171,6 +171,7 @@ the same screen the survey cannot see. Count the input controls themselves: `<in
 - **Peek dialog title** → carry the record's larger avatar in the dialog title; drop a duplicate avatar from the body's first row.
 - **Page chrome** → title/description via `usePageHeader`, create action in its `actions` slot, no ad-hoc page-root padding, panel list-detail renders the `Stack flex` root directly (invariant #31).
 - **Backend-sync gate** → if the OpenAPI spec moved since the last codegen, run the SCAFFOLD Update path FIRST (invariant #29) - even a "just a column" tidy is blocked on stale `generated/`.
+- **A cell's text is cut mid-word with no ellipsis, or a focus ring is cut at the edge of a scroller** → a text node that is a flex item is blockified, so the container's `text-overflow` never reaches it: the text node takes its own `min-w-0 overflow-clip text-ellipsis`. A sideways scroller clips the cross axis and cuts the focus halo: give it the gutter pair `-m-[var(--focus-gutter)] p-[var(--focus-gutter)]`, stated in the kit slot (the design-classes check refuses the pair on the element itself). A class change on a kit slot needs `design:css` run again, or `design:check` fails; a deliberate departure from the reference story edits the recorded measures in the same change.
 - **After the pass** → run AUDIT (`../audit/overview.md`) - any pattern this normalization repeats across modules is extracted to the shared package (invariant #22, #23), never left inlined.
 
 ---

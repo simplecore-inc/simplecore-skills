@@ -721,6 +721,12 @@ empty option list reads as "failed to load", not as "your tier does not include 
 the reader retries, then reports a bug against a screen that is behaving exactly as
 designed. Remove the control, or replace it with a sentence naming what is missing.
 
+**A read held back by `enabled: false` is idle, not empty.** It sits at `data: []`, which the
+list engine reports as an answered empty list, so every total or count derived from it reads 0
+for a list nobody asked. A derived total takes the gate as an input (`listTotal(list, { enabled })`
+in the console kit) and answers unknown while the read is held back, the same way a hidden tab body
+must not draw "0 records".
+
 The shapes this takes:
 
 | Shape | Where it hid | What still fired |
