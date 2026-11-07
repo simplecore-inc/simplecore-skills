@@ -190,6 +190,12 @@ in the project's `CLAUDE.md`, never here.
   is checked on its own; a board check that stops at its first failing step hides the later ones, so
   its steps run one by one when the first fails (screen-workflow Cases, "A checks chain stopped at
   a known failure").
+- `tsc --noEmit` reports only syntax errors once any file of the program fails to parse (a conflict
+  marker another agent left in a module the app imports) and skips the semantic pass for every file,
+  so a run filtered to "errors outside that module" prints nothing for a changed file that does not
+  type-check. While another file of the program does not parse, check the changed files with
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/typecheck-paths.mjs" <package> <path ...>`, which asks
+  TypeScript for those files' semantic diagnostics one by one, and report that run.
 - A shared test-account sign-in helper that resets the password on expiry signs other agents out:
   every agent creates and deletes its own account. A deleted identity's username cannot be reused,
   so pick a fresh name.
