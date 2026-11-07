@@ -1701,6 +1701,60 @@ const hint = new URLSearchParams(search).get(SCHEME_PARAM);`,
     },
   },
   {
+    id: "router-search-serialiser-written-out",
+    invariant: "#9",
+    level: "review",
+    desc: "A TanStack router given a `stringifySearch` or `parseSearch` written out by hand. The framework exports the flat serialiser every list screen's URL state is written in (`flatSearch` from `@simplix-react/ui`) and the adapter the screens navigate through (`createTanstackRouterAdapter(router)`); a copy per app drifts the first time one of them learns to drop a value the other keeps. Spread `...flatSearch` into `createRouter` and provide `createTanstackRouterAdapter(router)`, as the CLI's `app-index-tsx.hbs` writes it",
+    appliesTo: (p) => (inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => lineHits(c, /\b(?:stringifySearch|parseSearch)\s*:\s*(?:\(|function\b|[a-zA-Z_$][\w$]*\s*=>)/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/app/index.tsx",
+      broken: `const router = createRouter({
+  routeTree,
+  stringifySearch: (search) => \`?\${new URLSearchParams(search as Record<string, string>)}\`,
+});`,
+      fixed: `import { createTanstackRouterAdapter, flatSearch } from "@simplix-react/ui";
+const router = createRouter({ routeTree, ...flatSearch });
+const routerAdapter = createTanstackRouterAdapter(router);`,
+      miss: [{ note: "the framework's serialiser handed in by name", source: `const router = createRouter({ routeTree, stringifySearch: flatSearch.stringifySearch, parseSearch: flatSearch.parseSearch });` }],
+    },
+  },
+  {
+    id: "random-uuid-filled-by-hand",
+    invariant: "#9",
+    level: "review",
+    desc: "`crypto.randomUUID` filled in by hand for a page outside a secure context. `@simplix-react/headless` ships the fill (`installRandomUUIDFallback()`, re-exported from `@simplix-react/ui` beside `installClipboardFallback`), installed only where the browser left the API out; the CLI's `polyfills-ts.hbs` calls both. A copy per app is one more version-4 generator nobody tests",
+    appliesTo: (p) => (inApps(p) || inPackages(p) || inModules(p)) && isSource(p),
+    check: (c) => lineHits(c, /\bcrypto\.randomUUID\s*=(?!=)/, notCommentLine),
+    samples: {
+      file: "apps/<app>/src/polyfills.ts",
+      broken: `if (typeof crypto !== "undefined" && !crypto.randomUUID) {
+  crypto.randomUUID = () => "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => c) as never;
+}`,
+      fixed: `import { installClipboardFallback, installRandomUUIDFallback } from "@simplix-react/ui";
+installClipboardFallback();
+installRandomUUIDFallback();`,
+      miss: [{ note: "a call of the API", source: `const id = crypto.randomUUID();` }],
+    },
+  },
+  {
+    id: "locale-refresh-registered-beside-console-providers",
+    invariant: "#9",
+    level: "review",
+    desc: "An app that mounts the console kit's `ConsoleProviders` also registers its own `onLocaleChange` handler that invalidates the query cache. `ConsoleProviders` already reads every cached query and the signed-in reader's access again on a language change (`refreshOnLocaleChange`, on by default), so the app's copy runs the invalidation twice and drifts from the kit's the first time one of them learns a new read. Delete the app's handler; keep only `onLocaleChange(setRequestLocale)` in the i18n setup",
+    appliesTo: (p) => inApps(p) && isSource(p),
+    check: (c) => (/\bConsoleProviders\b/.test(c) ? lineHits(c, /\bonLocaleChange\s*\(\s*(?:\(\s*\)|[a-zA-Z_$][\w$]*)\s*=>/, notCommentLine) : []),
+    samples: {
+      file: "apps/<app>/src/app/providers/app-providers.tsx",
+      broken: `i18nAdapter.onLocaleChange(() => {
+  void queryClient.invalidateQueries();
+});
+export const Providers = ({ children }) => <ConsoleProviders i18nAdapter={i18nAdapter}>{children}</ConsoleProviders>;`,
+      fixed: `export const Providers = ({ children }) => <ConsoleProviders i18nAdapter={i18nAdapter}>{children}</ConsoleProviders>;`,
+      miss: [{ note: "the request language kept in step in the i18n setup, which mounts no providers", source: `i18nAdapter.onLocaleChange(setRequestLocale);` }],
+    },
+  },
+  {
     id: "instant-written-through-a-made-up-field",
     invariant: "#36 / #42",
     level: "review",
