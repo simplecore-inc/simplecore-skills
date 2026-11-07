@@ -52,6 +52,25 @@ prefix every read of the entity is cached under: a cache invalidation imports it
 (`useInvalidateEntity(costBreakerEntityPath)`, `useCommand(..., { invalidate: [costBreakerEntityPath] })`)
 and never types the route again. An entity whose routes share no segment exports none.
 
+What SimpliX Meta declares beyond a type's shape is exported from the domain too, so a reader that
+is not a generated screen (a dashboard card, a report, a toast) takes it from the contract instead
+of a hand map:
+
+- `<Enum>Tones` sits beside each enum in `model/_enums.ts` whose values declare a tone, typed
+  `Readonly<Partial<Record<<Enum>, StatusTone>>>` with `StatusTone` from `@simplix-react/api` (the
+  type `@simplix-react/ui` re-exports). A value may declare none, so a reader writes its fallback:
+  `markToneOf(EmailStatusTones[status] ?? "neutral")`. An enum with no toned value has no table.
+- `<Type>FieldFormats` sits beside each DTO interface in its own model file, `as const`, one entry
+  per field (inherited ones included) that declares a format or money:
+  `UsageEventDetailDTOFieldFormats.costMicros` is `{ format: "money", money: { currency: "USD", scale: 6 } }`,
+  so a cost is drawn with `moneyText(UsageEventDetailDTOFieldFormats.costMicros.money, micros, locale)`
+  and never with a hand `{ currency, scale }`. The other formats carry `format` alone (`credits`,
+  `signedCredits`, `excerpt`, `bytes`, `duration`, `code`, `secret`). A type with no such field has
+  no table.
+
+A hand tone map or money spec for a value one of these tables already carries is the drift they
+exist to remove; a dashboard that disagrees with the list screen's badge colours is the symptom.
+
 ## The app boot the framework supplies
 
 An app's `main.tsx`, `app/index.tsx` and `polyfills.ts` are written by `simplix init` and wire
