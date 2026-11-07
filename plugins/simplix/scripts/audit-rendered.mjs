@@ -2897,7 +2897,15 @@ const textContrastBelowMinimum = {
         if (!o.contrastCheckIcons) continue;
         const r = el.getBoundingClientRect();
         if (r.width > o.contrastIconMaxPx || r.height > o.contrastIconMaxPx || !visible(el) || clippedAway(el)) continue;
-        const s = getComputedStyle(el);
+        // The paint is read off the first shape that paints, never off the root alone: a mark whose
+        // shapes each carry their own fill (`<path fill="var(--accent)">`) leaves the root's inherited
+        // fill at black, and the root's colour is then not on the screen.
+        const paints = (node) => {
+          const cs = getComputedStyle(node);
+          return (cs.stroke !== "none" && parseFloat(cs.strokeWidth) > 0) || cs.fill !== "none";
+        };
+        const shape = [...el.querySelectorAll("path, rect, circle, ellipse, polygon, polyline, line, text, use")].find(paints);
+        const s = getComputedStyle(shape ?? el);
         const stroked = s.stroke !== "none" && parseFloat(s.strokeWidth) > 0;
         const fill = stroked ? s.stroke : s.fill !== "none" ? s.fill : null;
         if (fill) judge(el, "icon", fill, "", o.contrastMinIcon);
@@ -4229,6 +4237,10 @@ const FIXTURES = {
         a.current{background:#ddf1ee;color:#075c57}</style>
         <nav><a>Overview</a><a>People</a><a class=current>Users</a><a>Billing</a></nav>`,
       // An icon in the same pair: a muted stroke on the dark ground, the label beside it fine.
+      // The same mark with a shape painted near the ground: the shape's own fill is judged.
+      "a filled mark on a dark ground, its shape painted near the ground":
+        `<style>body{margin:0;background:#142024;--accent:#1d2c31}</style>
+        <div><svg width=32 height=32 viewBox="0 0 32 32" aria-hidden=true><path fill="var(--accent)" d="M6 4H26V22H6z" /></svg></div>`,
       "a muted icon on a dark column beside a readable label":
         `<style>body{margin:0;font:14px sans-serif}nav{width:240px;padding:8px;background:#14252a;color:#7ef0e0}
         a{display:flex;gap:8px;align-items:center}svg{color:#566765}</style>
@@ -4266,6 +4278,11 @@ const FIXTURES = {
         <div class=hero>Welcome back</div>`,
       "ordinary ink on white":
         `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}</style><p>Account lifecycle</p>`,
+      // A mark whose shapes carry their own fill on a dark ground: the root's inherited fill is black,
+      // and what the screen shows is the shapes' light accent.
+      "a filled mark on a dark ground, its shapes painting their own colour":
+        `<style>body{margin:0;background:#142024;--accent:#33d6c4}</style>
+        <div><svg width=32 height=32 viewBox="0 0 32 32" aria-hidden=true><path fill="var(--accent)" d="M6 4H26V22H6z" /><rect fill="#142024" x=9 y=11 width=2 height=4 /></svg></div>`,
       // A tooltip's arrow is painted in the bubble's own colour and hangs below the bubble, over the
       // page: its ground is the page, not the bubble that holds it in the markup.
       "a tooltip arrow hanging below its bubble":
