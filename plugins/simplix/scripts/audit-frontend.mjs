@@ -7768,7 +7768,9 @@ return (
       // Only a failure branch counts. A pending branch draws a skeleton and then falls into the
       // same empty state, so `isPending` protects nothing here - and matching it file-wide let a
       // mutation's own pending flag silence the rule for every read in the file.
-      const HANDLES = /isError|isLoadingError|\.error\b|QueryFallback|ErrorState/;
+      // The site kit's `SiteRead` draws the failure before the empty sentence, so handing a read to it
+      // is a failure branch the file does not spell out.
+      const HANDLES = /isError|isLoadingError|\.error\b|QueryFallback|ErrorState|<SiteRead\b/;
       if (HANDLES.test(c)) {
         return [];
       }
@@ -7797,6 +7799,12 @@ if (rows.length === 0) {
 
 return <AreaRows rows={rows} />;`,
       miss: [
+        {
+          note: "a read handed to the site kit's SiteRead, which draws the failure first",
+          source: `const read = useListMyReceipts(params);
+const rows = read.data?.content ?? [];
+return <SiteRead read={read} failed={t("readFailed")}>{() => <ReceiptRows rows={rows} />}</SiteRead>;`,
+        },
         {
           note: "a widget that draws what it was given and claims no emptiness says nothing false when it gets nothing",
           source: `const areas = useListAreas({ siteId });
