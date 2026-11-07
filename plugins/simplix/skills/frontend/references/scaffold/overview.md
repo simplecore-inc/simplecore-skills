@@ -178,6 +178,14 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   <path...>` must read `merge current`; that line is not independent proof (an adoption makes the render the base), so
   also look for lines of the new render that are absent from the final file.
 
+- **After `simplix generated --all`, read the diff of the files a screen registers itself in, before anything is committed:**
+  the admin menu (`@simplix-menu` anchor), the permission subjects, the menu labels in `common` catalogs and the board's
+  menu. A regeneration appends an entry for every scaffolded screen whose entry the project keyed differently (a screen
+  the menu already lists as `positions` came back as `jobPositions`, a duplicate row, and every entity as a generic
+  `FileTextIcon` row), and the board's mirror of those labels carries the same keys. Revert those files, run the board's
+  catalog mirror again, and run the console menu check. Match by route before appending is a CLI change (see the defect
+  batch of the project that found it).
+
 ## The commands beside the numbered steps
 
 Screen work uses more of the CLI than the four generators of the steps below. Each entry says what the command does
