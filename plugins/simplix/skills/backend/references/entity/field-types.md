@@ -15,6 +15,7 @@ All field-type patterns for SimpliX JPA entities.
 - [Encrypted Fields (PII)](#encrypted-fields-pii)
 - [Date/Time Fields](#datetime-fields)
 - [Numeric Fields](#numeric-fields)
+- [Value Formats](#value-formats)
 - [Search Index Field](#search-index-field)
 - [Sort Order Field](#sort-order-field)
 - [Field Annotations Summary](#field-annotations-summary)
@@ -172,6 +173,13 @@ private ContentStatus status = ContentStatus.DRAFT;
 
 A status badge reads its colour from the contract: put `@Tone(ToneKind.DANGER)` on the enum
 constant itself (`@Tone(ToneKind.DANGER) SUSPENDED`). A constant without it is neutral.
+`ToneKind` is the frontend status tone vocabulary: `NEUTRAL`, `INFO`, `SUCCESS`, `WARNING`,
+`DANGER`, `PENDING` (waiting to start) and `PROCESSING` (running now).
+
+Every enum a list badge, a figure tile or a detail header colours carries its tones here, and the
+screens read them from Meta. A tone map typed into a screen is a second source that drifts: the
+same `FAILED` drawn red on a tile and neutral in the row it counts. Where two screens disagree, the
+list's badge is the one to keep.
 
 ### LabeledEnum Interface
 
@@ -613,6 +621,43 @@ private Long sortOrder = 0L;
 @Column(name = "price", precision = 19, scale = 4)
 private BigDecimal price;
 ```
+
+---
+
+## Value Formats
+
+A number or string whose name says what it holds also says how a screen draws it, and SimpliX Meta
+publishes that as the field's `format`. Declare it on the entity field so every DTO mapped to the
+column inherits it; declare it on the DTO field for a derived value with no column, or where the
+DTO container is not `<Entity>DTOs` (a self-service or app DTO), since only that container shape
+reaches the entity. A DTO field's own declaration wins over its column's, and a field carrying two
+of these fails the Meta build naming it.
+
+| Annotation | `format` | Holds |
+| --- | --- | --- |
+| `@MoneyValue(currency = "USD", scale = 6)` | `money` (+ `money: {currency, scale}`) | an amount in the currency's smallest stored unit; one fixed currency |
+| `@CreditValue` | `credits` | a credit amount, unsigned |
+| `@CreditValue(signed = true)` | `signedCredits` | a ledger amount: positive credit, negative debit |
+| `@ExcerptValue` | `excerpt` | machine text drawn whole and copyable: an error message, stack trace, log tail, idempotency key, hash, storage path |
+| `@BytesValue` | `bytes` | a size in bytes |
+| `@DurationValue` | `duration` | a length of time in milliseconds |
+| `@CodeValue` | `code` | a code read character by character (role code, provider id) |
+
+```java
+@Column(name = "cost_micros", nullable = false)
+@MoneyValue(currency = "USD", scale = 6)
+private Long costMicros;
+
+@Column(name = "amount", nullable = false)
+@CreditValue(signed = true)
+private Long amount;
+```
+
+A price whose currency another column names (won or US cents by the row) takes no `@MoneyValue`:
+one fixed currency cannot describe it. Without a format the generated screen draws a bare number
+or a cut-off string, and every screen that cared retypes the kind by hand. Keep the format in a
+project test that reads the built Meta document and fails a field whose name promises a format it
+does not publish (`*Micros` without USD money, a credit amount without `credits`, `*Bytes`, `*Ms`).
 
 ---
 
