@@ -1218,7 +1218,22 @@ So a create/update form does not carry the state field, and the DTO's value for 
 record being edited. Where the state genuinely has to be set at creation time, the create form may
 carry it and the edit form still may not.
 
-Enforcement: review - which field is a record's state, and whether an action also moves it, is a fact about the entity.
+**Which field this is is stated once, in SimpliX Meta, as `verbOnly: true` on the field** (the
+backend's annotation; any of the entity's DTOs may carry it, and it counts by name on all of them).
+The scaffold then flags the field `verbOnly`, leaves it out of `formFields` (the form and its story
+panel alike), and hands the form template `verbOnlyCreateDefaults`: the create sends the field's Meta
+`defaultValue`, the edit sends the stored value back from the edit read. A field the create body
+requires with no `defaultValue` is refused at scaffold time. The list and the detail still draw it.
+Never filter the field out in a screen by hand; that is the shape this replaces.
+
+**The verb itself never moves the value through the record's update.** The server keeps a `verbOnly`
+value as stored on the update, so a switch that reads the edit DTO and PUTs it back with the new
+value reports success and changes nothing. The verb calls its own endpoint or the batch update
+(`{ <entity>Ids: [id], <field>: next }`).
+
+Enforcement: `simplix check-screen` refuses a form whose field table draws a `verbOnly` field, and a
+form that neither draws nor sends one the create body requires. Which field is a record's state is
+still a fact about the entity, decided in the backend.
 
 ## #75 A field the DTO accepts as absent can be returned to absent
 

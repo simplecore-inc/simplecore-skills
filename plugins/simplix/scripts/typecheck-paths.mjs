@@ -24,6 +24,12 @@ if (!packageArg) {
 }
 const pkg = path.resolve(packageArg);
 const ts = createRequire(path.join(pkg, "package.json"))("typescript");
+// TypeScript 7 (the native compiler) ships no JavaScript compiler API, so there is no program to ask
+// per file; `tsc --noEmit -p <packageDir>` is the check there.
+if (!ts.sys || typeof ts.findConfigFile !== "function") {
+  console.error(`typescript ${ts.version ?? "?"} resolved from ${pkg} has no compiler API; run \`tsc --noEmit -p ${packageArg}\` instead`);
+  process.exit(2);
+}
 const prefixes = pathArgs.map((one) => path.resolve(one));
 const configPath = ts.findConfigFile(pkg, ts.sys.fileExists, "tsconfig.json");
 if (!configPath) {
