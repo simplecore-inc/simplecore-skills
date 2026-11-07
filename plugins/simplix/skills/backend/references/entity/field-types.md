@@ -135,6 +135,38 @@ Every initialised field on an entity carries `@Builder.Default`: the entity clas
 each value of a flag its badge tone, and reaches every DTO field mapped to that column. On a DTO
 field it covers a derived flag with no column, and wins over the entity's.
 
+### A value only a verb moves: `@VerbOnly`
+
+A field whose value moves only through a verb of its own (enable and disable, publish and
+withdraw), or that the installation decides and nobody edits, carries `@VerbOnly` on the entity
+field, beside its `@Builder.Default`:
+
+```java
+@Column(name = "enabled", nullable = false)
+@Builder.Default
+@VerbOnly
+private Boolean enabled = true;
+```
+
+- **Meta**: every DTO field mapped to it publishes `verbOnly: true` (Search, Create, Update, List,
+  Detail, BatchUpdate), and the entity default as `defaultValue`. The frontend leaves the field out
+  of its forms and offers the verb instead (frontend invariant #74).
+- **Server**: the auto-configured `ModelMapper` never copies a request onto a `@VerbOnly` entity
+  field, so a create starts at the entity default and an update keeps the stored value whatever the
+  body carries. The verb writes it through the setter: the batch update (`if (dto.getX() != null)
+  entity.setX(...)`) or a dedicated endpoint. The Create and Update DTOs may keep the field, so a
+  client that echoes the record back is not refused.
+- **No request DTO requires it**: `@NotNull`, `@NotBlank` or `@NotEmpty` on a `@VerbOnly` field
+  fails the Meta build naming the field. Set `required: false` on it in `.simplix/entity/*.yml`, or a
+  regeneration puts the `@NotNull` back.
+- **A value with no verb** (the installation decides it) also leaves the batch update: drop it from
+  the yml `views` `batchUpdate` and trim the batch endpoint when nothing else is left in it, since a
+  write that changes nothing is a stub.
+- **A screen that moved the value through the record's update stops working silently** once the
+  annotation lands: the update answers 200 and keeps the stored value. Before declaring a field
+  `@VerbOnly`, grep the frontend for the field in update bodies and move those callers to the verb
+  in the same change.
+
 ### Common Boolean Fields
 
 ```java
@@ -384,11 +416,15 @@ SimpliX Meta publishes each entity's display name and plural from its label bund
 defines both keys, the plural on its own line:
 
 ```properties
-entities.UserRole=User Role
-entities.UserRole._plural=User Roles
+entities.UserRole=User role
+entities.UserRole._plural=User roles
 ```
 
 A locale with no grammatical plural repeats the name (`entities.UserRole._plural=사용자 역할`).
+English entity and field labels (`entities.*`, `field.*`) are sentence case: "Sent at", never
+"Sent At". Only the first word of a sentence, an acronym (ID, IP, URL) and a proper noun keep a
+capital. A project holds this with a test that reads every base bundle it owns and lists the
+title-cased words outside a proper-noun list, proven on "Sent At" (hit) and "IP address" (miss).
 Templates draw empty-state, not-found and tile copy from them. The audit's
 `entity-bundle-without-plural` fails a bundle with `entities.<Entity>=` and no `._plural`.
 `entities.<Entity>._description` is the page's one-sentence description, published as the
