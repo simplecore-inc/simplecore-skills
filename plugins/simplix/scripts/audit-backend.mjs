@@ -2766,6 +2766,57 @@ public class Thing {
     },
   },
   {
+    id: "search-narrowed-by-identifier-list",
+    invariant: "#15③ (paged searchable lists)",
+    level: "review",
+    desc: "A search narrowed by an identifier list the code builds (`<field>.in` from String.join, or an IN condition over a collection) - the searchable layer refuses a collection over 1000 values (SearchRequestLimits.MAX_IN_VALUES) and answers the request as an invalid search, so a filter resolved to the matching rows' ids stops working the day it matches 1000 rows. Express the filter as conditions on entity columns (an OR group of AND groups for a compound state), or as a read-only @Formula column the condition names (mark it @NotAudited on an audited entity and @JsonIgnore when it is search only). A list bounded by what an operator typed (a grant's named targets) is the exception; say so where it is built",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c) => lineHits(stripComments(c),
+      /\.in"\s*,\s*String\.join\(|SearchOperator\.IN\s*,\s*new\s+(?:ArrayList|LinkedHashSet|HashSet)<>\(/),
+    samples: {
+      file: "modules/admin/user/src/main/java/app/web/admin/user/service/MemberDerivedFilters.java",
+      broken: `@Service
+public class MemberDerivedFilters {
+    public Map<String, String> narrow(Map<String, String> params) {
+        List<String> ids = entityManager.createQuery("SELECT m.memberId FROM Member m WHERE m.enabled = true", String.class).getResultList();
+        params.put("memberId" + ".in", String.join(",", ids));
+        return params;
+    }
+}`,
+      fixed: `@Service
+public class MemberDerivedFilters {
+    public <D> SearchCondition<D> narrow(SearchCondition<D> condition, List<SearchCondition.Node> kept) {
+        kept.add(new SearchCondition.Condition(LogicalOperator.AND, "enabled", SearchOperator.EQUALS, true, null, "enabled"));
+        return new SearchCondition<>(kept, condition.getPage(), condition.getSize());
+    }
+}`,
+      hit: [
+        {
+          note: "an IN condition over a collection appended to a posted search",
+          source: `@Service
+public class MemberScope {
+    public <D> SearchCondition<D> force(SearchCondition<D> condition, Set<String> visible) {
+        List<SearchCondition.Node> nodes = new ArrayList<>(condition.getNodes());
+        nodes.add(new SearchCondition.Condition(LogicalOperator.AND, "memberId", SearchOperator.IN, new ArrayList<>(visible), null, "memberId"));
+        return new SearchCondition<>(nodes, condition.getPage(), condition.getSize());
+    }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "an IN condition over values the client sent, not a list the code resolved",
+          source: `@Service
+public class MemberSearch {
+    public SearchCondition<MemberSearchDTO> byGrades(String grades) {
+        return new SearchCondition<>(List.of(new SearchCondition.Condition(LogicalOperator.AND, "grade", SearchOperator.IN, List.of(grades.split(",")), null, "grade")), 0, 20);
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "field-injection-in-web",
     invariant: "#8",
     level: "error",

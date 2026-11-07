@@ -139,6 +139,25 @@ verification requests above, run by hand against a started server, prove the ser
 
 ---
 
+### A filter no single field carries is written as conditions, never as an identifier list
+
+A filter that is a compound state over several columns (an account's standing), or that reads an
+element collection Hibernate will not put in a condition (a role id set), is rewritten into
+conditions the search applies in SQL: an `OR` group of `AND` groups over the entity's own columns,
+or a containment condition on a read-only `@Formula` column (for a role set, every id wrapped in
+commas so `,<id>,` matches exactly). `SearchCondition.Condition` takes the entity path as its last
+argument and the predicate builder reads that, so the column needs no SearchDTO field. Mark such a
+formula `@NotAudited` on an audited entity (Envers cannot map a formula and the context fails to
+start) and `@JsonIgnore` when it exists only for the search, or it joins every response and the Meta
+type of every DTO that embeds the entity.
+
+Resolving the filter to the matching rows' identifiers and handing them back as `<id>.in` works
+until a filter matches 1000 rows: the searchable layer refuses a larger collection
+(`SearchRequestLimits.MAX_IN_VALUES`) and answers the request as an invalid search. The audit's
+`search-narrowed-by-identifier-list` lists every place a search is narrowed that way; a list bounded
+by what an operator typed (the targets a scope grant names) is the exception, stated where it is
+built.
+
 ## SearchOperator Reference
 
 ### Comparison Operators
