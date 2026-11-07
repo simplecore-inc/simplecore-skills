@@ -575,7 +575,12 @@ function useTranslation(namespace: string): {
 function useLocale(): LocaleCode;
 
 function useI18n(): II18nAdapter | null;
+
+// A count drawn outside a catalog sentence: grouped by the reader's locale; undefined in, undefined out.
+function useGroupedFigure(): (figure: number | undefined) => string | undefined;
 ```
+
+A figure is drawn through `useGroupedFigure` (or a `{{n, number}}` placeholder in a catalog sentence), never as a bare template string, so `3,820` reads `3.820` for a German reader and a Korean count is grouped like every other count on the screen. A test that mocks `@simplix-react/i18n/react` by hand breaks the moment a component starts using a new export of that module: every hand mock in the repository gets the new export in the same change (`rg "vi.mock\(\"@simplix-react/i18n/react\""` lists them).
 
 ### Type Constants
 
