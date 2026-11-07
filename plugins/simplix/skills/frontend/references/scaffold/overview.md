@@ -168,10 +168,15 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   point by counting `simplix generated` conflicts for each candidate (one change moved the lists from 22 conflicts to 17
   that way), and read the preview (`simplix generated`, read-only) before the regeneration, not after. A file laid down
   once and not regenerated (a widget folder's `index.ts`) needs the new export added by hand.
-- **A conflict is resolved in the file by writing the merged text, never by letting markers into the tree.** The
-  report prints the merge with its markers in its output; the dev servers read the files live and a marker blanks the
-  app. Resolve, then `simplix generated --rebase -y --adopt <path...>`, then run `simplix generated <path...>` and read
-  `merge current`.
+- **A conflict is resolved from the full render, in a scratch directory, never with markers in the tree.** The report
+  prints only the conflicting hunks, so the clean template hunks around them are invisible and a resolution written from
+  the output alone loses them. The recipe: run `simplix generated --rebase --adopt <path>` without `-y` (it prints the
+  render-to-file diff and records nothing), reverse-apply that diff onto a copy of the file to get the render, run
+  `git merge-file -p <copy of the file> <the base under .simplix/generated> <render>` into a scratch file, resolve the
+  markers there, and copy the result in after a `cmp` shows the tree file is unchanged. The dev servers read the files
+  live and a marker blanks the app. Then `simplix generated --rebase -y --adopt <path...>`, and `simplix generated
+  <path...>` must read `merge current`; that line is not independent proof (an adoption makes the render the base), so
+  also look for lines of the new render that are absent from the final file.
 
 ## The commands beside the numbered steps
 
