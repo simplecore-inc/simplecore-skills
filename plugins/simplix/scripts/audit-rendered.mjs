@@ -2662,11 +2662,25 @@ const routedPageHasOneHeadingAndATitleThatFollowsIt = {
     // The words a reader reads: a line break between two words (`<br>`) is a space there, and it is
     // nothing in `textContent`.
     const readOf = (el) => el.innerText || el.textContent || "";
+    // An open dialog hides the page behind it from the accessibility tree: a modal library marks
+    // each sibling along the path to the dialog `aria-hidden` or `inert`. That is the state of the
+    // moment, not a property of the page, so the page's heading is judged as the page stands
+    // without it. A hiding mark counts as the modal's when it sits on an element that is a
+    // sibling along the dialog's own path (its parent holds the dialog and it does not); a mark the
+    // page authored on a decoration inside its own content is deeper and still hides what it holds.
+    const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog[open]')].filter(
+      (d) => d.getClientRects().length > 0 && getComputedStyle(d).visibility !== "hidden",
+    );
+    const hiddenByModal = (el) => dialogs.some((d) => el.parentElement?.contains(d) && !el.contains(d));
     // In the accessibility tree: laid out (a clipped one-pixel heading is), not hidden, not aria-hidden.
-    const exposed = (el) =>
-      el.getClientRects().length > 0
-      && getComputedStyle(el).visibility !== "hidden"
-      && el.closest('[aria-hidden="true"], [hidden], [inert]') === null;
+    const exposed = (el) => {
+      if (el.getClientRects().length === 0 || getComputedStyle(el).visibility === "hidden") return false;
+      for (let node = el; node; node = node.parentElement) {
+        const marked = node.matches('[aria-hidden="true"], [hidden], [inert]');
+        if (marked && !(node.matches('[aria-hidden="true"], [inert]') && !node.hasAttribute("hidden") && hiddenByModal(node))) return false;
+      }
+      return true;
+    };
     const headings = [...document.querySelectorAll(o.headingSelector)].filter(exposed);
     if (headings.length === 0) {
       findings.push("the page has no heading of level 1: a reader who moves by headings, and the title that follows the heading, have nothing to name the page by");
@@ -3267,6 +3281,11 @@ const FIXTURES = {
         `<style>body{margin:0;font:14px sans-serif}</style><h1>Pricing</h1>`,
       "a heading of level 1 with no text":
         `<title>Pricing - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1></h1><p>Plans</p>`,
+      // The drawer must not hide a real defect: the page behind it still has no h1.
+      "a modal drawer open over a page with no heading of level 1":
+        `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div aria-hidden="true"><h2>Users</h2><p>Accounts</p></div><div role="dialog" aria-label="Detail"><h2 class=sr>Detail</h2><p>Record</p></div>`,
+      "a modal drawer open over a page with two headings of level 1":
+        `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}</style><div aria-hidden="true"><h1>Users</h1><h1>Accounts</h1></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
     },
     quiet: {
       "a heading broken over two lines by a line break":
@@ -3285,6 +3304,11 @@ const FIXTURES = {
         `<html lang=ko><title>가격 안내 - 제품</title><style>body{margin:0;font:14px sans-serif}</style><h1>가격 안내</h1>`,
       "a title that differs only in case and punctuation":
         `<title>pricing: plans &amp; packs | Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Pricing - Plans &amp; Packs</h1>`,
+      // A modal drawer marks the page behind it aria-hidden; the page's own h1 is still the page's.
+      "a modal drawer open over a page with one heading of level 1":
+        `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div aria-hidden="true"><h1>Users</h1><p>Accounts</p></div><div role="dialog" aria-label="Detail"><h2 class=sr>Detail</h2><p>Record</p></div>`,
+      "a page whose own heading of level 1 is marked hidden only by the modal, with a deeper authored decoration inside it":
+        `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}</style><div aria-hidden="true"><main><h1>Users</h1><div aria-hidden="true"><h1>Decoration</h1></div></main></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
     },
   },
   paintNamesAnUndefinedVariable: {

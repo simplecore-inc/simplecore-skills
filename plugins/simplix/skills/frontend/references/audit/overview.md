@@ -72,7 +72,9 @@ is a check that reached nothing, and it prints the same exit status as a clean s
   `routedPageHasOneHeadingAndATitleThatFollowsIt` reads the painted page: exactly one non-empty h1 in the
   accessibility tree (a visually hidden one counts), and a title that contains the heading's words or whose leading
   segment, before a separator of `titleSeparators`, is a name the heading carries. A title of only the product name
-  follows nothing.
+  follows nothing. An open dialog or drawer does not hide the page behind it from this check: the `aria-hidden` or
+  `inert` mark a modal library puts on the page's siblings is the state of the moment, so a drawer read is judged by
+  the page's own heading like a list read (a page with no h1 behind a drawer is still flagged).
 - **A page drawn by another kit is read under that kit's own audit options, never under the console's.** The message
   checks find a message by its role or by the band it is painted as, which also reads a live region or a tinted row
   of a settings list on a page whose kit draws its notices with a part of its own. The project's options file for
