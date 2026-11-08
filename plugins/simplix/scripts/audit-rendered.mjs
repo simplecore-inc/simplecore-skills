@@ -3220,10 +3220,39 @@ function closeSession(session) {
   }
 }
 
+/**
+ * How many finite animations are running on the page, as one expression for any driver's evaluate
+ * call. A looping spinner (iteration count infinity) is excluded: it never ends, so waiting for it
+ * would wait for the whole budget on every page that draws one.
+ */
+export const MOVING_ANIMATIONS = `document.getAnimations().filter((a) => a.playState === "running" && Number.isFinite(a.effect?.getComputedTiming().endTime)).length`;
+
+/**
+ * One reading, carrying `moving`: the finite animations still running when it was taken. The count
+ * is read in the same evaluation as the check, so the two describe one instant.
+ */
 function evaluateOnce(session, check, options) {
-  const parsed = JSON.parse(agentBrowser(session, ["eval", snippet(check, options)]));
+  const expression = `(() => { const reading = ${snippet(check, options)}; reading.moving = ${MOVING_ANIMATIONS}; return reading; })()`;
+  const parsed = JSON.parse(agentBrowser(session, ["eval", expression]));
   if (!parsed.success) throw new Error(parsed.error || "eval failed");
   return parsed.data.result;
+}
+
+/**
+ * Whether a reading is at rest: it compared something, it compared what the reading before it
+ * did, and no finite animation was running.
+ *
+ * <p><b>Two equal readings are not enough.</b> A panel that opens through a delayed transition
+ * stands at its border width for the length of the delay and reads the same twice in a row; a
+ * count that does not change while the geometry is about to is satisfied by it too. Nothing running
+ * is the half that says the page has stopped moving.
+ *
+ * @param {{ compared: number, moving?: number }} reading the reading just taken
+ * @param {number | null} previousCompared what the reading before it compared, or null for the first
+ * @returns {boolean} whether the loop may stop
+ */
+export function isAtRest(reading, previousCompared) {
+  return reading.compared > 0 && previousCompared !== null && reading.compared === previousCompared && !(reading.moving > 0);
 }
 
 /**
@@ -3235,8 +3264,9 @@ function evaluateOnce(session, check, options) {
  * defect this file exists to catch lives in the state that arrives a few hundred milliseconds
  * later, so the measurement waits for it.
  *
- * <p><b>Settled means two consecutive readings compared the same number of things</b>, not a fixed
- * sleep: a slow read costs the whole budget and a fast one costs one interval. The last reading is
+ * <p><b>Settled means two consecutive readings compared the same number of things and no finite
+ * animation was running</b>, not a fixed sleep: a slow read costs the whole budget and a fast one
+ * costs one interval (see `isAtRest`). The last reading is
  * the one reported even when nothing ever settles, because a page that never stops changing is a
  * finding a reader has to see rather than an error that hides it.
  */
@@ -3246,7 +3276,7 @@ function evaluate(session, url, check, options) {
   let previous = null;
   let result = evaluateOnce(session, check, options);
   for (let waited = 0; waited < options.settleMs; waited += options.settleIntervalMs) {
-    if (result.compared > 0 && previous !== null && result.compared === previous) break;
+    if (isAtRest(result, previous)) break;
     previous = result.compared;
     pause(options.settleIntervalMs);
     result = evaluateOnce(session, check, options);
@@ -4933,6 +4963,68 @@ function retryRows() {
 }
 
 /**
+ * Rows proving the rest rule with no browser: equal counts alone do not settle a reading, and a
+ * running finite animation holds it back whatever the counts say.
+ */
+function restRows() {
+  const cases = [
+    ["two equal counts with an animation still running are not at rest", { compared: 8, moving: 18 }, 8, false],
+    ["two equal counts with nothing running are at rest", { compared: 8, moving: 0 }, 8, true],
+    ["a reading from a driver that reports no animation count follows the counts alone", { compared: 8 }, 8, true],
+    ["the first reading is never at rest", { compared: 8, moving: 0 }, null, false],
+    ["counts that differ are not at rest even when nothing runs", { compared: 9, moving: 0 }, 8, false],
+    ["a reading that compared nothing is not at rest", { compared: 0, moving: 0 }, 0, false],
+  ];
+  return cases.map(([name, reading, previous, expected]) => [
+    "selftest · a reading is at rest",
+    name,
+    `isAtRest(${JSON.stringify(reading)}, ${previous}) = ${isAtRest(reading, previous)}`,
+    isAtRest(reading, previous) === expected,
+  ]);
+}
+
+/**
+ * Rows proving the rest rule against a painted page: the settle loop waits out a transition that
+ * starts late, and does not wait for an animation that never ends.
+ *
+ * <p>The first page stands at 2 px for a second (the delay of its transition) and then opens to
+ * 300 px, the shape of a side panel held at its border width by a delayed grid transition: two
+ * readings taken inside the delay are equal, so a loop that compared counts alone returned the
+ * 2 px reading as the page. The second page draws a looping spinner, which must not hold the loop
+ * for its whole budget.
+ */
+function restBrowserRows(session, options, dir) {
+  const reading = {
+    id: "restFixture",
+    title: "the width of the box and the animations running",
+    grade: "review",
+    page: () => ({ compared: 1, findings: [], width: document.querySelector(".p").offsetWidth }),
+  };
+  const pages = {
+    "a box that opens through a transition delayed past the first two readings": {
+      html: `<style>body{margin:0}.p{width:2px;height:20px;background:#333;transition:width 200ms 1100ms}</style><div class=p></div>
+<script>requestAnimationFrame(() => requestAnimationFrame(() => { document.querySelector(".p").style.width = "300px"; }))</script>`,
+      holds: (out) => out.width === 300 && out.moving === 0,
+    },
+    "a page with a spinner that loops for ever": {
+      html: `<style>body{margin:0}@keyframes spin{to{transform:rotate(360deg)}}.p{width:10px;height:10px;animation:spin 1s linear infinite}</style><div class=p></div>`,
+      holds: (out) => out.moving === 0 && out.width === 10,
+    },
+  };
+  return Object.entries(pages).map(([name, page], i) => {
+    const file = path.join(dir, `rest-${i}.html`);
+    fs.writeFileSync(file, `<!doctype html><meta charset=utf-8>${page.html}`);
+    const out = evaluate(session, `file://${file}`, reading, options);
+    return [
+      "selftest · a reading is at rest",
+      name,
+      `width ${out.width}, ${out.moving} finite animation(s) running when the reading was taken`,
+      page.holds(out),
+    ];
+  });
+}
+
+/**
  * Both directions, against generated fixtures.
  *
  * <p>`selected` narrows to `--check <id>`, because iterating on one check should not mean sitting
@@ -4975,11 +5067,14 @@ function selfTest(session, options, selected = checks) {
         }
       }
     }
+    // The rest rule is a property of the loop and not of one check, so its pages run with every
+    // self-test, narrowed or not.
+    rows.push(...restBrowserRows(session, options, dir));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-  // The retry's own cases need no browser, so they run with every self-test, narrowed or not.
-  rows.push(...retryRows());
+  // The retry's and the rest rule's own cases need no browser, so they run with every self-test, narrowed or not.
+  rows.push(...retryRows(), ...restRows());
 
   let failed = 0;
   for (const [id, name, detail, ok] of rows) {
@@ -5118,6 +5213,7 @@ function run(session, options, selected) {
     console.log(
       `${marker} ${check.id} - ${check.title}\n   compared ${out.compared}` +
         (reachedNothing ? " - reached nothing on this screen, so it proves nothing" : "") +
+        (out.moving > 0 ? ` - read while ${out.moving} finite animation(s) were still running, so the geometry may not be final` : "") +
         (out.sampled ? ` (sampled the first ${options.maxLeaves})` : ""),
     );
     for (const f of out.findings) console.log(`   ${f}`);

@@ -120,6 +120,49 @@ function stringifiedPathsAreKeyTested(line) {
   return paths.length > 0 && paths.every((path) => line.includes(`${path} in `));
 }
 
+/**
+ * The text span of the outermost object literal around an index: the literal that holds it, then each
+ * literal that holds that one (a conditional spread inside a style object, the braces of a JSX
+ * attribute around it), stopping at a function body or a block.
+ *
+ * @param content a source file
+ * @param at an index inside the innermost literal
+ * @returns the start and end of the outermost span; the whole file when no brace encloses the index
+ */
+function outermostObjectAround(content, at) {
+  const enclosing = (from) => {
+    let depth = 0;
+    for (let i = from - 1; i >= 0; i--) {
+      const ch = content[i];
+      if (ch === "}") depth++;
+      else if (ch === "{") {
+        if (depth === 0) return i;
+        depth--;
+      }
+    }
+    return -1;
+  };
+  let open = enclosing(at);
+  if (open < 0) return [0, content.length];
+  for (let outer = enclosing(open); outer >= 0; outer = enclosing(open)) {
+    // A literal or a JSX attribute's braces follow `=`, `:`, `(`, `,`, `?`, `[`, `{`, `...` or `return`;
+    // a function body or a block follows `)`, `=>` or a keyword.
+    const before = content.slice(Math.max(0, outer - 24), outer).trimEnd();
+    if (!/(?:[=:(,?\[{]|\.\.\.|\breturn)$/.test(before)) break;
+    open = outer;
+  }
+  let depth = 0;
+  let close = content.length;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === "{") depth++;
+    else if (content[i] === "}" && --depth === 0) {
+      close = i + 1;
+      break;
+    }
+  }
+  return [open, close];
+}
+
 function lineHits(content, re, filter) {
   const hits = [];
   const lines = content.split("\n");
@@ -1960,6 +2003,43 @@ const save = { runningLabel: t("actions.unknown") };`,
       miss: [
         { note: "a digit count taken from the number itself, in the typeface of the digits", source: "const style = { width: `calc(${String(max).length}ch + 2rem)` };" },
         { note: "a count of characters in ch with no calc around it is the field's own typeface", source: "const style = { width: `${digits}ch` };" },
+      ],
+    },
+  },
+  {
+    id: "content-box-without-height",
+    invariant: "audit: control width",
+    level: "review",
+    desc: "A style that sets `boxSizing: \"content-box\"` (or `box-sizing: content-box`) with no `height` in the same style object. A field sized in `ch` takes `content-box` so the design's padding stays outside the digit count, but the same box model puts the design's vertical padding outside the field's height too: a design that gives every input of a form its own height (`[&_input]:h-9`) then overflows a fixed-height box and clips the digits against its lower border. Write `height: \"auto\"` beside it so the box's own height decides and the flex row stretches the field. Report level: a height given by the field's class or by the box it stands in is not visible in the style object, so a candidate is judged by reading the rendered border-box height against the box's",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) => {
+      const hits = [];
+      const lines = c.split("\n");
+      for (const m of c.matchAll(/\bboxSizing\s*:\s*["']content-box["']|\bbox-sizing\s*:\s*content-box\b/g)) {
+        const line = lineOfIndex(c, m.index);
+        if (!notCommentLine(lines[line - 1] ?? "", lines, line - 1)) continue;
+        const [from, to] = outermostObjectAround(c, m.index);
+        if (!/(?<![\w-])height\s*["']?\s*(?::|,|\})/.test(c.slice(from, to))) {
+          hits.push({ line, excerpt: (lines[line - 1] ?? "").trim().slice(0, 140) });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/<ui>/src/inputs/number-input.tsx",
+      broken: "const fieldStyle: CSSProperties = { width: `${digits}ch`, boxSizing: \"content-box\" };",
+      fixed: "const fieldStyle: CSSProperties = { height: \"auto\", width: `${digits}ch`, boxSizing: \"content-box\" };",
+      miss: [
+        {
+          note: "the height sits in the enclosing style object and the content-box in a conditional spread inside it",
+          source: `const fieldStyle: CSSProperties = {
+  height: "auto",
+  ...(digits === undefined ? null : { width: \`\${digits}ch\`, boxSizing: "content-box" }),
+  ...rest.style,
+};`,
+        },
+        { note: "the border-box default needs no height beside it", source: "const fieldStyle: CSSProperties = { width: `${digits}ch`, boxSizing: \"border-box\" };" },
+        { note: "a comment naming the property is not a style", source: "// content-box: boxSizing: \"content-box\" keeps the padding outside the count\nconst gap = 4;" },
       ],
     },
   },
@@ -4498,7 +4578,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     id: "missing-translation-key",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator - i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
+    desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator - i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors. A string handed to a helper is judged only when its first segment is a section the namespace's catalogue defines (`unit.` in `countedFigure(t, n, \"unit.areaCount\")`): a string whose first segment is no section of that catalogue names something else (a notice key, a route, a storage key) and is not read as a key",
     // An app's own screens are checked as well as a module's. Scoping this to `modules/` left every
     // hand-written app screen unread, and a deployable's error and empty-state pages are exactly
     // the screens written by hand and seen least often: two apps were printing ten raw `error.*`
@@ -4543,11 +4623,20 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
           `\\b[A-Za-z_$][\\w$]*\\(\\s*${alias}\\s*,[^)]*?"([a-zA-Z0-9_.]+\\.[a-zA-Z0-9_.]+)"`,
           "g",
         );
-        for (const pattern of [call, viaHelper]) {
+        // **A string beside the translator is not always a key of it.** `failedRecordNotice(t, failed,
+        // code, "record.detail.failed")` hands the translator over for the words it draws and a
+        // notice key for the card's dismissal memory, which no catalogue holds; reading every dotted
+        // string there as a catalogue key reported the notice key as a missing translation. A helper's
+        // string is judged only where its first segment is a section this catalogue defines, so a
+        // wrong leaf in a known section still reports and a string naming something else does not.
+        const sections = new Set([...keys].map((k) => k.split(".")[0]));
+        for (const [pattern, helper] of [[call, false], [viaHelper, true]]) {
           hits.push(
             ...lineHits(text, pattern, (line) => {
               pattern.lastIndex = 0;
-              return [...line.matchAll(pattern)].some((m) => !keys.has(m[1]) && !guardsItsOwnKey(m[1]));
+              return [...line.matchAll(pattern)].some(
+                (m) => !keys.has(m[1]) && !guardsItsOwnKey(m[1]) && (!helper || sections.has(m[1].split(".")[0])),
+              );
             }),
           );
         }
@@ -4619,6 +4708,14 @@ const line = t("screen.area.description");
 const description = line && line !== "screen.area.description" ? line : undefined;
 
 return <Header title={t("area.title")} description={description} />;`,
+          },
+          {
+            note: "a notice key handed to a helper beside the translator: its first segment is no section of the catalogue, so it names the card's dismissal memory and not a translation",
+            files: widgets,
+            source: `const { t } = useTranslation("site/widgets");
+
+const notice = failedRecordNotice(t, failed, record.errorCode, "record.detail.failed");
+return <Header title={t("area.title")} notices={[notice]} />;`,
           },
           {
             note: "the app under test owns the key while the app that sorts first does not - the owning catalogue answers, not the one directory order reaches",
@@ -11304,6 +11401,46 @@ function runSample(rule, sample) {
  */
 function selftestMechanisms() {
   const cases = [
+    {
+      name: "content-box-without-height: lineHeight, minHeight and a border-box height elsewhere do not count; a shorthand height and a JSX style do",
+      pass: () => {
+        const rule = ALL_RULES.find((r) => r.id === "content-box-without-height");
+        const run = (source) =>
+          runSample(rule, { file: "packages/<ui>/src/inputs/number-input.tsx", source, files: {} }).hits.length;
+        return (
+          run(`const s = { lineHeight: 1.2, minHeight: 20, boxSizing: "content-box" };`) === 1
+          && run(`const s = { height, boxSizing: "content-box" };`) === 0
+          && run(`const el = <input style={{ boxSizing: "content-box", width: "4ch" }} />;`) === 1
+          && run(`const el = <input style={{ boxSizing: "content-box", height: "auto" }} />;`) === 0
+          && run(`const css = "box-sizing: content-box; width: 4ch";`) === 1
+        );
+      },
+    },
+    {
+      name: "missing-translation-key: a string handed to a helper beside the translator is a key where its section exists, and is skipped where it does not",
+      pass: () => {
+        const rule = ALL_RULES.find((r) => r.id === "missing-translation-key");
+        const files = {
+          "modules/site/src/locales/widgets/ko.json": `{ "unit": { "areaCount": "구역 수" }, "area": { "title": "구역" } }\n`,
+        };
+        const run = (call) =>
+          runSample(rule, {
+            file: "modules/site/src/widgets/area/list.tsx",
+            source: `const { t } = useTranslation("site/widgets");\n\nreturn <Text>{${call}}</Text>;`,
+            files,
+          }).hits.length;
+        return (
+          // a wrong leaf in a section the catalogue defines
+          run(`countedFigure(t, rows.length, "unit.areaTotal")`) === 1
+          // the same helper with a key the catalogue defines
+          && run(`countedFigure(t, rows.length, "unit.areaCount")`) === 0
+          // a notice key: its first segment is no section of the catalogue
+          && run(`failedRecordNotice(t, failed, code, "record.detail.failed")`) === 0
+          // a key read through the translator itself is judged whatever its section
+          && run(`t("record.detail.failed")`) === 1
+        );
+      },
+    },
     {
       name: "stringifiedPathsArePlainStrings: a field the model types as a string is text",
       pass: () => stringifiedPathsArePlainStrings(`String(record.exceptionType ?? "")`, new Set(["exceptionType"])),
