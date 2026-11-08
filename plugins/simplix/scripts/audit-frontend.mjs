@@ -10250,7 +10250,11 @@ function readMetaDiffersBetweenCallersFindings() {
       // Judged only where the options are written out: marked by the meta's own name, or bare when
       // every argument is an object literal that names no constant, spread, `meta` or `options`.
       const writtenOut = (/^\s*$/.test(args) || (/^\s*\{[\s\S]*\}\s*$/.test(args) && !/\b[A-Z][A-Z0-9_]{2,}\b|\.\.\.|\bmeta\b|\boptions\b/.test(args)));
-      const table = /READ_META|suppressErrorDialog/.test(args) ? marked : writtenOut ? bare : null;
+      // A bare call that says beside itself why it keeps the dialog (a `//` comment in the lines
+      // above it naming the error dialog) is a decision, not a drift.
+      const above = content.slice(0, m.index).split("\n").slice(-5).join("\n");
+      const explained = /\/\/[^\n]*error dialog/i.test(above);
+      const table = /READ_META|suppressErrorDialog/.test(args) ? marked : writtenOut ? (explained ? null : bare) : null;
       if (!table) continue;
       if (!table.has(m[1])) table.set(m[1], []);
       table.get(m[1]).push(at);
@@ -10639,6 +10643,13 @@ const COLLECTION_RULES = [
           files: {
             "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions({ query: { meta: RECORD_READ_META } });`,
             "apps/console/src/layouts/search.tsx": `const list = useGetAllRoles();`,
+          },
+        },
+        {
+          note: "a bare call that says beside itself why it keeps the error dialog",
+          files: {
+            "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions({ query: { meta: RECORD_READ_META } });`,
+            "apps/console/src/layouts/search.tsx": `// The page draws no state for a failed read, so the console's error dialog stays the one place it is told.\nconst me = useGetAllCurrentUserPermissions();`,
           },
         },
         {
