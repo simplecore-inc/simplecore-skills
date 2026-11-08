@@ -453,6 +453,13 @@ object, so the two cannot drift. A number picked off a status count states exact
 whose condition equals a destination tab's forced params links to `?tab=` and never sets both on one field. A card head
 that opens a list by its bare address is named as a whole-list head, with its reason, in a test that reads every head.
 
+**A read whose key follows the list's request parameters keeps its previous value while the next one is read.** The sum
+tiles of a list (an aggregate read) and a count read under the list's filters have a query key built from the same
+request as the rows, so every press of a tile or filter change is a new key with no data yet, and the tile that held a
+figure draws a blank until the answer arrives. The read passes `placeholderData: (previous) => previous`, and the tile
+draws the held figure until the new one replaces it. The console kit's list template writes this on its aggregate read;
+a hand-written read of this shape writes it too. A read with fixed parameters never changes key and needs nothing.
+
 Enforcement: review - whether a count is a set the viewer must act on, and whether the screen it leads to opens on exactly that set, needs the meaning of the count and the default filter of its destination.
 
 ## #49 Always-open master-detail boards
@@ -793,6 +800,16 @@ or that swallows the refusal in a toast while it closes, takes the reader's reas
 `suppressErrorDialog` (or a `read-dialog:` comment saying why it keeps the dialog), a sub-list with no `onRowClick` (or a
 `row-record: none` comment), a forced list key from an optional chain, a dialog submit that returns nothing, and a count
 hook that hides its failure; a project adds them to its screen rules.
+
+**An action dialog with fields asks before it discards what was typed, and a held request never asks.** A dialog that
+holds input (a reason, an amount, a picked record) closes through four doors: Escape, a press outside, the close mark
+and the cancel button. Each one throws the typed values away, as it would on a record form, so a dirty dialog asks the
+same discard question the record form asks (`useUnsavedChanges({ isDirty })`, with `guardedNavigate` around the close),
+and a dialog whose values were typed back to its starting ones closes at once. While the write is held the dialog
+already refuses to close, and a second question over a running write offers a choice that does not exist, so a held
+request never asks. A refusal keeps the typed values and the next close asks again; a success closes without asking. The
+console kit's `ActionDialog` carries the guard for every dialog with fields; a hand-drawn dialog with a field takes the
+same one. A confirmation with no input has nothing to lose and asks nothing.
 
 ## #62 A screen with no list beside it still lays out in columns
 
@@ -1230,6 +1247,20 @@ draws no control on that width, and it stops being true the moment the header is
 one-line change somebody will make. A reason that rests on a defect expires when the defect is
 repaired, and it expires silently, still written down and still being copied. The durable reason is
 the one above, which never depended on the header at all.
+
+**A record's state notice becomes a card through a key defined once for the state, never one per record.** The
+detail of a record states its standing in notices (an account that is suspended, a run that failed, a voice waiting for
+consent), and each is a standing message: it is still there a minute later for as long as the record is in that state.
+The console kit's `RecordNotice` takes an optional `noticeKey`; a notice that names one is drawn through `NoticeCard`
+(the kind from the tone, the body as the hint, the action as the card's action), so the reader puts it away and brings
+it back from the header control. The key is a constant at the definition site, one per state
+(`<entity>.detail.<state>`), and is never built from the record's id: the dismissal is kept per operator on the server,
+and a per-record key adds one entry to that operator's set for every record they open. A notice with no `noticeKey`
+stays a banner, which is the form of the two transient ones a detail draws (the read that failed, the submit the server
+refused); a success tone has no card kind and stays a banner. The key is written on the notice object
+(`{ ...stateNotice(...), noticeKey: "<entity>.detail.<state>" }`), not handed to a helper that also receives the
+translator, where it reads as a catalogue key. A standing notice inside a form is a card too, and a form that opens
+in a dialog declares its card with `NoticeDeclaration` so the header control lists it while the dialog is closed.
 
 **The board does not settle it by which primitive it drew.** A board can carry three vocabularies
 for a standing sentence - a page note, a sub-caption, a message - and only the message records

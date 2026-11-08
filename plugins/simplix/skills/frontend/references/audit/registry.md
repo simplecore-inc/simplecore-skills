@@ -59,7 +59,8 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 
 - **ListDetail Dialog Height Control** - `ListDetail` dialog variant (`variant="dialog"`) supports a `dialogHeight` prop to control the dialog's height
 - **Project layout primitives (section header strip, side-panel list, selectable row, indented sub-section)** - Project-specific composition patterns that live in the project's UI package `layout` entry, not in `@simplix-react/ui`; the names are the project's own
-- **A width in `ch` sizes the digits only** - a width computed in `ch` from the length of text drawn in another font (a suffix, a unit) clips CJK; size the element holding the digits and let the rest take its own width
+- **A width in `ch` sizes the digits only** - a width computed in `ch` from the length of text drawn in another font (a suffix, a unit) clips CJK; size the element holding the digits and let the rest take its own width; a `content-box` field also sets `height: "auto"` so the box's own height decides (`content-box-without-height`)
+- **A faded glyph is measured against its ground (candidate, no rule yet)** - an `opacity` on an `svg` rule of a compiled design is checked against the glyph's ink and the ground it stands on in both schemes; the framework test `field-icon-contrast.test.ts` is the form to generalise → `registry/layout-and-chrome.md`
 - **Layout primitive variants (Stack / Grid)** - Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 overflow-y-auto">`); fixed cells
 - **AssignmentChip trailing slot** - `AssignmentChip` accepts a `trailing?: ReactNode` slot rendered between the label and the remove button. Use i
 - **Section variant convention (detail=flat / form=card)** - Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudForm.Section` uses `variant="card
@@ -99,7 +100,7 @@ Every rule of `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` is listed here,
 | Peek label and peek host | `peek-label-takes-onpeek` |
 | Row action standardization | `row-action-that-reads-as-text`, `row-action-type-fixed-under-a-varying-label`, `row-action-that-only-some-rows-draw`, `row-actions-as-nameless-column` |
 | Layout primitive variants (Stack / Grid) | `raw-layout-div`, `wrap-string-prop`, `split-row-without-a-width` |
-| A width in `ch` sizes the digits only | `typing-width-counts-characters-of-another-font` |
+| A width in `ch` sizes the digits only | `typing-width-counts-characters-of-another-font`, `content-box-without-height` |
 | A pressed control shows it | `pressed-state-without-look` |
 | A running label ends with the ellipsis character | `running-label-without-ellipsis` |
 

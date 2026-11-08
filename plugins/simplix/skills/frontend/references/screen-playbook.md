@@ -54,6 +54,11 @@ in the project's `CLAUDE.md`, never here.
   search text and its forced scope. Both are computed under the parameters the caller sends, so
   "today", "last 24 hours", "granted only" and "held above zero" are parameters the screen adds,
   never new backend figures.
+- A figure read whose key follows the list's request (the aggregate behind the sum cards, a count under the filters)
+  keeps its previous value while the next one is read (`placeholderData: (previous) => previous`; invariant #48).
+  Without it every press of a tile or change of a filter blanks the figures for the length of the read, a flash the
+  reader sees as the numbers disappearing and coming back, and a screenshot taken in that moment reads the cards as
+  empty. A status read with fixed parameters never changes key and shows no flash.
 - Act-now tiles state their tone per status value (`status.tones`); a tile takes it only above zero.
 - The time range is a slot on the list-detail page, switched on with data (`field`, presets); the
   per-slice counts come from the generated bucket read published in Meta, and the heatmap is drawn

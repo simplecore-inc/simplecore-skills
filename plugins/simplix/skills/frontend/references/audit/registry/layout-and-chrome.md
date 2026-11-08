@@ -76,7 +76,7 @@ Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 ov
 | Field | Value |
 |-------|-------|
 | **Pattern** | A typing field sized by the digits it holds (a number input with a unit suffix, a code box) |
-| **Audit** | `typing-width-counts-characters-of-another-font` (review) |
+| **Audit** | `typing-width-counts-characters-of-another-font`, `content-box-without-height` (review) |
 
 `ch` is the width of a `0` in the element's own typeface. A width written as `calc(${digits + suffix.length}ch + 2.75rem)`
 counts the characters of a suffix drawn in a smaller proportional face, or in CJK, as if each were one `0`, so the
@@ -84,6 +84,29 @@ allowance misses and the box squeezes the field. Size only the element that hold
 count with `box-sizing: content-box`, and let the suffix, the spinner and the padding take their own width in the box
 that wraps them (`w-fit`). A digit count taken from a number (`String(max).length`) is in the digits' typeface and is
 fine.
+
+`content-box` moves the design's vertical padding outside the field's height as well as its horizontal padding. A
+design that gives every input in a form its own height (`[&_input]:h-9`) then makes the field taller than the fixed-height
+box around it (`h-8`) and the digits clip against the lower border. The style that sets `boxSizing: "content-box"` also
+sets `height: "auto"`, so the box's height decides and the flex row stretches the field, whatever the padding; a style
+with the one and not the other is what `content-box-without-height` lists. jsdom has no layout, so the proof is a browser
+reading of the field's border-box height equal to the box's inner height.
+
+## A faded glyph is measured against its ground
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | An icon drawn at a reduced `opacity` in a design's compiled stylesheet (a calendar glyph in an empty date field, an empty-state icon, a chevron) |
+| **Audit** | candidate, not a rule: no script form exists yet; the framework test `field-icon-contrast.test.ts` measures the glyphs it names |
+
+A fade lowers a glyph's contrast without changing its token, so the ink token passes and the painted glyph does not: a
+muted ink at 60% on a white field measured 2.37:1 in light and 2.74:1 in dark where a non-text mark needs 3:1. The
+check that finds the next one without a browser reads every compiled `svg` rule that sets `opacity`, mixes that opacity
+of the rule's ink token over the ground token the rule's element stands on, in both colour schemes, and fails below the
+3:1 floor for a glyph that carries meaning (a decoration beside text that names it is exempt). The framework test
+generalised over the whole stylesheet is the form; it is a design test that belongs beside the compiled output, because
+the ground of a glyph is a property of the slot it sits in and is known only there. A glyph with no token-only ground
+(over an image, on a transparent control) needs a browser reading.
 
 ## AssignmentChip trailing slot
 

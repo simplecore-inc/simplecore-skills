@@ -324,6 +324,9 @@ A confirmation in front of a command stays open on its running label until the c
 the open dialog, which draws it where the reader is looking and keeps the typed values; a second press retries the
 same verb, and a success closes the dialog. The verb's wrapper therefore returns the promise and does not catch the
 rejection (a `useCommand` run never rejects, so a held confirmation runs the generated mutation, not the wrapper).
+An action dialog that has fields also asks before Escape, a press outside, the close mark or the cancel button discards
+what was typed (the console kit's `ActionDialog` carries the guard, as a record form does), and a held request never
+asks; the full form is invariant #61.
 
 ## A running label ends with the ellipsis character
 

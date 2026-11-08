@@ -49,6 +49,13 @@ page type's contract, so a second way of drawing a region fails the moment it is
 screen, without anyone comparing screens by eye. A product's runner signs in and opens each
 screen (`screen-playbook.md` § Rendered checks).
 
+**A region's mark points at a framework part that every surface draws, never at a wrapper that exists on one
+surface.** A record's detail is drawn as a drawer, a side panel or a dialog, and each surface has its own wrapper
+around the same content. A region marked by the drawer's body leaves the panel and the dialog with no such region: the
+close button there stands in none and the check reports an unassigned control. Mark the region with the part inside
+the wrapper that every surface renders (the detail header that holds the title, the status, the view switch and the
+close control), and prove the contract with one render per surface, each of which must place every control.
+
 Read the contract before naming a part or a slot in a plan or designing a screen. A region it lacks
 is added there, with both checks proving it on a hit and a miss; where a kit has no contract,
 writing it is the first step of the preflight.

@@ -234,6 +234,18 @@ column sliding back) can still be under way after a long wait: wait for running 
 (`document.getAnimations()`, an infinite spinner excluded) and finish what is left before reading.
 A reading that turns from clean to failing once it is taken at the right moment was never clean.
 
+**At rest means two equal readings and no running finite animation.** Equality alone is satisfied by a
+surface that is held still by a delay: a side panel opens through a grid transition that starts after a
+pause, so for the length of the pause it stands at its two border widths and two readings 200 ms apart
+are equal, which read as a record panel 2 px wide and failed every region check inside it. Count the
+finite animations running (`document.getAnimations()` with `playState === "running"` and a finite end
+time; an infinite spinner is excluded, it never ends) in the same evaluation as the reading, and take the
+reading as the one at rest only when that count is 0 and the last two readings are equal. A reading taken
+while one runs says so in its report. `audit-rendered.mjs` applies the rule in its own settle loop
+(`isAtRest`, with `moving` on every reading it takes) and exports `MOVING_ANIMATIONS` for a runner that
+drives the page through another tool; a project runner that waits for a surface keeps the same two
+conditions.
+
 **Probe the surface under its own root, and make the report name it.** A drawer and a dialog are
 portaled out of `main`, so a region probe rooted at `main` reads the list again while the record
 stands beside it: the "detail" signature equalled the list's on every drawer screen, and the
