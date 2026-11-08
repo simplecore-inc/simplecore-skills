@@ -2665,13 +2665,19 @@ const routedPageHasOneHeadingAndATitleThatFollowsIt = {
     // An open dialog hides the page behind it from the accessibility tree: a modal library marks
     // each sibling along the path to the dialog `aria-hidden` or `inert`. That is the state of the
     // moment, not a property of the page, so the page's heading is judged as the page stands
-    // without it. A hiding mark counts as the modal's when it sits on an element that is a
-    // sibling along the dialog's own path (its parent holds the dialog and it does not); a mark the
-    // page authored on a decoration inside its own content is deeper and still hides what it holds.
+    // without it. A hiding mark counts as the modal's in two cases. It sits on an element that is a
+    // sibling along the dialog's own path (its parent holds the dialog and it does not). Or the
+    // element carries the marker attribute the aria-hidden library writes beside every node it hides
+    // (`data-aria-hidden`, `data-inert-ed`, `data-suppressed`), at any depth: the library keeps a
+    // live region exposed and so marks the live region's siblings one level down instead of the
+    // root, and a page holding such a region has its heading marked well inside the page. A mark
+    // the page authored on a decoration inside its own content has no library marker and still
+    // hides what it holds.
     const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog[open]')].filter(
       (d) => d.getClientRects().length > 0 && getComputedStyle(d).visibility !== "hidden",
     );
-    const hiddenByModal = (el) => dialogs.some((d) => el.parentElement?.contains(d) && !el.contains(d));
+    const libraryMarked = (el) => el.matches('[data-aria-hidden="true"], [data-inert-ed="true"], [data-suppressed="true"]');
+    const hiddenByModal = (el) => dialogs.some((d) => !el.contains(d) && (libraryMarked(el) || el.parentElement?.contains(d)));
     // In the accessibility tree: laid out (a clipped one-pixel heading is), not hidden, not aria-hidden.
     const exposed = (el) => {
       if (el.getClientRects().length === 0 || getComputedStyle(el).visibility === "hidden") return false;
@@ -3284,6 +3290,12 @@ const FIXTURES = {
       // The drawer must not hide a real defect: the page behind it still has no h1.
       "a modal drawer open over a page with no heading of level 1":
         `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div aria-hidden="true"><h2>Users</h2><p>Accounts</p></div><div role="dialog" aria-label="Detail"><h2 class=sr>Detail</h2><p>Record</p></div>`,
+      // The library marks a live region's siblings, not the root: an authored aria-hidden heading
+      // inside such a page has no library marker and must still hide.
+      "a modal over a page whose only heading is authored aria-hidden, beside a live region":
+        `<title>Jobs - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div id=root><div class=stack><div data-aria-hidden="true" aria-hidden="true"><main><h1 aria-hidden="true">Jobs</h1><p>Runs</p></main></div><span aria-live="polite" class=sr>3 rows</span></div></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
+      "a page with a live region and no heading of level 1, under a modal":
+        `<title>Jobs - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div id=root><div class=stack><div data-aria-hidden="true" aria-hidden="true"><h2>Jobs</h2></div><span aria-live="polite" class=sr>3 rows</span></div></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
       "a modal drawer open over a page with two headings of level 1":
         `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}</style><div aria-hidden="true"><h1>Users</h1><h1>Accounts</h1></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
     },
@@ -3307,6 +3319,12 @@ const FIXTURES = {
       // A modal drawer marks the page behind it aria-hidden; the page's own h1 is still the page's.
       "a modal drawer open over a page with one heading of level 1":
         `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div aria-hidden="true"><h1>Users</h1><p>Accounts</p></div><div role="dialog" aria-label="Detail"><h2 class=sr>Detail</h2><p>Record</p></div>`,
+      // The screen this was written from: the library keeps the time strip's live region exposed and
+      // so marks div.console-page-header inside the stack instead of the root.
+      "a modal over a page with a live region, whose heading the library marked inside the stack":
+        `<title>Jobs - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div id=root><div class=stack><div class=header data-aria-hidden="true" aria-hidden="true"><h1>Jobs</h1></div><span aria-live="polite" class=sr>3 rows</span></div></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
+      "a modal made inert by the library with the marker deeper than the root":
+        `<title>Jobs - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><div id=root><div class=stack><div class=header data-inert-ed="true" inert><h1>Jobs</h1></div><span aria-live="polite" class=sr>3 rows</span></div></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
       "a page whose own heading of level 1 is marked hidden only by the modal, with a deeper authored decoration inside it":
         `<title>Users - Product</title><style>body{margin:0;font:14px sans-serif}</style><div aria-hidden="true"><main><h1>Users</h1><div aria-hidden="true"><h1>Decoration</h1></div></main></div><div role="dialog" aria-label="Detail"><p>Record</p></div>`,
     },
