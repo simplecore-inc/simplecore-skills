@@ -75,6 +75,18 @@ const DEFAULTS = {
   expectLang: undefined,
 
   /**
+   * `routedPageHasOneHeadingAndATitleThatFollowsIt`: what is a page's top heading, and what splits a
+   * document title into the page's own words and the product's.
+   *
+   * <p>A heading counts when it is in the accessibility tree, so a visually hidden one that a screen
+   * reader reads still counts and one under `display: none` or `aria-hidden` does not. The title's
+   * leading segment (the text before the first separator) names the page in the common
+   * `page - product` form; a project that writes its titles another way lists its separators here.
+   */
+  headingSelector: 'h1, [role="heading"][aria-level="1"]',
+  titleSeparators: [" - ", " | ", " \u00b7 ", " \u2013 "],
+
+  /**
    * How wide a clipping element has to be before it counts as a region. Narrower than this it is
    * a control, an icon well or a rule, and none of those is holding a screen the reader lost.
    */
@@ -237,6 +249,44 @@ const DEFAULTS = {
     "py", "sh", "properties", "lock", "map",
   ],
 
+  /**
+   * The last segments that make a dotted lower-case string an address rather than a key.
+   *
+   * <p>A page may name a website in plain text (`agency.example.com`), and an all-lower-case dotted
+   * string whose last segment is one of these is a host. The list is deliberately only suffixes that
+   * are not also the end of a catalogue key: two-letter codes that are words (`id`, `no`, `in`, `at`)
+   * are left out, so a product that writes the addresses of another country adds that country's code
+   * through its options file. A text that is the address its own link opens is an address too,
+   * whatever its suffix.
+   */
+  keyTextHostSuffixes: [
+    "com", "org", "net", "edu", "gov", "mil", "info", "biz", "dev", "app", "xyz", "io",
+    "kr", "jp", "cn", "uk", "de", "fr", "au", "nl", "sg", "hk", "tw", "vn", "br", "ru",
+    "example", "test", "invalid", "localhost", "local", "internal", "onion",
+  ],
+
+
+  /**
+   * The elements a kit marks as its messages, for the three checks that read them
+   * (`standingMessageDrawsNoClose`, `theFigureRowSitsAgainstTheHeader`,
+   * `theCardRegionReadsLoudestFirst`). Empty: a message is whatever publishes one of `messageRoles`
+   * and whatever is painted like a band across the column (the second recogniser).
+   *
+   * <p><b>A kit whose messages all carry a marker of their own names it here, and then those
+   * elements are the messages and nothing else is.</b> The role recogniser also finds every live
+   * region, and the shape recogniser every tinted row of a settings list: on a page drawn by a kit
+   * with its own notice part both are misreadings, reported as messages with no glyph. A selector
+   * such as `[data-slot="site-banner"]` stops both without a list of exceptions to keep.
+   */
+  messageSelector: "",
+
+  /**
+   * A selector the page must contain for `theFigureRowSitsAgainstTheHeader` to apply, empty for every
+   * page. The rule is about the console shell's figure row folding behind its header's rule; a page
+   * drawn by another kit has no such row, and its cards of numbers (plans, steps) are not one. The
+   * same pattern as `buttonFillScope`: name a slot only the console shell draws.
+   */
+  figureRowScope: "",
 
   /**
    * What counts as something a reader presses.
@@ -1624,10 +1674,13 @@ const standingMessageDrawsNoClose = {
       messages.push({ el, how });
     };
     const column = main.getBoundingClientRect();
-    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(bandOf(el), "role");
+    // A kit that marks its own messages names them (`messageSelector`): those are the messages, and the
+    // role and shape recognisers, which also find live regions and tinted rows, are not read.
+    const marked = o.messageSelector !== "";
+    for (const el of main.querySelectorAll(marked ? o.messageSelector : o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(marked ? el : bandOf(el), marked ? "marker" : "role");
     }
-    for (const el of main.querySelectorAll("*")) {
+    for (const el of marked ? [] : main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
       // A control is not a message, whatever it is painted like.
       if (el.matches(o.notAMessageSelector)) continue;
@@ -1686,7 +1739,7 @@ const standingMessageDrawsNoClose = {
               + "What does not close is the answer to something the reader just did, and that is gone "
               + "before a page anybody merely opened is read")
           + (glyph || !missesClose ? "" : ", and it draws no glyph either")
-          + ` (found by ${how === "role" ? "the role it publishes" : "the band it draws"}, ${where(el)})`,
+          + ` (found by ${how === "role" ? "the role it publishes" : how === "marker" ? "the kit's message selector" : "the band it draws"}, ${where(el)})`,
       );
       if (findings.length >= o.maxFindings) break;
     }
@@ -1732,6 +1785,8 @@ const theFigureRowSitsAgainstTheHeader = {
     const findings = [];
     const main = document.querySelector("main, [role=main]");
     if (!main) return { compared: 0, findings };
+    // The rule belongs to the console shell's figure row: a page without the shell has none.
+    if (o.figureRowScope && !document.querySelector(o.figureRowScope)) return { compared: 0, findings };
 
     const clear = (c) => c === "transparent" || c === "rgba(0, 0, 0, 0)" || /\/\s*0(?:\.0+)?\s*\)\s*$/.test(c);
     const visible = (el) => {
@@ -1816,10 +1871,12 @@ const theFigureRowSitsAgainstTheHeader = {
       messages.push(el);
     };
     const column = main.getBoundingClientRect();
-    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(bandOf(el));
+    // A kit that marks its own messages names them (`messageSelector`): see standingMessageDrawsNoClose.
+    const marked = o.messageSelector !== "";
+    for (const el of main.querySelectorAll(marked ? o.messageSelector : o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(marked ? el : bandOf(el));
     }
-    for (const el of main.querySelectorAll("*")) {
+    for (const el of marked ? [] : main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
       // A control is not a message, whatever it is painted like.
       if (el.matches(o.notAMessageSelector)) continue;
@@ -2063,10 +2120,12 @@ const theCardRegionReadsLoudestFirst = {
       if (messages.some((m) => m === el || m.contains(el) || el.contains(m))) return;
       messages.push(el);
     };
-    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
-      if (eligible(el)) add(bandOf(el));
+    // A kit that marks its own messages names them (`messageSelector`): see standingMessageDrawsNoClose.
+    const marked = o.messageSelector !== "";
+    for (const el of main.querySelectorAll(marked ? o.messageSelector : o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(marked ? el : bandOf(el));
     }
-    for (const el of main.querySelectorAll("*")) {
+    for (const el of marked ? [] : main.querySelectorAll("*")) {
       if (!eligible(el)) continue;
       if (el.matches(o.notAMessageSelector)) continue;
       if (el.closest('table, [role="table"], [role="grid"]')) continue;
@@ -2298,6 +2357,7 @@ const unresolvedKeyOnTheScreen = {
     let compared = 0;
 
     const suffixes = new Set(o.keyTextFileSuffixes);
+    const hostSuffixes = new Set(o.keyTextHostSuffixes);
     const where = (el) => {
       const bits = [];
       for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
@@ -2339,6 +2399,11 @@ const unresolvedKeyOnTheScreen = {
       const parts = text.split(".");
       const last = parts[parts.length - 1];
       if (suffixes.has(last.toLowerCase())) continue;
+      // An address: the website of an agency, a host in a walkthrough. All lower case and ending in a
+      // suffix no catalogue key ends in, or the very address its own link opens.
+      if (text === text.toLowerCase() && hostSuffixes.has(last)) continue;
+      const link = el.closest("a[href]");
+      if (link && (link.getAttribute("href") || "").toLowerCase().includes(text.toLowerCase())) continue;
       // A host, an address, a two-part name whose tail is too short to be a word. `example.test`
       // and `a.co` land here; `form.status` and `page.description` do not.
       const wordy = last.length >= 5 || /[A-Z]/.test(last);
@@ -2560,6 +2625,72 @@ const pageLanguageFollowsTheLocale = {
     }
     // A page mostly in a script many languages share (Latin) is not judged without `expectLang`:
     // a Korean screen listing Latin names, codes and addresses is still a Korean screen.
+    return { compared: 1, findings };
+  },
+};
+
+/**
+ * A routed page without exactly one top heading, or whose document title does not follow it.
+ *
+ * The defect it exists to catch: a page whose tab reads only the product name because no heading
+ * ever set the title, a page with two h1 elements because a section borrowed the page's level, and
+ * a page with no h1 at all because its header drew the heading at level 2. A screen reader moves
+ * between pages by the h1 and a reader finds a tab by its title, and the page looks complete either
+ * way. Nothing in the source says so: the heading's level and the title are set by two different
+ * parts, and only the painted page holds both.
+ *
+ * **What the rule asks.** Exactly one heading of level 1 stands in the accessibility tree (a hidden
+ * one that a screen reader reads counts; `display: none` and `aria-hidden` do not), it holds text,
+ * and `document.title` is not empty and follows it: the title contains the heading's words, or its
+ * leading segment (before the first of `titleSeparators`) is a name the heading carries, as in the
+ * title `Terms of Service - Product` over the heading `Terms of Service, version 3`. A title that
+ * is only the product name, with no separator, follows nothing.
+ *
+ * **It judges the page it is pointed at, in the state it is in.** A page whose heading changes with
+ * a step or a read (a payment that confirms a few seconds after it opens) has the title of the
+ * moment: read it again once the page has settled, and a title that stays behind the heading is the
+ * finding.
+ */
+const routedPageHasOneHeadingAndATitleThatFollowsIt = {
+  id: "routedPageHasOneHeadingAndATitleThatFollowsIt",
+  grade: "error",
+  title: "a page without exactly one non-empty h1, or whose document title does not follow it",
+  page: (o) => {
+    const findings = [];
+    const fold = (text) => (text || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    const said = (text) => (text || "").replace(/\s+/g, " ").trim();
+    // The words a reader reads: a line break between two words (`<br>`) is a space there, and it is
+    // nothing in `textContent`.
+    const readOf = (el) => el.innerText || el.textContent || "";
+    // In the accessibility tree: laid out (a clipped one-pixel heading is), not hidden, not aria-hidden.
+    const exposed = (el) =>
+      el.getClientRects().length > 0
+      && getComputedStyle(el).visibility !== "hidden"
+      && el.closest('[aria-hidden="true"], [hidden], [inert]') === null;
+    const headings = [...document.querySelectorAll(o.headingSelector)].filter(exposed);
+    if (headings.length === 0) {
+      findings.push("the page has no heading of level 1: a reader who moves by headings, and the title that follows the heading, have nothing to name the page by");
+    } else if (headings.length > 1) {
+      findings.push(
+        `the page has ${headings.length} headings of level 1 (${headings.map((h) => `「${said(readOf(h)).slice(0, 30)}」`).join(", ")}): the page is named by one, and a section that needs a heading draws its own level`,
+      );
+    }
+    const heading = headings.find((h) => said(readOf(h)) !== "");
+    if (headings.length > 0 && !heading) findings.push("the page's heading of level 1 holds no text");
+
+    const title = said(document.title);
+    if (title === "") {
+      findings.push("the document title is empty: the tab, the history and the bookmark read the address");
+    } else if (heading) {
+      const words = fold(readOf(heading));
+      const leading = fold(title.split(new RegExp(o.titleSeparators.map((sep) => sep.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")))[0]);
+      const followed =
+        fold(title).includes(words)
+        || (leading !== fold(title) && leading.length >= 3 && words.includes(leading));
+      if (!followed) {
+        findings.push(`the document title 「${title.slice(0, 60)}」 does not follow the page's heading 「${said(readOf(heading)).slice(0, 60)}」: the tab names another page, or only the product`);
+      }
+    }
     return { compared: 1, findings };
   },
 };
@@ -2994,6 +3125,7 @@ export const checks = [
   pageFrozenAroundAScrollingRegion,
   unresolvedKeyOnTheScreen,
   pageLanguageFollowsTheLocale,
+  routedPageHasOneHeadingAndATitleThatFollowsIt,
   buttonWithoutBackground,
   valueOffTheTokenSet,
   textContrastBelowMinimum,
@@ -3119,6 +3251,42 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  routedPageHasOneHeadingAndATitleThatFollowsIt: {
+    broken: {
+      // The screen this check was written from: a page whose header drew its heading at level 2.
+      "a page whose only heading is level 2":
+        `<title>Packs - Product</title><style>body{margin:0;font:14px sans-serif}</style><h2>Packs</h2><p>Top up your credits.</p>`,
+      "a page with two headings of level 1":
+        `<title>Pricing - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Pricing</h1><h1>Frequently asked questions</h1>`,
+      // The tab that read only the product name while the page drew its own heading.
+      "a title that is only the product name":
+        `<title>Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Pricing</h1>`,
+      "a title that names another page":
+        `<title>Checkout - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Receipts</h1>`,
+      "a page with no title":
+        `<style>body{margin:0;font:14px sans-serif}</style><h1>Pricing</h1>`,
+      "a heading of level 1 with no text":
+        `<title>Pricing - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1></h1><p>Plans</p>`,
+    },
+    quiet: {
+      "a heading broken over two lines by a line break":
+        `<title>Speaker notes in your own voice - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Speaker notes<br><em>in your own voice</em></h1>`,
+      "a title that carries the heading and the product after a separator":
+        `<title>Pricing - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Pricing</h1>`,
+      // A heading kept for screen readers only is the page's heading: this page's visible heading
+      // sits at level 2, and a check that read the painted box would call the page headless.
+      "a visually hidden heading of level 1 over a visible level 2":
+        `<title>Checkout - Product</title><style>body{margin:0;font:14px sans-serif}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style><h1 class=sr>Checkout</h1><h2>Choose a plan</h2>`,
+      "a title whose leading segment is a name the longer heading carries":
+        `<title>Terms of Service - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Terms of Service, version 3</h1>`,
+      "a second heading of level 1 that is not in the accessibility tree":
+        `<title>Plans - Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Plans</h1><div hidden><h1>Print layout</h1></div><div aria-hidden="true"><h1>Decoration</h1></div>`,
+      "a heading and a title in a script other than Latin":
+        `<html lang=ko><title>가격 안내 - 제품</title><style>body{margin:0;font:14px sans-serif}</style><h1>가격 안내</h1>`,
+      "a title that differs only in case and punctuation":
+        `<title>pricing: plans &amp; packs | Product</title><style>body{margin:0;font:14px sans-serif}</style><h1>Pricing - Plans &amp; Packs</h1>`,
+    },
+  },
   paintNamesAnUndefinedVariable: {
     broken: {
       // The screen this check was written from: a logo painted from a theme the page does not load.
@@ -3192,6 +3360,8 @@ const FIXTURES = {
   },
   theCardRegionReadsLoudestFirst: {
     broken: {
+      "an info notice above an error notice, read by the kit's own part and glyphs":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><div data-slot=site-banner class="banner info"><span aria-hidden=true><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10 /><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class=body><p role=status>Prices are shown without tax.</p></div></div><div data-slot=site-banner class="banner bad"><span aria-hidden=true><svg class="lucide lucide-circle-alert" width=16 height=16><circle cx=12 cy=12 r=10 /><line x1=12 x2=12 y1=8 y2=12 /><line x1=12 x2=12.01 y1=16 y2=16 /></svg></span><div class=body><p role=alert>The payment could not be started.</p></div></div></main>`, options: { messageSelector: '[data-slot="site-banner"]', noticeKinds: [{ name: "error", glyph: ["lucide-circle-alert"] }, { name: "warning", glyph: ["lucide-triangle-alert"] }, { name: "info", glyph: ["lucide-info"] }, { name: "success", glyph: ["lucide-circle-check"] }] } },
       // **The shape the product actually paints, and the one a fixture written from the rule's
       // imagination leaves out.** The card component wraps its own banner in a box of its own - to
       // scroll a restored card into view - so the element carrying the role has a parent nobody
@@ -3287,6 +3457,8 @@ const FIXTURES = {
         </main>`,
     },
     quiet: {
+      "error, warning, info and success notices in that order, with a live region and a tinted row that are not read":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><span role=status>Due today 14,900</span><div class=row>Region and language <span>English</span></div><div data-slot=site-banner class="banner bad"><span aria-hidden=true><svg class="lucide lucide-circle-alert" width=16 height=16><circle cx=12 cy=12 r=10 /><line x1=12 x2=12 y1=8 y2=12 /><line x1=12 x2=12.01 y1=16 y2=16 /></svg></span><div class=body><p role=alert>The payment could not be started.</p></div></div><div data-slot=site-banner class="banner warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>Your card expires this month.</p></div></div><div data-slot=site-banner class="banner info"><span aria-hidden=true><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10 /><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class=body><p role=status>Prices are shown without tax.</p></div></div><div data-slot=site-banner class="banner good"><span aria-hidden=true><svg class="lucide lucide-circle-check" width=16 height=16><circle cx=12 cy=12 r=10 /><path d="m16 9-5.5 5.5L8 12"/></svg></span><div class=body><p role=status>Your receipt was sent.</p></div></div></main>`, options: { messageSelector: '[data-slot="site-banner"]', noticeKinds: [{ name: "error", glyph: ["lucide-circle-alert"] }, { name: "warning", glyph: ["lucide-triangle-alert"] }, { name: "info", glyph: ["lucide-info"] }, { name: "success", glyph: ["lucide-circle-check"] }] } },
       // The framework's time range strip draws its window as a rounded, tinted badge with a
       // calendar glyph and a sentence-long date range. It is a control of the strip, never a
       // message, and read as one it reported a glyph no notice kind carries on every timed list.
@@ -3379,6 +3551,12 @@ const FIXTURES = {
   },
   standingMessageDrawsNoClose: {
     broken: {
+      // A kit with its own notice part, read without naming it: the live region and the tinted row of a
+      // settings list are read as messages, and neither draws a glyph.
+      "a live region and a tinted settings row read as messages when the kit's notice part is not named":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><span role=status>Due today 14,900</span><div class=row>Region and language <span>English</span></div></main>`,
+      "a notice of the kit's own part with no glyph":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><div data-slot=site-banner class="banner warn"><div class=body><p role=alert>Names are confirmed before this takes effect.</p></div></div></main>`, options: { messageSelector: '[data-slot="site-banner"], [data-slot="site-auth-alert"]' } },
       // The screen this was written from: two messages that close, the figures, then a red one
       // with no close at all. Both source rules were green on it - one read the first message and
       // asked what stood in front of it, the other exempted the red one as a ternary arm.
@@ -3427,6 +3605,8 @@ const FIXTURES = {
         <button>삭제</button> <button>취소</button></main>`,
     },
     quiet: {
+      "a notice of the kit's own part with its glyph, beside a live region and a tinted row that are not messages":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><span role=status>Due today 14,900</span><div class=row>Region and language <span>English</span></div><div data-slot=site-banner class="banner info"><span aria-hidden=true><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10 /><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class=body><p role=status>Your plan renews on the first of the month.</p></div></div></main>`, options: { messageSelector: '[data-slot="site-banner"], [data-slot="site-auth-alert"]' } },
       // A figure tile that spans a phone's column: tinted, rounded, a caption, and a number.
       "a figure tile across a phone column":
         `<style>body{margin:0;font:14px sans-serif;width:390px}main{display:block;padding:12px}
@@ -3536,6 +3716,12 @@ const FIXTURES = {
   },
   theFigureRowSitsAgainstTheHeader: {
     broken: {
+      // The notice above a row of cards of numbers on a page that is not the console's: read without a
+      // scope, the plans are a figure row and the notice stands above them.
+      "a notice above a row of price cards, read without a scope":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><div data-slot=site-banner class="banner warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>Prices are shown without tax.</p></div></div><div class=figs><div class=fig>Basic<br>$9</div><div class=fig>Pro<br>$19</div><div class=fig>Team<br>$49</div></div></main>`,
+      "a notice above the figure row on a page with the console shell, scope named":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><header data-slot=console-header>Console</header><main><div data-slot=site-banner class="banner warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>Two policies are below the legal minimum.</p></div></div><div class=figs><div class=fig>Basic<br>$9</div><div class=fig>Pro<br>$19</div><div class=fig>Team<br>$49</div></div></main>`, options: { figureRowScope: '[data-slot^="console-"]' } },
       // The same defect inside a scrolling page. The page's own scrollport is every message's
       // ancestor, so the region exemption must not reach it - a climb that counted `main` would
       // exempt every card on every screen and this rule would report nothing for ever.
@@ -3581,6 +3767,8 @@ const FIXTURES = {
         <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
     },
     quiet: {
+      "a notice above a row of price cards on a page without the console shell, scope named":
+        { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><div data-slot=site-banner class="banner warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>Prices are shown without tax.</p></div></div><div class=figs><div class=fig>Basic<br>$9</div><div class=fig>Pro<br>$19</div><div class=fig>Team<br>$49</div></div></main>`, options: { figureRowScope: '[data-slot^="console-"]' } },
       // The order the rule asks for: the row against the header, the cards directly under it.
       "a message under the tile row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -4519,6 +4707,11 @@ const FIXTURES = {
   },
   unresolvedKeyOnTheScreen: {
     broken: {
+      // A catalogue key that ends like a host label is still a key: only the suffixes no key ends in
+      // make a dotted string an address.
+      "a three-segment key ending in a two-letter word":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
+        <div class=box><p>Row</p><p><span>table.rows.id</span></p></div>`,
       // The screen this check was written from: a refused form naming the fields the server
       // would not accept, resolved out of a catalogue that has no entry for any of them.
       "a validation summary naming fields by their lookup keys":
@@ -4535,6 +4728,11 @@ const FIXTURES = {
         </div>`,
     },
     quiet: {
+      // The addresses a policy page names in plain text, and a link whose text is the address it opens.
+      "websites written in plain text and a link that names its own address":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
+        <div class=box><p><span>privacy.agency.go.kr</span></p><p><span>support.product.example</span></p><p><span>docs.vendor.com</span></p>
+        <p><a href="https://wiki.intranet.corp/start">wiki.intranet.corp</a></p></div>`,
       "the same summary once the catalogue answers":
         `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
         <div class=box>
@@ -4711,10 +4909,13 @@ function selfTest(session, options, selected = checks) {
         continue;
       }
       for (const direction of ["broken", "quiet"]) {
-        for (const [name, html] of Object.entries(pages[direction])) {
+        for (const [name, page] of Object.entries(pages[direction])) {
+          // A page is its markup, or `{ html, options }` where the case needs options of its own
+          // (a profile that changes what the check reads, against the page read without it).
+          const html = typeof page === "string" ? page : page.html;
           const file = path.join(dir, `${check.id}-${direction}-${rows.length}.html`);
           fs.writeFileSync(file, `<!doctype html><meta charset=utf-8>${html}`);
-          const measure = () => evaluate(session, `file://${file}`, check, { ...options, ...pages.options });
+          const measure = () => evaluate(session, `file://${file}`, check, { ...options, ...pages.options, ...(typeof page === "string" ? {} : page.options) });
           // A quiet page may compare nothing on purpose (a screen the check has no subject on),
           // so only a page that must fire is measured again.
           const { out, retried } =

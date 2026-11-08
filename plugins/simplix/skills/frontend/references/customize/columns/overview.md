@@ -179,6 +179,15 @@ column is not rendered at all - no header, no cells, no entry in the columns dro
   outgrows its narrowest pane falls to cards against a table design. Where two such columns do
   not both fit, keep the one whose absence makes the row say something false, and let the one
   whose absence only leaves the row silent drop; measure the narrowest pane before deciding.
+- **Keeping a column at the design's window moves another column out of it, so read that window before
+  and after.** A table holds as many columns as its pane has width for (a fluid column asks 200 px, so
+  about six fit a 1440 window), and a kept column takes its width from the columns before it. A kept release
+  size pushed the platform out of the window, and a kept audit category pushed the details out and, at 1024, the
+  record. Keep a column only where the column it displaces matters less and the table still holds at the
+  narrowest width in both languages. A design entry that lists the columns the list draws at its window, apart
+  from the columns only the columns menu offers, lets a rendered check compare the entry with the painted headers
+  (the table's `th` labels) and name each declared column that is not drawn; one that lists every column cannot be
+  compared, since the ladder drops the tail on purpose.
 - **A column the screen adds after the generated ones takes a tier like them.** A derived marker
   appended without `minTableWidth` draws at every width and silently joins the always-drawn set;
   with the leading and the sorted columns that set can outgrow a tablet pane, and the list falls

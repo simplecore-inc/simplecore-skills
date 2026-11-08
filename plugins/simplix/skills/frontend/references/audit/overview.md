@@ -68,10 +68,25 @@ is a check that reached nothing, and it prints the same exit status as a clean s
   that passes on cards says nothing about the table.
 - **A finding names the item it judges** (the message, its glyph, the column, the text node). A finding
   that does not is resolved to its item before it is attributed to the screen or dismissed as old.
+- **A routed page is named by one heading, and its document title follows it.**
+  `routedPageHasOneHeadingAndATitleThatFollowsIt` reads the painted page: exactly one non-empty h1 in the
+  accessibility tree (a visually hidden one counts), and a title that contains the heading's words or whose leading
+  segment, before a separator of `titleSeparators`, is a name the heading carries. A title of only the product name
+  follows nothing.
+- **A page drawn by another kit is read under that kit's own audit options, never under the console's.** The message
+  checks find a message by its role or by the band it is painted as, which also reads a live region or a tinted row
+  of a settings list on a page whose kit draws its notices with a part of its own. The project's options file for
+  that kit names the part (`messageSelector`), lists the glyph of each message kind (`noticeKinds`), scopes the rules
+  of the console shell to a slot only the console draws (`figureRowScope`, `buttonFillScope`) and turns the button
+  fill rule off where the design draws quiet actions (`requireButtonFill`). The runner passes the file; the script
+  holds no product name.
 - **An identifier painted alone is drawn in the code face.** A provider's event name or a dotted
   lowercase code painted as the whole of a text node reads as a missing catalog key to
   `unresolvedKeyOnTheScreen` unless it is in the monospaced face (a contract field with `code`; the
   record title when the record is named by an identifier).
+  A website named in plain text is an address, not a key: an all-lower-case dotted string ending in one of
+  `keyTextHostSuffixes` (a project adds the suffixes of the countries whose addresses it writes), or text that is the
+  address its own link opens.
 
 Enforcement: review - which file must carry a decision, and what an unnamed finding refers to, are
 facts about the product's manifest and its painted page, and the check itself is the thing under review.
