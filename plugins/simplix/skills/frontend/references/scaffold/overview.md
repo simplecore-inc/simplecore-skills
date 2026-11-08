@@ -185,6 +185,13 @@ the changed surface is `git diff` of `src/generated-meta/` and of the committed 
   `FileTextIcon` row), and the board's mirror of those labels carries the same keys. Revert those files, run the board's
   catalog mirror again, and run the console menu check. Match by route before appending is a CLI change (see the defect
   batch of the project that found it).
+  **A regeneration can also drop a screen's scaffold flags.** The flags in the origin line of a screen's files
+  (a status badge, a time range, a drawn-filters constant) are unified across the screen's files by the CLI; where
+  they differ between the files of one screen, `--all` re-renders each file with its own and the badge or strip the
+  hand edit kept disappears from the list, the detail or the page. Until the CLI unifies them, a regeneration is followed
+  by a diff of these files against HEAD: the registrations above, and every screen whose list or detail lost a part it
+  had. Resolve each to the edited side, and never take the whole-tree `--write-conflicts` result as is: it can nest
+  conflict markers inside a file that already holds some.
 
 ## The commands beside the numbered steps
 
