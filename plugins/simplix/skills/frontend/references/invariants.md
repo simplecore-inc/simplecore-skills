@@ -315,6 +315,18 @@ entry's `filters` list names them in that order. A sibling screen that places th
 choice first predates the rule and is not a precedent for order (#67: a survey of hand-written
 screens measures drift). The stamp a log is read by keeps its period filter (#54).
 
+**A list declares its address over the filters it draws, plus the time-range field.** A list's address
+(the URL keys a link may set: `?filters[status.in]=FAILED`, the window of a time range) is declared once, over
+the same set the page builds its filter controls from. When the controls are built from one set and the address
+from another (the whole contract, or the same set trimmed inline at the controls), a key held by the address alone
+narrows the rows from a link with no control, chip or badge to show that it did. Name the drawn set once in a
+constant, trim it there, and hand that constant to both the controls and the address declaration. The field a page
+draws a time range over is the one key family the address carries without a filter control (its `between` pair or
+its two bounds), so it is named on the declaration; a list that draws no time range drops those keys. A field whose
+control is of another kind (a chip row over an enum) stays in the address and says so beside the call, with its
+reason. Enforcement: a project rule reading the list file, because the set names are the project's own; the
+kit's generated list template declares both from one constant.
+
 ## #40 Failure messages are a product surface
 
 A user-facing exception carries a message key (`"{error.<module>.<case>}"`), resolved at
@@ -761,10 +773,23 @@ the project's own gate vocabulary. A rule that fires on the correct cases teache
 reader to ignore it. Find these by driving the screens as an account that lacks the
 thing, and watch for a refusal dialog with nothing behind it.
 
+**A shell read whose failure the page tells itself carries the suppress-error-dialog meta on every call that shares
+its query.** The shell reads the signed-in account's permissions and profile before it can draw a menu, and several
+parts ask for the same read. Queries that share a key are one query: the meta of the first observer to mount decides
+whether a failure raises the console's error dialog, and every later observer's meta is ignored. A read the page
+draws as its own notice (the self-access notice, a record's danger card) therefore passes the same meta, from one shared
+constant, at every call site, or a failure is told twice and the reader dismisses a modal to reach the sentence under it.
+A read with no state of its own keeps the dialog. Enforcement: review - whether a page draws the failure is a fact about
+the screen; `read-meta-differs-between-callers` lists the one shape a file can show, the same hook called with the meta in
+one place and without it in another.
+
 **A write that must hold an action dialog open is the mutation, not a command wrapper.** A write run through
 `useCommand` or `runWithToast` never rejects, so it cannot keep the dialog open until the server has answered or keep a
 typed reason after a refusal. The dialog's submit returns the mutation's promise (with the project's own-refusal meta) and
-a refusal rejects into the dialog. Five shapes are mechanical and project-agnostic: a generated secondary read without
+a refusal rejects into the dialog. **The held confirmation behaves as follows:** the confirm handler returns the verb's
+promise and lets a rejection through; the refusal is drawn inside the dialog that is still open; the values the reader
+typed stay; a second press retries the same verb; success closes the dialog. A confirmation that closes before the answer,
+or that swallows the refusal in a toast while it closes, takes the reader's reason with it. Five shapes are mechanical and project-agnostic: a generated secondary read without
 `suppressErrorDialog` (or a `read-dialog:` comment saying why it keeps the dialog), a sub-list with no `onRowClick` (or a
 `row-record: none` comment), a forced list key from an optional chain, a dialog submit that returns nothing, and a count
 hook that hides its failure; a project adds them to its screen rules.
@@ -1467,3 +1492,22 @@ callback. A driver that opens the mailed link within about two seconds of the co
 loading races Keycloak's poll (the theme inserts `authChecker.js` after mount, and a session that
 already exists then stops the poll), so the first tab never moves; wait as a person would before
 opening the link.
+
+## #81 A one-frame colour-scheme switch lists no transition property
+
+**The shape.** A part that eases its colours (a hover fill, a selected option) would paint the old scheme's ink
+on the new scheme's ground for the length of its transition, light ink on a dark panel. So the stylesheet marks the
+document element for the one frame in which the scheme changes (`:root[data-...scheme-switch]`) and switches every
+transition off under the mark, for the element, its descendants and their `::before` and `::after`.
+
+**Zero durations do not do it.** A transition that is already running when the mark is set, and whose end value is the
+same in both schemes (a fill that ends transparent in both), keeps fading from the old scheme's colour after the
+durations are nilled: the end value did not change, so nothing restarts it. A property that is no longer listed is
+cancelled and takes its end value at once. The rule therefore lists `transition-property: none !important` beside the
+zero `transition-duration` and `transition-delay` (a part that reads its duration from a custom property gets the
+same declaration on the covering selector), and a test over the stylesheet holds that the rule covers all four selectors
+and carries the property.
+
+Enforcement: `scheme-switch-keeps-transition-property` in `audit-frontend.mjs` reads every stylesheet under the source
+roots and reports a scheme-mark rule that nils a duration where no rule of the file lists `transition-property: none`.
+A stylesheet shipped by a kit is held by the kit's own test over its tokens.
