@@ -296,7 +296,7 @@ screens share, or the toast ends on an empty colon.
 |-------|-------|
 | **Pattern** | Which surface tells the reader a read failed: the part that draws the read, or the app's error dialog |
 | **Package** | `@simplix-react/headless` (`LIST_READ_META`), the console kit's entity segment (`RECORD_READ_META`, `listTotal`) |
-| **Audit** | the `adapt-orval-list` test in headless; the kit's `widget-templates` and `record-list-total` tests; `confirmed-verb-followed-by-nothing` (review) |
+| **Audit** | the `adapt-orval-list` test in headless; the kit's `widget-templates` and `record-list-total` tests; `confirmed-verb-followed-by-nothing`, `read-meta-differs-between-callers` (review) |
 
 A read whose failure a part draws carries `meta.suppressErrorDialog`, and the console query client
 leaves it out of the error dialog. `adaptOrvalList` (and `adaptForcedList`, which wraps it) gives
@@ -312,9 +312,30 @@ total is unknown, not 0: every place that draws a list's total (the total badge,
 `listTotal(list)`, which answers `undefined` then. `CrudList.Pagination` draws an unknown total as
 `list.rangeUnknown` and offers no next page.
 
+**Calls that share a query share its meta.** Two calls of one generated read hook with equal arguments are one
+query, and the meta of the first observer to mount decides whether a failure raises the error dialog; a later
+observer's meta is ignored. A shell read the page tells itself (the signed-in account's permissions, the profile) is
+therefore given the same options at every call site, from one shared constant, and the sites that read it for another
+purpose pass the same constant (`read-meta-differs-between-callers` lists one hook called both marked and bare).
+
 A confirmation in front of a command stays open on its running label until the command settles:
 `useActionConfirm`'s `onConfirm` returns the run's promise, or the config passes `running`
-(`confirmed-verb-followed-by-nothing` flags a discarded promise with neither).
+(`confirmed-verb-followed-by-nothing` flags a discarded promise with neither). A refusal rejects out of that promise into
+the open dialog, which draws it where the reader is looking and keeps the typed values; a second press retries the
+same verb, and a success closes the dialog. The verb's wrapper therefore returns the promise and does not catch the
+rejection (a `useCommand` run never rejects, so a held confirmation runs the generated mutation, not the wrapper).
+
+## A running label ends with the ellipsis character
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | The words a button shows while its command runs (`runningLabel` of `useActionConfirm`, an action dialog's submit, a record form) |
+| **Audit** | `running-label-without-ellipsis` (review) |
+
+Every `runningLabel` catalogue value, in every language, ends with the single character `…` (`Saving…`, never
+`Saving...`): the words are drawn on the button in the product's one typeface, and a catalogue that writes three full
+stops in one entry and the character in the next draws two marks under one pointer. A label chosen between two keys
+by the record (a verb that flips) ends both keys the same way.
 
 ## Site kit reads, waits, jumps and links (site-core)
 

@@ -246,3 +246,18 @@ Muted dashed-outline badge that explicitly marks a missing value, so a blank fie
 // FORBIDDEN - hand-rolled no-value pill
 <Badge variant="outline" className="border-dashed text-muted-foreground">값 없음</Badge>
 ```
+
+## A pressed control shows it
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | An element that carries `aria-pressed` (a toggle, a chip, a segmented choice, a view switch) |
+| **Audit** | `pressed-state-without-look` (review) |
+
+`aria-pressed={x}` tells a screen reader that the control is on; a sighted reader needs a look for the same fact. Every
+element with the attribute has a pressed look: a pressed axis or variant of its part (`variant={x ? "default" : "outline"}`,
+a `pressed` axis of a slot helper), or an `aria-pressed:` class on the element itself, and the stacked
+`focus-visible:focus-ring` stays visible beside it so a pressed ring does not hide the keyboard ring. A part whose look
+comes from a container's stylesheet keyed on the attribute (`[&>button[aria-pressed=true]]:bg-accent`) is correct and
+is read by looking at that stylesheet: the rule reads the tag and cannot see the container, so it stays at review level
+and its candidates are judged one by one.

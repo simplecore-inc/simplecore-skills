@@ -71,6 +71,20 @@ These are project-specific composition patterns (domain-agnostic but not generic
 
 Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 overflow-y-auto">`); fixed cells use `<Stack shrink={false}>`; arbitrary grid templates use `<Grid template="1fr auto">`; hairline grids use `<Grid gap="px">`. Genuinely non-replaceable cases (absolute drag/resize handles, konva/canvas hosts, custom time-grid cells, bitmap chips) keep a raw `div` with a `{/* raw layout: <reason> */}` justification comment.
 
+## A width in `ch` sizes the digits only
+
+| Field | Value |
+|-------|-------|
+| **Pattern** | A typing field sized by the digits it holds (a number input with a unit suffix, a code box) |
+| **Audit** | `typing-width-counts-characters-of-another-font` (review) |
+
+`ch` is the width of a `0` in the element's own typeface. A width written as `calc(${digits + suffix.length}ch + 2.75rem)`
+counts the characters of a suffix drawn in a smaller proportional face, or in CJK, as if each were one `0`, so the
+allowance misses and the box squeezes the field. Size only the element that holds the digits, in `ch` of its own digit
+count with `box-sizing: content-box`, and let the suffix, the spinner and the padding take their own width in the box
+that wraps them (`w-fit`). A digit count taken from a number (`String(max).length`) is in the digits' typeface and is
+fine.
+
 ## AssignmentChip trailing slot
 
 | Field | Value |

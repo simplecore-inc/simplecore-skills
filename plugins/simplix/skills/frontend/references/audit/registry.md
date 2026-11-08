@@ -12,6 +12,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **DetailFields Fallback Standardization** - All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted dashed-outline "No value" pill
 - **Loading Indicator Standardization (Button `loading` prop)** - Button carries `loading` / `loadingText` built in - no manual `disabled={isPending}` + ternary text + spinner icon
 - **EmptyValue (hyphen placeholder for non-field cells)** - Muted placeholder (`children` default `EMPTY_VALUE_TEXT`, one hyphen-minus) for "no value" in COMPACT contexts where neither a `DetailF
+- **A pressed control shows it** - every element with `aria-pressed` has a pressed look (a pressed axis or variant, or an `aria-pressed:` class), so the state is visible as well as announced
 - **EmptyValueBadge (no-value pill for detail-style displays)** - Muted dashed "No value" pill for empty detail-style values (standard label: `값 없음` / `No value` / `値なし`)
 
 ## Identity, detail fields & user labels → `registry/identity-and-detail-fields.md`
@@ -46,6 +47,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **SelectField Compact Mode** - `FormFields.SelectField compact` for table-cell / toolbar selects - modules never import raw Select primitives
 - **Command runner (useCommand / runWithToast)** - A user's command runs through `useCommand(useGeneratedMutationHook, { done, failed, invalidate })` from `@simplix-react/ui`: one toast per outcome with the server's reason, no second error dialog; never a hand-written mutate, toast, invalidate, catch-and-toast chain
 - **A failed read is told in one place** - a list read (`LIST_READ_META` from `adaptOrvalList`) and a generated record read (`RECORD_READ_META`) leave the error dialog alone because the part draws the failure; a list total is `listTotal(list)`, unknown until the read answers; a confirmation follows its command until it settles → `registry/actions-and-forms.md`
+- **A running label ends with the ellipsis character** - every `runningLabel` value, in every language, ends with the single character `…`, never three full stops; `running-label-without-ellipsis` reads the literal and the catalogue value behind a `t("key")`
 - **Site kit reads, waits, jumps and links (site-core)** - `SiteRead` for a region drawn from a read, `pending` on a waiting site action, `DocLayout`'s own jump select with `useDocJump`, a plain `href` for another origin (`routesInPage` in the site shell)
 - **Awaitable Cache Invalidation (useInvalidateEntity)** - `useInvalidateEntity` returns `() => Promise<void>` and calls `queryClient.invalidateQueries(...)` directly (n
 - **SaveButton (Unified Save Button with isDirty + Validation)** - Save button with isDirty / isSaving / validation-count state built in - no hand-rolled primary save Button
@@ -57,6 +59,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 
 - **ListDetail Dialog Height Control** - `ListDetail` dialog variant (`variant="dialog"`) supports a `dialogHeight` prop to control the dialog's height
 - **Project layout primitives (section header strip, side-panel list, selectable row, indented sub-section)** - Project-specific composition patterns that live in the project's UI package `layout` entry, not in `@simplix-react/ui`; the names are the project's own
+- **A width in `ch` sizes the digits only** - a width computed in `ch` from the length of text drawn in another font (a suffix, a unit) clips CJK; size the element holding the digits and let the rest take its own width
 - **Layout primitive variants (Stack / Grid)** - Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 overflow-y-auto">`); fixed cells
 - **AssignmentChip trailing slot** - `AssignmentChip` accepts a `trailing?: ReactNode` slot rendered between the label and the remove button. Use i
 - **Section variant convention (detail=flat / form=card)** - Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudForm.Section` uses `variant="card
@@ -96,6 +99,9 @@ Every rule of `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` is listed here,
 | Peek label and peek host | `peek-label-takes-onpeek` |
 | Row action standardization | `row-action-that-reads-as-text`, `row-action-type-fixed-under-a-varying-label`, `row-action-that-only-some-rows-draw`, `row-actions-as-nameless-column` |
 | Layout primitive variants (Stack / Grid) | `raw-layout-div`, `wrap-string-prop`, `split-row-without-a-width` |
+| A width in `ch` sizes the digits only | `typing-width-counts-characters-of-another-font` |
+| A pressed control shows it | `pressed-state-without-look` |
+| A running label ends with the ellipsis character | `running-label-without-ellipsis` |
 
 ### Rules owned by an invariant
 
@@ -135,7 +141,7 @@ These rules guard a convention that has no shared component to register; the inv
 | #52 | `ungated-create-button`, `inline-permission-group`, `unsubscribed-access-policy-read`, `ungated-entity-action`, `gated-callback-wrapped-in-an-always-truthy-arrow` |
 | #55 | `one-message-for-several-states` |
 | #58 | `unbounded-overlay-panel`, `second-viewport-ceiling-inside-a-dialog` |
-| #61 | `permission-blanked-tab` |
+| #61 | `permission-blanked-tab`, `read-meta-differs-between-callers` |
 | #63 | `tab-panel-repeats-its-tab-name` |
 | #67 | `screen-picks-action-variant` |
 | #69 | `screen-picks-detail-presentation` |
@@ -144,6 +150,7 @@ These rules guard a convention that has no shared component to register; the inv
 | #72 | `audit-strip-outside-the-first-tab` |
 | #77 | `session-token-read-from-the-query-string` |
 | #79 | `blocks-file-imports-a-value-from-its-generated-widget`, `important-outline-removal` |
+| #81 | `scheme-switch-keeps-transition-property` |
 | Scaffold and catalogue wording (locale rules) | `missing-translation-key`, `dropped-interpolation`, `counted-string-without-number-format`, `number-format-on-a-value-that-is-not-a-number`, `translation-key-prefix-table-has-a-dead-entry`, `empty-locale-value`, `locale-missing-sections`, `locale-untranslated`, `ko-particle-after-placeholder`, `scaffold-header-placeholder` |
 | Other defects named by the rule itself | `unguarded-route`, `internal-address-as-a-bare-anchor`, `phantom-projection-read`, `unnamed-icon-button`, `jsx-child-line-comment`, `size-shorthand`, `description-as-filter`, `visible-native-file-input`, `single-line-free-text` |
 

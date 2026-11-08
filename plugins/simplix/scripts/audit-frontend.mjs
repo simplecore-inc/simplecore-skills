@@ -1872,6 +1872,165 @@ return isAuthenticated ? <SignedInWindow /> : <VisitorWindow />;`,
     },
   },
   {
+    id: "running-label-without-ellipsis",
+    invariant: "audit: action words",
+    level: "review",
+    desc: "A `runningLabel` whose words do not end with the ellipsis character (`…`): three full stops (`Saving...`) or no ending at all. The label is drawn on the button while a command runs, in the one typeface every other running label of the product uses, and a catalogue that writes `...` in one entry and `…` in the next draws two different marks under one pointer. Write the single character `…` at the end of every running label, in every language. The rule reads the literal beside `runningLabel:` and, for a `t(\"key\")` call (a ternary of two keys included), the value the key has in every catalogue language",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c, file) => {
+      const hits = [];
+      const lines = c.split("\n");
+      const segments = translatorBindingSegments(c);
+      const endsWithEllipsis = (text) => text.trimEnd().endsWith("…");
+      const quoted = (text) => [...text.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]);
+      // The text inside the parentheses that open at `open`, balanced, or null when the line ends first.
+      const callArguments = (line, open) => {
+        let depth = 0;
+        for (let i = open; i < line.length; i++) {
+          if (line[i] === "(") depth++;
+          else if (line[i] === ")" && --depth === 0) return line.slice(open + 1, i);
+        }
+        return null;
+      };
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const at = line.search(/\brunningLabel\s*:/);
+        if (at < 0 || !notCommentLine(line, lines, i)) continue;
+        const rest = line.slice(line.indexOf(":", at) + 1);
+        const literal = /^\s*(["'`])((?:\\.|(?!\1).)*)\1/.exec(rest);
+        const bad = [];
+        if (literal && !endsWithEllipsis(literal[2])) bad.push(`"${literal[2]}"`);
+        for (const { alias, ns } of segments) {
+          for (const call of rest.matchAll(new RegExp(`\\b${alias}\\(`, "g"))) {
+            const args = callArguments(rest, call.index + call[0].length - 1);
+            if (args === null) continue;
+            for (const key of quoted(args)) {
+              for (const dir of catalogueDirsFor(ns, file)) {
+                for (const [language, entries] of catalogueLanguages(dir)) {
+                  const value = entries.get(key);
+                  if (value !== undefined && !endsWithEllipsis(value)) bad.push(`${language}: "${value}"`);
+                }
+              }
+            }
+          }
+        }
+        if (bad.length > 0) hits.push({ line: i + 1, excerpt: `${line.trim().slice(0, 90)} -> ${bad.join(", ")}`.slice(0, 200) });
+      }
+      return hits;
+    },
+    samples: (() => {
+      const catalogue = (value) => ({
+        "modules/site/src/locales/widgets/en.json": `{ "actions": { "saving": ${JSON.stringify(value)} } }\n`,
+      });
+      const source = `const { t } = useTranslation("site/widgets");
+const save = useActionConfirm<Row>({ title: t("actions.saveTitle"), runningLabel: t("actions.saving"), onConfirm: (row) => run(row) });`;
+      return {
+        file: "modules/site/src/widgets/area/actions.tsx",
+        broken: { files: catalogue("Saving..."), source },
+        fixed: { files: catalogue("Saving…"), source },
+        miss: [
+          {
+            note: "a label with no running state of its own: another property holding the same key is not a running label",
+            files: catalogue("Saving..."),
+            source: `const { t } = useTranslation("site/widgets");
+const row = { title: t("actions.saving"), runningLabel: undefined };`,
+          },
+          {
+            note: "a key no catalogue defines is missing-translation-key's business, not this rule's",
+            files: catalogue("Saving..."),
+            source: `const { t } = useTranslation("site/widgets");
+const save = { runningLabel: t("actions.unknown") };`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
+    id: "typing-width-counts-characters-of-another-font",
+    invariant: "audit: control width",
+    level: "review",
+    desc: "A width written as a `calc(...)` over a count of characters in `ch` where the count is the `.length` of text drawn beside the field (a suffix, a unit, a label). `ch` is the width of a `0` in the field's own typeface; a suffix drawn in a smaller proportional face, or in CJK, is wider or narrower than one `0` per character, so the allowance misses and the box squeezes the field it was meant to size (a Korean unit cut the digits off). Size only the element that holds the digits, in `ch` of its own digit count, and let the suffix, the spinner and the padding take their own width. A digit count taken from a number (`String(max).length`) is the field's own typeface and is not reported",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isSource(p),
+    check: (c) =>
+      lineHits(c, /calc\([^)`]*\$\{(?![^}]*(?:String\(|toString\(|toFixed\())[^}]*\.length[^}]*\}\s*ch\b/, notCommentLine),
+    samples: {
+      file: "packages/<ui>/src/inputs/number-input.tsx",
+      broken: "const style = { width: `calc(${digits + suffix.length}ch + 2.75rem)` };",
+      fixed: "const fieldStyle = { width: `${digits}ch`, boxSizing: \"content-box\" } as const;",
+      miss: [
+        { note: "a digit count taken from the number itself, in the typeface of the digits", source: "const style = { width: `calc(${String(max).length}ch + 2rem)` };" },
+        { note: "a count of characters in ch with no calc around it is the field's own typeface", source: "const style = { width: `${digits}ch` };" },
+      ],
+    },
+  },
+  {
+    id: "pressed-state-without-look",
+    invariant: "audit: interaction states",
+    level: "review",
+    desc: "An element that carries `aria-pressed={x}` and draws nothing different when `x` is true: no `aria-pressed:` / `data-pressed` class variant on it and nothing else in the tag reading the same value (a `variant`, a `data-*` attribute, a class chosen by it). The attribute tells a screen reader the control is on; a sighted reader gets no sign, so a toggle, a chip or a segmented choice looks the same pressed and not. Give the element a pressed look (a pressed axis or variant of its part, or an `aria-pressed:` class), and keep the keyboard focus ring visible beside it. Report level: a part that draws its pressed look from a stylesheet keyed on the attribute is judged by reading that stylesheet",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c) => {
+      const hits = [];
+      const lines = c.split("\n");
+      for (const m of c.matchAll(/<[A-Za-z][\w.]*/g)) {
+        const { tag } = jsxOpenTag(c, m.index);
+        const own = tagAttrs(tag);
+        const attr = /\baria-pressed=\{/.exec(own);
+        if (!attr) continue;
+        // The braced expression, balanced.
+        let depth = 0;
+        let end = attr.index + attr[0].length - 1;
+        for (; end < own.length; end++) {
+          if (own[end] === "{") depth++;
+          else if (own[end] === "}" && --depth === 0) break;
+        }
+        const expression = own.slice(attr.index + attr[0].length, end);
+        // What else the tag says, without its event handlers: `onClick={() => set(!x)}` reads the value
+        // it toggles and draws nothing.
+        let remainder = own.slice(0, attr.index) + own.slice(end + 1);
+        for (let handler = /\bon[A-Z]\w*=\{/.exec(remainder); handler; handler = /\bon[A-Z]\w*=\{/.exec(remainder)) {
+          let braces = 0;
+          let close = handler.index + handler[0].length - 1;
+          for (; close < remainder.length; close++) {
+            if (remainder[close] === "{") braces++;
+            else if (remainder[close] === "}" && --braces === 0) break;
+          }
+          remainder = remainder.slice(0, handler.index) + remainder.slice(close + 1);
+        }
+        if (/\baria-pressed:|\bdata-pressed\b|\bdata-\[pressed|\[aria-pressed=/.test(remainder)) continue;
+        const identity = [...expression.matchAll(/[A-Za-z_$][\w$]*/g)]
+          .map((n) => n[0])
+          .filter((n) => n.length > 1 && !/^(?:true|false|null|undefined|Boolean|has|some|includes|every|length)$/.test(n));
+        // Something else in the tag reads the value the attribute states: a variant, a data attribute,
+        // a class picked by it, or a slot-attribute helper handed it.
+        if (identity.some((n) => new RegExp(`\\b${n.replace(/\$/g, "\\$")}\\b`).test(remainder))) continue;
+        const line = lineOfIndex(c, m.index);
+        if (!notCommentLine(lines[line - 1] ?? "", lines, line - 1)) continue;
+        hits.push({ line, excerpt: tag.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/toolbar.tsx",
+      broken: `<button type="button" className="rounded-md px-2 py-1" aria-pressed={wrapped} onClick={() => setWrapped(!wrapped)}>
+  {t("wrap")}
+</button>`,
+      fixed: `<button type="button" className="rounded-md px-2 py-1 aria-pressed:bg-accent aria-pressed:text-accent-foreground" aria-pressed={wrapped} onClick={() => setWrapped(!wrapped)}>
+  {t("wrap")}
+</button>`,
+      miss: [
+        {
+          note: "a variant chosen by the same value is the pressed look",
+          source: `<Button variant={wrapped ? "default" : "outline"} aria-pressed={wrapped} onClick={() => setWrapped(!wrapped)}>{t("wrap")}</Button>`,
+        },
+        {
+          note: "a part that draws the pressed look from a slot attribute handed the same value",
+          source: `<button {...slotAttributes(toggleStyle, { pressed })} type="button" aria-pressed={pressed} onClick={onToggle}>{label}</button>`,
+        },
+      ],
+    },
+  },
+  {
     id: "page-opened-at-written-by-hand",
     invariant: "#3",
     level: "review",
@@ -10060,6 +10219,117 @@ function scaffoldHeaderFindings() {
 }
 
 /**
+ * A generated read hook called with the read-meta in one place and with no options at all in another.
+ *
+ * <p>Calls of one hook with equal arguments share a query, and the meta of the first observer to mount
+ * decides whether a failure raises the console's error dialog: the later observer's meta is ignored. A
+ * read one caller marks (`RECORD_READ_META`, `suppressErrorDialog`) because the page draws its failure,
+ * and another leaves bare, is therefore told twice or not at all, depending on which mounts first.
+ *
+ * <p>A call whose argument is a name rather than a literal (`SHELL_PERMISSIONS_READ`, `options`, a spread) may
+ * carry the meta out of sight and is not judged. Reads are the generated `useGet*` and `useList*` hooks; their
+ * definitions, tests and stories are left out.
+ */
+function readMetaDiffersBetweenCallersFindings() {
+  const marked = new Map();
+  const bare = new Map();
+  for (const abs of collectSources()) {
+    const rel = path.relative(ROOT, abs).split(path.sep).join("/");
+    if (/\.(?:test|spec|stories)\.tsx?$/.test(rel)) continue;
+    const content = fs.readFileSync(abs, "utf8");
+    for (const m of content.matchAll(/\b(use(?:Get|List)[A-Z]\w*)\(/g)) {
+      if (/\b(?:function|const|let|var)\s+$/.test(content.slice(Math.max(0, m.index - 12), m.index))) continue;
+      let depth = 0;
+      let end = m.index + m[0].length - 1;
+      for (; end < content.length; end++) {
+        if (content[end] === "(") depth++;
+        else if (content[end] === ")" && --depth === 0) break;
+      }
+      const args = content.slice(m.index + m[0].length, end);
+      const at = { file: rel, line: lineOfIndex(content, m.index), excerpt: content.slice(m.index, end + 1).replace(/\s+/g, " ").slice(0, 140) };
+      // Judged only where the options are written out: marked by the meta's own name, or bare when
+      // every argument is an object literal that names no constant, spread, `meta` or `options`.
+      const writtenOut = (/^\s*$/.test(args) || (/^\s*\{[\s\S]*\}\s*$/.test(args) && !/\b[A-Z][A-Z0-9_]{2,}\b|\.\.\.|\bmeta\b|\boptions\b/.test(args)));
+      const table = /READ_META|suppressErrorDialog/.test(args) ? marked : writtenOut ? bare : null;
+      if (!table) continue;
+      if (!table.has(m[1])) table.set(m[1], []);
+      table.get(m[1]).push(at);
+    }
+  }
+  const findings = [];
+  for (const [hook, calls] of bare) {
+    if (!marked.has(hook)) continue;
+    for (const call of calls) findings.push({ ...call, excerpt: `${call.excerpt} - ${hook} carries the read-meta at ${marked.get(hook)[0].file}:${marked.get(hook)[0].line}` });
+  }
+  return findings;
+}
+
+/** Every stylesheet under the source roots, dependency, build and generated directories left out. */
+function projectStylesheets() {
+  const out = [];
+  const visit = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(e.name)) visit(path.join(dir, e.name));
+      } else if (e.name.endsWith(".css")) {
+        out.push(path.join(dir, e.name));
+      }
+    }
+  };
+  for (const root of SRC_ROOTS) visit(path.join(ROOT, root));
+  return out;
+}
+
+/**
+ * A stylesheet rule under a colour-scheme-switch mark that nils a transition's duration or delay
+ * while no rule of the file lists `transition-property: none` under a mark.
+ *
+ * <p>A part that eases its colours would paint the old scheme's ink on the new scheme's ground for
+ * the length of its transition, so a document element is marked for the one frame in which the
+ * scheme changes and every transition is switched off under the mark. A zero duration is not
+ * enough: a transition that is already running when the mark is set, whose end value is the same
+ * in both schemes (a fill that ends transparent), keeps fading from the old scheme's colour. A
+ * property that is no longer listed is cancelled and takes its end value at once.
+ *
+ * <p>The mark is read by its attribute name (`[data-...scheme-switch...]`), which is the spelling
+ * both kits write. Read per file: a file whose duration rule and property rule sit apart is whole.
+ */
+function schemeSwitchTransitionFindings() {
+  const findings = [];
+  for (const abs of projectStylesheets()) {
+    const raw = fs.readFileSync(abs, "utf8");
+    // Comments blanked in place so a line number still names the line of the file.
+    const bare = raw.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "));
+    const durations = [];
+    let cancelsProperty = false;
+    for (const m of bare.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+      if (!/\[[^\]]*scheme-switch[^\]]*\]/.test(m[1])) continue;
+      if (/\btransition-property\s*:\s*none\b|\btransition\s*:\s*none\b/.test(m[2])) cancelsProperty = true;
+      // A duration is nilled directly (`transition-duration: 0s`) or through the custom property the
+      // parts read it from (`--part-duration-fast: 0s`); both leave a running transition fading.
+      if (/\btransition-(?:duration|delay)\s*:|--[\w-]*duration[\w-]*\s*:\s*0m?s\b/.test(m[2])) {
+        durations.push({ at: m.index + (m[1].length - m[1].trimStart().length), selector: m[1].trim().replace(/\s+/g, " ") });
+      }
+    }
+    if (cancelsProperty) continue;
+    for (const { at, selector } of durations) {
+      findings.push({
+        file: path.relative(ROOT, abs).split(path.sep).join("/"),
+        line: lineOfIndex(bare, at),
+        excerpt: `${selector.slice(0, 100)} - nils a duration, and no rule under a scheme mark lists transition-property: none`,
+      });
+    }
+  }
+  return findings;
+}
+
+/**
  * A locale entry left empty, which does not render as nothing.
  *
  * <p>The adapter is configured not to return empty strings, so a key whose value is `""` is treated
@@ -10339,6 +10609,96 @@ const COLLECTION_RULES = [
           files: {
             "apps/console/src/app/peek-kinds.tsx": `const PEEKS = [{ kind: "userAccount", detail }, { kind: "team", detail }]; for (const { kind, ...spec } of PEEKS) registerPeek(kind, entityPeek(spec));`,
             "modules/billing/src/widgets/account/list.tsx": `const F = [{ name: "ownerId", kind: "reference", peekKinds: { field: "ownerType", kinds: { USER: "userAccount", TEAM: "team" } } }]; peek.open({ kind: "userAccount", target });`,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "read-meta-differs-between-callers",
+    invariant: "#61",
+    level: "review",
+    desc: "A generated read hook (`useGet*`, `useList*`) called with the read-meta (`RECORD_READ_META`, `suppressErrorDialog`) at one call site and with no options at another. Calls of one hook with equal arguments share a query, and the meta of the first observer to mount decides whether a failure raises the console's error dialog; the later observer's meta is ignored. Whether the dialog appears then depends on which part mounts first. Hand every caller the same options, from one shared constant, or say beside the bare call why it keeps the dialog. A call whose argument is a name (a constant, an `options` object, a spread) may carry the meta out of sight and is not judged",
+    collect: readMetaDiffersBetweenCallersFindings,
+    samples: {
+      broken: {
+        files: {
+          "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions({ query: { meta: RECORD_READ_META } });`,
+          "apps/console/src/layouts/search.tsx": `const me = useGetAllCurrentUserPermissions();`,
+        },
+      },
+      fixed: {
+        files: {
+          "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions(SHELL_READ);`,
+          "apps/console/src/layouts/search.tsx": `const me = useGetAllCurrentUserPermissions(SHELL_READ);`,
+        },
+      },
+      miss: [
+        {
+          note: "two different hooks: one marked, the other bare",
+          files: {
+            "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions({ query: { meta: RECORD_READ_META } });`,
+            "apps/console/src/layouts/search.tsx": `const list = useGetAllRoles();`,
+          },
+        },
+        {
+          note: "the hook's own definition and a test are not call sites",
+          files: {
+            "apps/console/src/layouts/shell.tsx": `const me = useGetAllCurrentUserPermissions({ query: { meta: RECORD_READ_META } });`,
+            "apps/console/src/layouts/hooks.ts": `export function useGetAllCurrentUserPermissions(options) { return useQuery(options); }`,
+            "apps/console/src/layouts/search.test.tsx": `const me = useGetAllCurrentUserPermissions();`,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "scheme-switch-keeps-transition-property",
+    invariant: "#81",
+    level: "error",
+    desc: "A stylesheet rule under a colour-scheme-switch mark (`:root[data-...scheme-switch]`) nils `transition-duration`, `transition-delay` or a duration custom property (`--part-duration-fast: 0s`) and no rule of the file lists `transition-property: none` under a mark. A zero duration does not cancel a transition that is already running when its end value is the same in both schemes (a fill that ends transparent): it keeps fading from the old scheme's colour, which paints light fill under light ink on the dark ground for 50 to 100 ms after the switch. Add `transition-property: none !important` to the rule that covers the element, its descendants and their pseudo-elements; a property that is not listed is cancelled and takes its end value at once",
+    collect: schemeSwitchTransitionFindings,
+    samples: {
+      broken: {
+        files: {
+          "packages/theme/src/styles/tokens.css": `:root[data-scheme-switch],
+:root[data-scheme-switch] *,
+:root[data-scheme-switch] *::before,
+:root[data-scheme-switch] *::after {
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+`,
+        },
+      },
+      fixed: {
+        files: {
+          "packages/theme/src/styles/tokens.css": `:root[data-scheme-switch],
+:root[data-scheme-switch] *,
+:root[data-scheme-switch] *::before,
+:root[data-scheme-switch] *::after {
+  transition-property: none !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+`,
+        },
+      },
+      miss: [
+        {
+          note: "the duration rule and the property rule sit apart in one file, which cancels every running transition as well",
+          files: {
+            "packages/theme/src/styles/tokens.css": `:root[data-scheme-switch] { --duration-fast: 0s !important; transition-duration: 0s !important; }
+:root[data-scheme-switch] * { transition-property: none !important; }
+`,
+          },
+        },
+        {
+          note: "a zero duration under a mark that is not the scheme's, and a scheme mark that sets a variable that is not a duration",
+          files: {
+            "packages/theme/src/styles/motion.css": `:root[data-reduced-motion] * { transition-duration: 0s !important; }
+:root[data-scheme-switch] { --ground: #000; }
+`,
           },
         },
       ],
