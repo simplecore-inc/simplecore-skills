@@ -1916,6 +1916,9 @@ const theFigureRowSitsAgainstTheHeader = {
       const boxes = [...parent.children].filter((k) => {
         if (k.matches(o.recordCollectionSelector)) return false;
         if (!visible(k) || !/\d/.test(k.textContent)) return false;
+        // A field of a form is not a figure tile, whatever digits its hint holds (「60 to 86400 seconds」):
+        // a tile reports a value and never takes one, so a box that holds a control to type or tick into is a form cell.
+        if (k.querySelector("input, select, textarea, [role=switch], [role=combobox], [role=spinbutton]")) return false;
         const q = k.getBoundingClientRect();
         return q.width >= o.minFigureTileWidthPx
           && q.height >= o.minFigureTileHeightPx
@@ -3839,6 +3842,16 @@ const FIXTURES = {
         <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
     },
     quiet: {
+      // A settings form under a standing message: its two-column field grid holds digits in the hints, and a
+      // field is not a figure, so the message is not above a figure row.
+      "a message above a two-column settings form whose hints hold digits":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;background:#eff6ff;margin-bottom:12px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{min-height:90px}.field input{width:90%;height:32px}.field p{margin:4px 0}</style>
+        <main><div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> Values saved here apply when the server starts with the s3 provider
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=grid><div class=field><label>Storage address</label><input value="https://s3.example.test"><p>An address of an S3-compatible service.</p></div>
+        <div class=field><label>Link lifetime</label><input value="900"><p>60 to 86400 seconds; empty means 900.</p></div></div></main>`,
       "a notice above a row of price cards on a page without the console shell, scope named":
         { html: `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}.banner{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}.body{flex:1}.body p{margin:0}.bad{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.good{background:#ecfdf5}.row{background:#f4f4f5;border-radius:8px;padding:10px 12px;margin-bottom:8px}.figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style><main><div data-slot=site-banner class="banner warn"><span aria-hidden=true><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class=body><p role=alert>Prices are shown without tax.</p></div></div><div class=figs><div class=fig>Basic<br>$9</div><div class=fig>Pro<br>$19</div><div class=fig>Team<br>$49</div></div></main>`, options: { figureRowScope: '[data-slot^="console-"]' } },
       // The order the rule asks for: the row against the header, the cards directly under it.
