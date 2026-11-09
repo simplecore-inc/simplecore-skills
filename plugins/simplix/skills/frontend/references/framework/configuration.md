@@ -146,7 +146,7 @@ existing directory, naming the option and the path it resolved to.
 
 | Key | What it holds |
 | --- | --- |
-| `templates.from` | The UI kit package (or a template directory) whose templates draw pages and widgets; the project's own `.simplix/templates` overrides it file by file. Without it the CLI looks for one root dependency that declares `simplix.templates` in its `package.json`. |
+| `templates.from` | The UI kit package (or a template directory) whose templates draw pages and widgets, read above the templates of each kit it extends (`simplix.extends` in the kit's `package.json`); the project's own `.simplix/templates` overrides them file by file. The CLI writes `{{@kit.package}}`, `{{@kit.label}}` and `{{@kit.id}}` in any template as this kit's values. Without it the CLI looks for one root dependency that is a kit (declaring `simplix.templates` or `simplix.extends`), counting a kit and the base it extends as one. |
 | `templates.storiesDir` | The design reference's screens directory. A kit template with a `.stories` sibling makes a scaffold or `add-page` write the screen's board frame there. Without it no frame is written. |
 | `templates.story` | `id` and `title` patterns over `{entity}` and `{Entity}` for the generated frame, and `files`: a map from a scaffold key (an entity's kebab name, or an `add-page` story's default file name without `.stories.tsx`) to the frame file a board already draws it in, so the scaffold writes that frame instead of a second one. |
 | `modules.groups` | Directory names under `modules/` that hold modules instead of being one (`["admin", "portal", "shared"]`), so `--module admin/user` addresses `modules/admin/user`. |

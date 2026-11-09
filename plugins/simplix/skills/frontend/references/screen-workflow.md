@@ -180,6 +180,11 @@ Read this before planning a screen or dispatching agents for screen work.
 4. **Where a change belongs:**
    - composition and wiring in the template
    - a look or behaviour that more than one screen reuses in the kit
+   - within the kits, a template, a part or a fence belongs to the area's core kit, so every design
+     kit of the area has it; a design kit adds only its stylesheet and design defaults, and a
+     template of its own only where its look cannot be drawn from the core's, declared in
+     `simplix.overrides` with the reason. A template that fails for one design kit means that kit
+     lacks a part: the kit is fixed, and the template is never kept only in the kits that pass
    - behaviour independent of product and design (data, state, accessibility) in the framework
    - contract information the template lacks (field types, enums, permissions, labels) in the
      backend's SimpliX Meta. Start with screens whose backend is ready.
@@ -223,6 +228,9 @@ Read this before planning a screen or dispatching agents for screen work.
    file is `.oxlintrc.json` unless `--lint <file>` names another. The command needs
    `templates.from` in `simplix.config.ts` and an override that already holds the rule; a config
    that narrows imports per module group carries the fence in each group's override.
+   The design kits of one area fence the same imports, so a screen moved to another design meets
+   the same refusals; a fence entry added to one design kit is added to all of them in the same
+   change.
    Two more checks belong in the project lint beside it: `simplix cycles` (an import cycle makes
    a hot update reload the whole page) and `simplix meta-removals` (a Meta surface that left the
    snapshot while code still names it); their roots and files are the `checks` keys of
@@ -284,8 +292,9 @@ Read this before planning a screen or dispatching agents for screen work.
     shared its name with a theme variable at `:root` overrode the theme's value; rename one.
 17. **A kit test that reads files needs Node types its package does not have.** Check the
     package's `tsconfig` `include` before adding one: a test outside it is never typechecked, and
-    one inside it fails on `node:fs`. The kit has no DOM test environment, so a hook is tested by
-    pulling its pure parts out and through `renderToStaticMarkup`.
+    one inside it fails on `node:fs`. A hook or a component that needs a DOM is tested in a
+    `*.dom.test.tsx` file, which the core kit runs in the linked framework's `jsdom`, with React
+    resolved to one copy; anything else is tested through its pure parts or `renderToStaticMarkup`.
 18. **A script binary is a dependency.** A package script that calls `oxlint` with no package
     declaring it fails with `command not found` on a clean install; declare the binary.
 19. **The rendered audit takes the design's options file.** A caller of `snippet()` passes the
@@ -357,9 +366,11 @@ Read this before planning a screen or dispatching agents for screen work.
     template that emits unused variables survives on every screen it renders. Read the warnings of
     a fresh render, and fix the template.
     Example: `const canCreate = useAllowed(undefined) && false` in every read-only crud page.
-29. **A template helper set has one source.** A kit test that renders templates registers the CLI's
-    Handlebars helpers from the CLI, never a copied list, or a template using a helper the CLI ships
-    fails only in the kit test.
+29. **A template helper set has one source.** A kit test that renders templates reads them with the
+    CLI's `loadProjectTemplates` (the kit's own and those of the kit it extends, with the kit's values
+    written in) and renders them with the CLI's `renderTemplate`, never a copied helper list or a
+    file read from one kit's `templates/`, or a template using a helper the CLI ships fails only in
+    the kit test.
     Example: a template using `or` passed in the CLI and failed `tests/template-typecheck.ts`.
 30. **Generated hook names are read after a Meta refresh.** SimpliX Meta pluralises an operation
     tag that is already plural; name the tag in the singular in the backend before the frontend
@@ -454,6 +465,15 @@ Read this before planning a screen or dispatching agents for screen work.
       `useRollingWindow(ms)` (`page-opened-at-written-by-hand`); a line's parts are `joinParts(...)`
       (`parts-joined-by-hand`); a help card's reference table is `HelpTable`; the colour scheme
       parameter is the site kit's `SCHEME_PARAM` (`scheme-parameter-spelled-out`).
+41. **A template change is proved by generating with it, for every kit that uses it.** A template is
+    code that runs in every product, so a test that renders one template with a hand-built context
+    proves less than one generation through the CLI: the kit repository's gate generates a project
+    from every template in force for each design kit (a domain from a SimpliX Meta snapshot, the
+    CRUD screen with its route and menu entry, every page kind and variant with its frame), then
+    refuses a fenced import, type-checks the generated code and mounts every generated frame,
+    page and shell, and compares the design kits of one area file by file. A template no command
+    renders fails that gate. Run it before a template change is called done; the kit
+    repository's instruction file names the command.
 
 ## Cases
 
@@ -488,7 +508,7 @@ Read this before planning a screen or dispatching agents for screen work.
   with no overridable template: it came from the bundled set and carried none of the kit's parts.
 - **Prevention.** A feasibility review runs before the plan commits: for every screen, the command
   that generates it and the templates it reads (`.simplix/templates`, then the kit named by
-  `templates.from`, then the bundled one). A gap found there is closed in the CLI before any
+  `templates.from`, then each kit it extends, then the bundled one). A gap found there is closed in the CLI before any
   screen work starts.
 
 ## A rule was invented that the user never set
