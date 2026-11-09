@@ -1000,8 +1000,8 @@ reason. Where a default is genuinely wrong for a product, it is changed once at 
     is standard across a project, its absence is one grep and belongs in that project's gate
     script - firing on the screens that lack it and silent on the ones that have it.
 - **A shape the generator does not emit is added to the project's template, never to one
-  screen.** The CLI reads `.simplix/templates/<name>.hbs` before the UI kit's template and its own
-  bundled one, and falls through per name, so a project takes over the page shapes it cares about and leaves the
+  screen.** The CLI reads `.simplix/templates/<name>.hbs` before the UI kit's template, the
+  template of the kit it extends and its own bundled one, and falls through per name, so a project takes over the page shapes it cares about and leaves the
   rest - `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names for
   list screens, `list`, `form`, `detail` and `editor` the widget-side ones, and `record-page`,
   `dashboard-page`, `static-page`, `error-page`, `auth-page` and `app-shell` the kinds

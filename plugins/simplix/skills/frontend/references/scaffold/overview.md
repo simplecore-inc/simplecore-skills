@@ -228,8 +228,11 @@ and when an author runs it; `pnpm exec simplix <command> --help` lists the flags
 - Name exactly one owner: `--module <name>` (a grouped module is `<group>/<name>`) writes
   `modules/<name>/src/pages/<page>/page.tsx` and its barrel exports; `--app <name>` writes the page under
   `apps/<name>/src/pages/<page>/`. An `app-shell` is written as `root-layout.tsx` under the owner's `src/app/layouts/`.
-- The template comes from the project's `.simplix/templates`, then the UI kit named by `templates.from`, then the
-  bundled one. `record-page`, `dashboard-page`, `static-page` and `error-page` have a bundled shape; `auth-page` and
+- The template comes from the app's and the project's `.simplix/templates`, then the UI kit named by
+  `templates.from`, then each kit it extends (`simplix.extends`: an area's shared templates live in its core kit,
+  and a design kit carries only the ones it draws differently), then the bundled one. A kit template names the kit
+  the project draws with as `{{@kit.package}}`, `{{@kit.label}}` and `{{@kit.id}}`, which the CLI fills in before
+  rendering; a project template may use them too. `record-page`, `dashboard-page`, `static-page` and `error-page` have a bundled shape; `auth-page` and
   `app-shell` exist only where the kit or the project supplies them, and the command refuses otherwise.
 - `--variant <name>` draws another shape of the same kind from `<kind>.<variant>.hbs` (a shell with a top bar
   instead of a menu column is `app-shell --variant top-bar`). A variant is never bundled; the kit or project must ship
