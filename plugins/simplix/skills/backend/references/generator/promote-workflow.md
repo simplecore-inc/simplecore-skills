@@ -119,6 +119,12 @@ yo simplix:promote CmsContentLink --module <promoteModule>
 It reports one `From` / `To` pair per artefact (service, controller, DTOs, service test; the tree
 service and its test are added when the render produced them), its outcome, and a count per outcome.
 
+**A changed yml needs `generate <Entity> --force` before the promote.** A `generate` without `--force`
+skips a render that already sits in `generated/` (a `SKIP ... already exists` line), so the promote
+writes the old render again and `yo simplix:generated` calls the file `stale`: a field added to the yml
+is in no DTO. `--force` here overwrites only the `generated/` render, never a promoted file; the
+promote then merges it three ways. Check that the new field is in the DTO before the Gradle run.
+
 ## Before generating: the module path names a group
 
 In a grouped backend (`modules/<group>/<module>`), `modulePath` and `promoteModule` start with an
