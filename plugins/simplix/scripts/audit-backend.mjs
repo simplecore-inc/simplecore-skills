@@ -2817,6 +2817,27 @@ public class MemberSearch {
     },
   },
   {
+    id: "storage-sdk-beside-simplix-file",
+    invariant: "framework-first (How to Use #3)",
+    level: "error",
+    desc: "Application code imports the AWS S3 SDK (S3Client, S3Presigner, S3 request/response types) - object storage, its presigned links and its public URL prefix are simplix-file's FileStorageService, configured by simplix.file.storage.*; a second S3 client beside it duplicates the framework, splits the configuration in two and is the defect How to Use #3 names. Use FileStorageService (store, exists, delete, getPublicUrl); when it lacks something, name the gap and extend the framework instead of working around it",
+    appliesTo: (p) => p.endsWith(".java") && !p.includes(`${path.sep}src${path.sep}test${path.sep}`),
+    check: (c) => lineHits(stripCommentsAndStrings(c), /^\s*import\s+software\.amazon\.awssdk\.(?:services\.s3|awscore|regions|auth)\b/),
+    samples: {
+      file: "modules/common/release/src/main/java/app/web/common/release/storage/S3ReleaseObjectStore.java",
+      broken: `import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+@Component
+public class S3ReleaseObjectStore {
+    private final S3Presigner presigner;
+}`,
+      fixed: `import dev.simplecore.simplix.file.infrastructure.storage.FileStorageService;
+@Component
+public class ReleaseFiles {
+    private final FileStorageService storage;
+}`,
+    },
+  },
+  {
     id: "field-injection-in-web",
     invariant: "#8",
     level: "error",
