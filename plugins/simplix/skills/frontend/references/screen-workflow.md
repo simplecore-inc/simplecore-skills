@@ -262,7 +262,7 @@ Read this before planning a screen or dispatching agents for screen work.
     draws the ring inset (`[--focus-halo:var(--focus-halo-inset)]` in its slot style); a control that
     draws no ring takes `focus-visible:shadow-[var(--focus-halo)]` from its slot style. Both tokens
     sit beside `--focus-halo`, and a theme a project generates carries them with it. The kit's
-    rendered focus probe (`packages/console-clarity/scripts/focus-clip-rendered.mjs`: `probe` after
+    rendered focus probe (`packages/console-core/scripts/focus-clip-rendered.mjs`: `probe` after
     one real Tab key press, `census` by clipping part) runs inside the project's rendered runner and
     reports a ring side an ancestor clips, a ring a sibling paints over and a control that draws the
     browser's default ring. The fix goes into the part the census names, never onto a screen.

@@ -35,7 +35,8 @@ generator, the template and the checks are.
 ## The kit's region contract is the authority
 
 What a page type draws, region by region, is data in the UI kit and is not restated here
-(`regions.json` in the design kit; for console-clarity, `packages/console-clarity/regions.json`).
+(`regions.json` in the area's core kit, which every design kit of the area extends; for the console,
+`packages/console-core/regions.json`).
 Per page type (list-detail, dashboard, tabbed, record, system) it lists the regions in drawing
 order. Per region it names the part that fills it, the `page.blocks` slot that feeds it, the DOM
 marks (`data-slot` or `data-part`) that place a control in it, and the control kinds it may hold.
