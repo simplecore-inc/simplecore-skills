@@ -201,7 +201,10 @@ private String name;
 
 A List or Detail DTO field that maps to no entity column (a count, an aggregate, a derived value) carries
 one too: without it Meta publishes the field with no label, and the screen humanises the field name
-(`memberCount` reads "Member count" in every language).
+(`memberCount` reads "Member count" in every language). A field an entity's `@References(nameField = "...")`
+names is one of these: it is a `@Formula` read through the reference, so its List and Detail DTO field carries
+`@FieldLabel("{entities.<Entity>.<nameField>}")` with the key the entity's message bundle already holds.
+A name field that no SearchDTO carries gets its label from nowhere else.
 Enforcement: review - the audit's `missing-field-label` reads Search and Create DTO fields only; a rule over
 List and Detail DTO fields with no matching entity column is the machine form of this line.
 
