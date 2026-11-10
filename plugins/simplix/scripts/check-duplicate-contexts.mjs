@@ -129,6 +129,13 @@ function collectCopies() {
   return byName;
 }
 
+/**
+ * A `createContext` call that makes a React context. Node's `vm.createContext()` builds a sandbox
+ * global and shares nothing between copies, so a test runner or bundler that calls it is not a
+ * context owner.
+ */
+const CREATES_CONTEXT = /(?<!\bvm\.)\bcreateContext\s*[(<]/;
+
 /** Whether the package's shipped code creates a React context at module scope. */
 function createsContext(dir) {
   let budget = MAX_BYTES_PER_PACKAGE;
@@ -162,7 +169,7 @@ function createsContext(dir) {
       } catch {
         continue;
       }
-      if (/\bcreateContext\s*[(<]/.test(content)) return true;
+      if (CREATES_CONTEXT.test(content)) return true;
     }
   }
   return false;
@@ -482,6 +489,19 @@ function selfTest() {
     return { status: r.status, json, out: r.stdout, err: r.stderr };
   };
 
+  /** An app whose `.pnpm` store holds two physical copies of one package whose code is `source`. */
+  const duplicated = (name, pkgName, source) => {
+    const root = path.join(tmp, name);
+    // The audit looks at a package the workspace itself depends on, so the app declares it.
+    write(path.join(root, "package.json"), JSON.stringify({ name, dependencies: { [pkgName]: "1.0.0" } }));
+    for (const peerHash of ["peer-a", "peer-b"]) {
+      const dir = path.join(root, "node_modules", ".pnpm", `${pkgName}@1.0.0_${peerHash}`, "node_modules", pkgName);
+      write(path.join(dir, "package.json"), JSON.stringify({ name: pkgName, version: "1.0.0" }));
+      write(path.join(dir, "index.js"), source);
+    }
+    return root;
+  };
+
   const a = framework("a");
   const b = framework("b");
   const cases = [
@@ -536,6 +556,30 @@ function selfTest() {
       mismatches: 0,
       compared: 0,
       holds: (r) => r.json.skipped.some((line) => line.includes("reaches no")),
+    },
+    {
+      name: "hit: two copies of a package that creates a React context, not deduped",
+      root: () => duplicated("hit-react-context", "ctx-lib", "import React from 'react'; export const Ctx = React.createContext(null);"),
+      status: 1,
+      mismatches: 0,
+      compared: 0,
+      holds: (r) => r.out.includes("ctx-lib"),
+    },
+    {
+      name: "hit: two copies of a package that imports createContext from react",
+      root: () => duplicated("hit-named-context", "named-lib", "import { createContext } from 'react'; export const Ctx = createContext(null);"),
+      status: 1,
+      mismatches: 0,
+      compared: 0,
+      holds: (r) => r.out.includes("named-lib"),
+    },
+    {
+      name: "miss: two copies of a package whose only createContext is Node's vm.createContext",
+      root: () => duplicated("miss-vm-context", "vm-lib", "const vm = await import('node:vm'); export const sandbox = vm.createContext();"),
+      status: 0,
+      mismatches: 0,
+      compared: 0,
+      holds: (r) => !r.out.includes("duplicate-context-package"),
     },
     {
       name: "miss: an app that installs no kit compares nothing",
