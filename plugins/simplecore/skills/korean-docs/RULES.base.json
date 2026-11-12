@@ -751,9 +751,9 @@
       "id": "call-for-invoke",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `call`. **Every conjugation is in scope** - writing only the final form lets 「재평가를 부르는지」·「경보를 부르지 않는다」 walk past. **Calling a person out loud is legitimate, so the object decides** - calling a name, a person, or a child is not caught, and only writing that something else (an API, a rule, a frame, a re-evaluation) is 「부른다」 is. Write the real action: 호출한다 · 실행한다 · 적용한다 · 요구한다 · 가리킨다",
+      "reason": "A literal English `call`. **Every conjugation is in scope** - writing only the final form lets 「재평가를 부르는지」·「경보를 부르지 않는다」 walk past. **Calling a person out loud is legitimate, so the object decides** - calling a name, a person, a child, or a pet (고양이 · 강아지) is not caught, and only writing that something else (an API, a rule, a frame, a re-evaluation) is 「부른다」 is. Write the real action: 호출한다 · 실행한다 · 적용한다 · 요구한다 · 가리킨다",
       "find": [
-        "/(?<!이름|사람|아이)[을를] 부(르는(?! ?(이름|말|낱말|명칭))|르지|른다|릅니다|를|른 )/"
+        "/(?<!이름|사람|아이|고양이|강아지)[을를] 부(르는(?! ?(이름|말|낱말|명칭))|르지|른다|릅니다|를|른 )/"
       ],
       "replace": null,
       "hit": [
@@ -770,7 +770,9 @@
         "제조사가 그 항목을 부르는 이름",
         "그렇게 부르는 이유",
         "사람을 부르는 순서",
-        "아이를 부르는 소리"
+        "아이를 부르는 소리",
+        "사용자는 언제든 고양이를 부를 수 있다",
+        "강아지를 부른다"
       ]
     },
     {
