@@ -221,7 +221,9 @@ Read this before planning a screen or dispatching agents for screen work.
    - `audit-rendered.mjs --check pageLanguageFollowsTheLocale` asserts `<html lang>` names the
      page's language; pass `--options '{"expectLang":"ko"}'` when the locale is known.
 7. **The fence is mechanical.** The kit lists the framework parts that screens must not import
-   directly (`simplix.fence` in its package.json), and the project lint refuses them.
+   directly (`simplix.fence` in its package.json, or in the package.json of the core kit it
+   extends, where the design kit is written as `{{@kit.package}}`), and the project lint refuses
+   them.
    `simplix kit-fence` fails when an override of the lint config that holds `no-restricted-imports`
    differs from the kit's list, naming each override by its files; `simplix kit-fence --write`
    copies the list into every such override and keeps the `patterns` each one restricts. The lint
