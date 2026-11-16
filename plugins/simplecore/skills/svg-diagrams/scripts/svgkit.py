@@ -669,13 +669,21 @@ class Canvas:
 
     def text(self, x, y, s, size=14, color=_DEF, family=MONO, weight=400,
              anchor="start", spacing=None, opacity=None, mask=False,
-             mask_pad=3):
+             mask_pad=3, halo=False, halo_width=5):
         """One line of text. `mask=True` paints a paper-coloured rect behind
         the glyphs first, sized from tw(), so a label that has to sit on a
         line - a boundary's name on its border, a value on an axis - reads
         with the line broken behind it instead of cutting through the
         letters. The lint reports the unmasked case as TEXT-ON-LINE and
-        recognises this mask as the fix."""
+        recognises this mask as the fix.
+
+        `halo=True` outlines the glyphs in the paper colour instead: a copy
+        of the label is drawn first with a paper stroke `halo_width` wide,
+        so a line behind the label is broken only around its letters. Use it
+        where a mask's rectangle would hide something the reader measures -
+        a schedule bar, a plotted line. The copy is a separate element, not
+        `paint-order`, because PowerPoint's SVG import ignores `paint-order`
+        and would draw the stroke over the letters."""
         color = self.t["fg"] if color is _DEF else color
         if mask:
             mono = family == MONO
@@ -690,6 +698,10 @@ class Canvas:
              f'text-anchor="{anchor}"']
         if spacing:
             a.append(f'letter-spacing="{spacing}"')
+        if halo:
+            under = [a[0], f'font-size="{size}" fill="{self.bg}" font-weight="{weight}"'] + a[2:]
+            self.add(" ".join(under) + f' stroke="{self.bg}" stroke-width="{halo_width}" '
+                     f'stroke-linejoin="round" data-halo="1" aria-hidden="true">{esc(s)}</text>')
         if opacity is not None:
             a.append(f'opacity="{opacity}"')
         self.add(" ".join(a) + f'>{esc(s)}</text>')

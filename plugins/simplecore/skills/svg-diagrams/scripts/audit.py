@@ -314,9 +314,27 @@ def crop(svg_path, x, y, w, h, out, scale=4):
 
 
 # --- static lints ----------------------------------------------------------
+_HALO_RE = re.compile(r'<text\b([^>]*\bdata-halo="[^"]*"[^>]*)>.*?</text>', re.S)
+_HALO_AT = set()        # (x, y) of every label of the file being linted that carries a halo
+
+
+def _strip_halos(svg):
+    """A halo is a paper-coloured stroked copy of a label drawn under it (`text(...,
+    halo=True)`). It is the label's own outline, not a second label, so it is taken out
+    before any check reads the texts, and where it stood is kept: a line passing behind
+    a haloed label is broken by the halo the way a mask breaks it."""
+    _HALO_AT.clear()
+    for m in _HALO_RE.finditer(svg):
+        x, y = (re.search(rf'\b{k}="([\-\d.]+)"', m.group(1)) for k in "xy")
+        if x and y:
+            _HALO_AT.add((round(float(x.group(1))), round(float(y.group(1)))))
+    return _HALO_RE.sub("", svg)
+
+
 def lint(svg_path):
     with open(svg_path) as f:
         svg = f.read()
+    svg = _strip_halos(svg)
     # strip XML comments first: commented-out draft markup must not be linted
     # as real elements (phantom flags / crashes on partial fragments)
     svg = re.sub(r'<!--.*?-->', '', svg, flags=re.S)
@@ -2801,6 +2819,8 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                         continue
             if _seg_len_in(p, q, gb) <= 1.0:
                 continue
+            if (round(t["x"]), round(t["y"])) in _HALO_AT:
+                continue
             masked = any(o["pos"] > pos
                          and _inside((t["x0"], t["y0"], t["x1"], t["y1"]),
                                      _box(o), 2)
@@ -2815,7 +2835,8 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                         f'"{t["txt"][:22]}" has {what} running through its '
                         f'letters with nothing behind them — move the label '
                         f'off the line, or draw a paper-coloured mask under '
-                        f'it (text(..., mask=True))'))
+                        f'it (text(..., mask=True)), or a halo around its '
+                        f'letters where a mask would hide a bar (halo=True)'))
             break
 
     # 11h) which box a label belongs to. A label outside every box is read

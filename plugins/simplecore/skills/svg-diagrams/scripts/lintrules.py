@@ -306,6 +306,8 @@ def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2,
             img = im.convert("RGB")
         for attrs, body in TEXT_RE.findall(raw):
             a = _attrs(attrs)
+            if a.get("data-halo"):        # the paper outline under a label, not a label
+                continue
             fg = _rgb(a.get("fill", ""))
             text = re.sub(r"<[^>]+>", "", body).strip()
             try:
