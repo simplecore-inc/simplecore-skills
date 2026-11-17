@@ -13,6 +13,12 @@ this skill adds the scene.
 **Paths.** `<skill>` is this skill's directory, ${CLAUDE_SKILL_DIR}. The library is
 `<skill>/scripts/isoscene/`. Never hardcode an absolute or home-directory path.
 
+**Outside Claude Code** (Codex and other hosts that read this file from their own skill
+directory): the variable above is not substituted and prints literally, so `<skill>` is the
+directory holding this `SKILL.md`, with symbolic links resolved. The companion skill is listed
+there without the plugin prefix, as `svg-diagrams`; load that one and find its `scripts/` as the
+sibling directory of this skill's resolved directory.
+
 ## What a scene has to explain
 
 A scene shows **where** things are and **which way** something travels. It does not show what the
