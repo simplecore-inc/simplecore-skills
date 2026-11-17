@@ -84,6 +84,17 @@ does not block a cable.
   conductors at height `h`, a nearer conductor coincides on the page with any farther edge along
   the same direction at height `z` and depth offset `dy` when `z - dy = h - s`. The casing hides
   the edge and the lint reports `COINCIDENT-LINES`; move the edge's height or the phase spacing.
+- **The same test for any two edges.** Two edges along x print on one line when their `y - z`
+  is equal, two along y when their `x - z` is equal, whatever their distance apart; under about
+  3 units of difference the lint reports them. A slab 3 units high already prints its own top and
+  bottom edge 2.6 px apart, so a base is 4 units or more.
+- **A dense yard is drawn as one phase.** Five devices in a row on three phases put fifteen
+  devices and their terminals where every edge finds a partner on another phase, and no label
+  finds a place beside its device. When the phases are not the subject, draw one phase, say so in
+  the label of the line, and show the three-phase arrangement in a scene of its own.
+- **A label's place depends on the labels before it.** Labels are placed in the order they are
+  declared; declare first the ones with the fewest free places (a device in a row of cabinets),
+  last the ones that can go anywhere (a point in the air).
 - **Two devices with the same `x - y` stand in one column on the page.** The nearer hides the
   farther. Give every device its own `x - y`, or accept the overlap on purpose.
 - **A conductor ends clear of the box of the device it ends on.** The paint order compares
@@ -119,7 +130,8 @@ or duct band), `cable`.
 ## Catalogue
 
 `power` holds substation equipment: `current_transformer`, `voltage_transformer`, `bus_support`,
-`gantry`, `kiosk`, `cabinet` (kinds `switch`, `relay`, `server`, `clock`), `antenna`; and the
+`gantry`, `disconnector`, `circuit_breaker`, `busbar`, `kiosk`, `cabinet` (kinds `switch`,
+`relay`, `server`, `clock`), `antenna`; and the
 grid outside the fence: `power_plant`, `power_transformer`, `line_tower`, `distribution_pole`,
 `building`. Each
 returns the device's solid and its connection points. A new device belongs in the catalogue of

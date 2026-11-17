@@ -78,6 +78,58 @@ def bus_support(sc, x, y, pal, line_z=118):
     return {"solid": sc.solids[-1], "line": (x - 5.5, y, line_z)}
 
 
+def _pads(sc, x, y, reach, pal, line_z):
+    """A terminal pad each side of a device's head, reaching past its box, and
+    the two points a conductor along x ends on."""
+    sc.box(x - reach - 9, y - 3, line_z - 3, 9, 6, 6, pal["steel"])
+    sc.box(x + reach, y - 3, line_z - 3, 9, 6, 6, pal["steel"])
+    return (x - reach - 10.5, y, line_z), (x + reach + 10.5, y, line_z)
+
+
+def disconnector(sc, x, y, pal, line_z=118):
+    """A disconnector, closed: two post insulators on a base frame with the
+    blade lying between their caps."""
+    with sc.group():
+        sc.box(x - 24, y - 7, 0, 48, 14, 3, pal["steel"])
+        for dx in (-16, 16):
+            sc.box_at(x + dx, y, 8, 8, 42, pal["steel"], z=3)
+            _insulator(sc, x + dx, y, 45, line_z - 6 - 45, pal, sheds=7, r=8)
+            sc.cyl(x + dx, y, 5, 4, pal["steel"], z=line_z - 6)
+        sc.box(x - 18, y - 1.5, line_z - 1.5, 36, 3, 3, pal["steel"])
+        ends = _pads(sc, x, y, 21, pal, line_z)
+    return {"solid": sc.solids[-1], "line_in": ends[0], "line_out": ends[1]}
+
+
+def circuit_breaker(sc, x, y, pal, line_z=118):
+    """A live-tank circuit breaker pole: operating mechanism at the foot, a
+    support insulator and the interrupter lying along the conductor. The
+    control cable leaves from `port`, on the +y face of the mechanism."""
+    with sc.group():
+        sc.box_at(x, y, 24, 24, 3, pal["steel"])
+        sc.box_at(x, y, 18, 18, 26, pal["gear"], z=3)
+        sc.box(x + 9, y - 5, 12, 2, 10, 10, pal["steel"])
+        _insulator(sc, x, y, 29, line_z - 9 - 29, pal, sheds=8, r=9)
+        sc.cyl_x(x - 22, y, line_z, 9, 44, pal["porcelain"])
+        ends = _pads(sc, x, y, 22, pal, line_z)
+    return {"solid": sc.solids[-1], "line_in": ends[0], "line_out": ends[1],
+            "port": (x, y + 12)}
+
+
+def busbar(sc, xs, y0, y1, pal, bus_z=150):
+    """A rigid busbar across the bays: one tube per phase at the x positions
+    `xs`, running along y on a post insulator at each end. `tap(k, y)` is the
+    point under tube k where a riser from a bay conductor ends."""
+    for x in xs:
+        for y in (y0, y1):
+            with sc.group():
+                sc.box_at(x, y, 16, 16, 4, pal["steel"])
+                sc.box_at(x, y, 7, 7, 59, pal["steel"], z=4)
+                _insulator(sc, x, y, 63, bus_z - 4 - 63, pal, sheds=8, r=7)
+                sc.cyl(x, y, 4, 4, pal["steel"], z=bus_z - 4)
+        sc.box(x - 2.5, y0 - 10, bus_z, 5, y1 - y0 + 20, 5, pal["live"])
+    return {"solid": sc.solids[-1], "tap": lambda k, y: (xs[k], y, bus_z - 1.1)}
+
+
 def kiosk(sc, x, y, color, pal, size=64, height=112):
     """An outdoor kiosk: plinth, body, overhanging roof, door handle, nameplate."""
     half = size / 2
