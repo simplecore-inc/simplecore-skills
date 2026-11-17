@@ -324,8 +324,24 @@ class Scene:
         if failed:
             raise ValueError("no free place for the label(s): " + ", ".join(failed))
 
+    def _check_footprints(self):
+        """Two things standing on the ground cannot share ground: a cabinet
+        drawn through a wall reads as a mistake, and the paint order of the
+        two is then decided by centre depth, not by what is in front."""
+        feet = [(s.get("foot", s["bbox"]), s) for s in self.solids if s["bbox"][2] <= 0.5]
+        found = []
+        for i, (a, _) in enumerate(feet):
+            for b, _ in feet[i + 1:]:
+                if (min(a[3], b[3]) - max(a[0], b[0]) > 0.5
+                        and min(a[4], b[4]) - max(a[1], b[1]) > 0.5):
+                    found.append(f"{tuple(round(v) for v in a[:2] + a[3:5])} and "
+                                 f"{tuple(round(v) for v in b[:2] + b[3:5])}")
+        if found:
+            raise ValueError("footprints overlap on the ground:\n  " + "\n  ".join(found))
+
     def paint(self):
         self._check_cables()
+        self._check_footprints()
         for markup in self.floor:
             self.c.add(markup)
         lines = []

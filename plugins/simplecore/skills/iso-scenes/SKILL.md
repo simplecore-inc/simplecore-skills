@@ -65,6 +65,7 @@ not loosen the rule.
 | A cable runs only along the two floor directions | An oblique run reads as a line in the air |
 | A cable end declared `"face"` meets the foot of a visible face, square to it, away from the corners | A cable that leaves along a face's edge reads as that edge continued, and one that ends on a hidden face is never seen arriving |
 | No two cables cross or overlap; a cable that meets another ends `"join"` and gets a dot | A crossing reads as a connection |
+| No two footprints overlap on the ground | A kiosk drawn through a wall reads as a mistake (a user sent one back), and the paint order of two interpenetrating things is decided by centre depth, not by what is in front |
 | No cable runs under a device's footprint | The cable vanishes and reappears with no visible path |
 | A label touches no solid, conductor, cable, other label or board edge | The engine tries positions around its target in the order of `prefer` and takes the first free one |
 
@@ -109,6 +110,11 @@ does not block a cable.
 - **A lattice is see-through.** `truss` draws members only; a conductor behind a lattice column
   shows between its members, which is correct, and a label must not rely on the column to hide
   anything.
+- **Moving one device moves the check to the next thing it now touches.** A scene copied from
+  another keeps the other's coordinates: a kiosk that stood clear of the room wall in one figure
+  was moved 60 units for a busbar in the next and went through the wall. After moving anything,
+  compare its footprint with every wall, island edge and device around it; the engine now refuses
+  an overlap, and what it cannot see is a device hanging over the edge of its island.
 - **Put what is outdoors outdoors.** A wall-mounted or rooftop part (an antenna) stands on the
   wall, not on the indoor unit it serves.
 - **An indoor area is drawn cut away**: low back walls on the two far edges, never a roof.
