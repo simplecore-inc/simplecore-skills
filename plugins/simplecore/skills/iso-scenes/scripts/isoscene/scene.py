@@ -151,6 +151,133 @@ class Scene:
                   + self._line(hull, edge, close=True) + self._line(near, edge, close=True))
         return self._add((x, y - r, z - r, x + length, y + r, z + r), markup)
 
+    @contextmanager
+    def ordered(self):
+        """Parts added inside belong to one device and are painted in the order
+        they were added. A cut-away needs this: what is seen through the
+        opening (the far inside wall, then what stands inside) is painted
+        before the near wall, an order no comparison of boxes can find."""
+        outer, self._group = self._group, {"parts": []}
+        try:
+            yield
+        finally:
+            parts, self._group = self._group["parts"], outer
+        if not parts:
+            return
+        boxes = [s["bbox"] for s in parts]
+        bbox = tuple(min(b[i] for b in boxes) for i in range(3)) + \
+            tuple(max(b[i] for b in boxes) for i in range(3, 6))
+        solid = self._add(bbox, "".join(s["markup"] for s in parts))
+        feet = [b for b in boxes if b[2] <= 0.5]
+        if feet:
+            solid["foot"] = (min(b[0] for b in feet), min(b[1] for b in feet), 0,
+                             max(b[3] for b in feet), max(b[4] for b in feet), 0)
+
+    # A point of a section across the x axis: the angle runs from the +y
+    # direction (towards the viewer's left) up to +z, in degrees.
+    def _ring(self, x, y, z, r, a0, a1, step=4.0):
+        n = max(1, int(math.ceil(abs(a1 - a0) / step)))
+        return [self.at(x, y + r * math.cos(math.radians(a0 + (a1 - a0) * k / n)),
+                        z + r * math.sin(math.radians(a0 + (a1 - a0) * k / n)))
+                for k in range(n + 1)]
+
+    @staticmethod
+    def _clip(a0, a1, lo, hi):
+        """The parts of [a0, a1] whose angle, taken modulo 360, lies in [lo, hi]."""
+        out = []
+        for turn in range(-2, 3):
+            b0, b1 = max(a0, lo + 360 * turn), min(a1, hi + 360 * turn)
+            if b1 - b0 > 0.01:
+                out.append((b0, b1))
+        return out
+
+    def shell_x(self, x, y, z, r_in, r_out, length, color, a0=0.0, a1=360.0, part="all",
+                face=None, seams=True, tone=1.0, edge=None):
+        """A hollow cylinder lying along x, kept between the angles a0 and a1
+        of its section (a full ring when they are 360 apart): the yoke of a
+        machine opened to show what turns inside. `part="back"` draws the far
+        inside wall, `part="front"` the outside, the two cut faces and the +x
+        end face; inside `ordered()`, add the back, then what stands inside,
+        then the front. `face=(f0, f1)` limits the end face to those angles, and
+        `seams=False` leaves out the two straight edges of that face, for a
+        ring whose opened continuation draws them."""
+        edge, full = edge or color, a1 - a0 >= 359.9
+        x1, markup = x + length, ""
+        if part in ("all", "back"):
+            for b0, b1 in self._clip(a0, a1, 135, 315):
+                patch = self._ring(x, y, z, r_in, b0, b1) + self._ring(x1, y, z, r_in, b1, b0)
+                markup += (self._fill(patch, color, 0.42 * tone)
+                           + self._line(self._ring(x, y, z, r_in, b0, b1), edge))
+        if part in ("all", "front"):
+            for b0, b1 in self._clip(a0, a1, -45, 135):
+                patch = self._ring(x, y, z, r_out, b0, b1) + self._ring(x1, y, z, r_out, b1, b0)
+                markup += self._fill(patch, color, 0.20 * tone)
+                for c0, c1 in self._clip(b0, b1, -45, 25):
+                    markup += self._fill(self._ring(x, y, z, r_out, c0, c1)
+                                         + self._ring(x1, y, z, r_out, c1, c0), color, 0.16 * tone)
+                markup += self._line(self._ring(x, y, z, r_out, b0, b1), edge)
+                for a in (b0, b1):
+                    if abs((a + 45) % 360) < 0.01 or abs((a - 135) % 360) < 0.01:
+                        markup += self._line([self.at(x, *self._yz(y, z, r_out, a)),
+                                              self.at(x1, *self._yz(y, z, r_out, a))], edge)
+            if not full:
+                for a, lo, hi in ((a0, 45, 225), (a1, -135, 45)):
+                    if self._clip(a, a + 0.02, lo, hi):
+                        quad = [self.at(x, *self._yz(y, z, r_in, a)), self.at(x, *self._yz(y, z, r_out, a)),
+                                self.at(x1, *self._yz(y, z, r_out, a)), self.at(x1, *self._yz(y, z, r_in, a))]
+                        # The edge at the +x end belongs to the end face.
+                        markup += (self._fill(quad, color, 0.12 * tone)
+                                   + self._line([quad[3], quad[0], quad[1], quad[2]], edge))
+            f0, f1 = face or (a0, a1)
+            ring = self._ring(x1, y, z, r_out, f0, f1) + self._ring(x1, y, z, r_in, f1, f0)
+            markup += self._fill(ring, color, 0.09 * tone)
+            if f1 - f0 >= 359.9:
+                markup += (self._line(self._ring(x1, y, z, r_out, f0, f1), edge, close=True)
+                           + self._line(self._ring(x1, y, z, r_in, f0, f1), edge, close=True))
+            elif seams:
+                markup += self._line(ring, edge, close=True)
+            else:
+                markup += (self._line(self._ring(x1, y, z, r_out, f0, f1), edge)
+                           + self._line(self._ring(x1, y, z, r_in, f0, f1), edge))
+        return self._add((x, y - r_out, z - r_out, x1, y + r_out, z + r_out), markup)
+
+    @staticmethod
+    def _yz(y, z, r, a):
+        return y + r * math.cos(math.radians(a)), z + r * math.sin(math.radians(a))
+
+    def sector_x(self, x, y, z, r0, r1, a0, a1, color, opacity=0.6, edge=None):
+        """A flat piece of a ring on a section across x, facing the viewer: a
+        slot and what lies in it, on an end face."""
+        ring = self._ring(x, y, z, r1, a0, a1, 2.0) + self._ring(x, y, z, r0, a1, a0, 2.0)
+        markup = self._fill(ring, color, opacity)
+        if edge:
+            markup += self._line(ring, edge, close=True)
+        return self._add((x - 0.5, y - r1, z - r1, x, y + r1, z + r1), markup)
+
+    def quad(self, points, color, opacity=0.6, edge=None):
+        """A flat four-cornered piece through world points: a bar lying in a
+        slot on a cut face."""
+        page = [self.at(*p) for p in points]
+        markup = self._fill(page, color, opacity)
+        if edge:
+            markup += self._line(page, edge, close=True)
+        lo = tuple(min(p[i] for p in points) for i in range(3))
+        hi = tuple(max(p[i] for p in points) for i in range(3))
+        return self._add(lo + hi, markup)
+
+    def lines_x(self, x, y, z, r, length, angles, color, sw=None):
+        """Lines along x on the outside of a cylinder lying along x, at the
+        given angles of its section; an angle on the far side is left out. The
+        slots of a rotor body."""
+        # Clear of the two silhouette lines, which the cylinder draws itself: a
+        # line closer to one than 4 units on the page prints on top of it.
+        margin = math.degrees(math.acos(max(-1.0, 1 - 4.0 / r)))
+        seen = [a for a in angles if self._clip(a, a + 0.02, -45 + margin, 135 - margin)]
+        markup = "".join(self._line([self.at(x, *self._yz(y, z, r, a)),
+                                     self.at(x + length, *self._yz(y, z, r, a))], color, sw)
+                         for a in seen)
+        return self._add((x, y - r, z - r, x + length, y + r, z + r), markup)
+
     def truss(self, members, color, sw=None):
         """Thin members drawn as one open frame: a lattice column, a bracing.
         `members` is a list of (p, q) world points. The frame has no faces, so

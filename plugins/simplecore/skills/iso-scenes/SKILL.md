@@ -129,6 +129,28 @@ does not block a cable.
 - **Put what is outdoors outdoors.** A wall-mounted or rooftop part (an antenna) stands on the
   wall, not on the indoor unit it serves.
 - **An indoor area is drawn cut away**: low back walls on the two far edges, never a roof.
+- **A cut-away is one `ordered()` device, and its order is checked on the render.** No comparison
+  of boxes finds that the far inside wall is painted before the rotor and the near wall after it.
+  Leave whole the length that carries something on top (terminals), open the rest, and draw what
+  stands inside only over the opened length: a part painted after a closed ring covers the ring.
+- **A gap that is the subject is drawn wide enough to print.** An air gap at true scale is a
+  hairline between two edges that the lint reports as one line; draw it several units wide and
+  say in the figure that it is not to scale.
+- **A line on a lying cylinder stays clear of the cylinder's two silhouette lines.** A slot line
+  within a few degrees of the silhouette prints on top of it; `lines_x` leaves those out.
+- **A flat piece laid on a face shares no edge with the face.** A coloured bar drawn with its
+  own outline along a cut face's edge prints two lines 0.5 px apart; inset the piece and give it
+  no outline, or draw the shared edge once.
+- **An end face is seen mirrored.** The section's angle runs from +y, the viewer's left, so
+  anything laid out by angle (phases in slots) is mirrored against a flat section of the same
+  machine drawn beside it; lay it out by the mirrored angle so both show one order (a reviewer
+  read two figures as having B and C swapped).
+- **A device that has a pair of something shows both.** A bearing hidden behind the stator left
+  a generator standing on one bearing; lengthen the shaft until the far one is seen.
+- **Parts inside one device are named by leaders, not by `label()`.** The label engine keeps a
+  label off the whole device, so it cannot name a part inside it: draw a dot on the part (the
+  device returns the world point), a hairline leader to the margin that stops short of the name,
+  and a numbered disc dark enough for a white digit. Order the names so no two leaders cross.
 - **Check a domain fact before drawing it.** Where a device stands, what connects to what and in
   which order are claims a reader will take from the picture; draw only what a source supports.
 
@@ -141,6 +163,13 @@ inside `with sc.group():` so the device moves through the depth order as one sol
 ordered by comparing bounding boxes pair by pair; a part that interpenetrates another falls back
 to centre depth, so keep parts of different devices apart.
 
+A machine opened to show what turns inside it: `ordered()` (a group painted in the order its
+parts are added, where `group()` sorts them), `shell_x` (a hollow cylinder along x kept between
+two angles of its section, drawn as `part="back"` and `part="front"`), `sector_x` and `quad`
+(flat coloured pieces on an end face or a cut face: a slot and the bar in it), `lines_x` (lines
+along a lying cylinder: the slots of a rotor). Inside `ordered()` the order is: what stands
+behind, the shell's back, what stands inside, the shell's front, what stands in front.
+
 Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
 or duct band), `cable`.
 
@@ -150,7 +179,9 @@ or duct band), `cable`.
 `gantry`, `disconnector`, `circuit_breaker`, `busbar`, `kiosk`, `cabinet` (kinds `switch`,
 `relay`, `server`, `clock`), `antenna`; and the
 grid outside the fence: `power_plant`, `power_transformer`, `line_tower`, `distribution_pole`,
-`building`. Each
+`building`; and the machine inside the plant: `synchronous_generator` (a two-pole machine with
+a cylindrical rotor, its stator opened over the near part of its length; it returns a world point
+on each part for labels). Each
 returns the device's solid and its connection points. A new device belongs in the catalogue of
 its field, with its ports on visible faces; a layout or a wording true of one project stays in
 that project's figure module.

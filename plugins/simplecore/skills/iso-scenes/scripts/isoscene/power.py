@@ -202,6 +202,106 @@ def power_plant(sc, x, y, color, pal, phases=(-20, 0, 20), out_z=58.1):
     return {"solid": hall, "out": [(x + 47.1, y + dy, out_z) for dy in phases]}
 
 
+def phase_belt(angle):
+    """Which phase (0, 1, 2) lies in the stator slot at this angle of the
+    section of a two-pole machine whose phase axes stand at 90, 210 and 330
+    degrees: each phase fills two opposite belts of 60 degrees, a quarter turn
+    from its axis."""
+    return (0, 2, 1)[int(((angle + 30) % 360) // 60) % 3]
+
+
+def _belt_seen(angle):
+    """The phase in a slot of the device's section. The section's angle runs
+    from +y, which is the viewer's left, so the end face is seen mirrored
+    against a drawing whose angle runs anticlockwise from the right; the slot
+    takes the phase of the mirrored angle, and the end face then shows the
+    same order of phases as that drawing."""
+    return phase_belt(180 - angle)
+
+
+def synchronous_generator(sc, x, y, pal, phase_colors, scale=1.0, cut=(120.0, 340.0),
+                          slots=24, pole=40.0):
+    """A two-pole synchronous generator with a cylindrical rotor, its shaft
+    along x, opened over the near part of its length: the stator core is kept
+    between the angles `cut` of its section, so the rotor, the air gap, the
+    slots of the core and the windings in them are seen. (x, y) is the centre
+    of the turbine-side end of the stator on the ground. The air gap is drawn
+    several times wider than it is, so that it prints as a gap. `pole` is the
+    angle the visible pole face of the rotor points at. Returns the solid and
+    world points on each part, for labels."""
+    u = scale
+    steel, body, field = pal["steel"], pal["gear"], pal["gear"]
+    base, r_out, r_slot, r_in, r_rotor, r_shaft = 8 * u, 90 * u, 70 * u, 55 * u, 45 * u, 13 * u
+    zc = base + r_out + 14 * u
+    full, opened = 62 * u, 180 * u
+    xa, xb, xe = x, x + full, x + full + opened
+    a0, a1 = cut
+    step = 360.0 / slots
+
+    def slot_face(xf, f0, f1):
+        for k in range(slots):
+            a = (k + 0.5) * step
+            if sc._clip(a - step * 0.3, a + step * 0.3, f0, f1) and \
+                    sc._clip(a + step * 0.29, a + step * 0.3, f0, f1):
+                sc.sector_x(xf, y, zc, r_in + 2 * u, r_slot, a - step * 0.3, a + step * 0.3,
+                            phase_colors[_belt_seen(a)], 0.75)
+
+    def pedestal(x0):
+        sc.box(x0, y - 26 * u, base, 30 * u, 52 * u, zc - 12 * u - base, steel)
+        sc.cyl_x(x0 + 2 * u, y, zc, 23 * u, 26 * u, steel)
+
+    with sc.ordered():
+        sc.box(xa - 190 * u, y - 78 * u, 0, full + opened + 268 * u, 156 * u, base, steel, tone=0.6)
+        # Turbine side: the coupling, the shaft and its bearing.
+        sc.cyl_x(xa - 176 * u, y, zc, 26 * u, 10 * u, steel)
+        sc.cyl_x(xa - 166 * u, y, zc, r_shaft, 34 * u, steel)
+        pedestal(xa - 132 * u)
+        sc.cyl_x(xa - 104 * u, y, zc, r_shaft, 104 * u, steel)
+        for x0 in (xa + 8 * u, xe - 52 * u):
+            sc.box(x0, y - 66 * u, base, 44 * u, 132 * u, zc - r_out * 0.62 - base, steel)
+        # The part of the stator that is left whole, with the terminals on it.
+        sc.shell_x(xa, y, zc, r_in, r_out, full, steel, face=(a1 - 360, a0), seams=False)
+        slot_face(xb, a1 - 360, a0)
+        sc.box(xa + 10 * u, y - 30 * u, zc + r_out - 12 * u, 42 * u, 60 * u, 25 * u, steel)
+        for k, dy in enumerate((-18, 0, 18)):
+            sc.cyl(xa + 31 * u, y + dy * u, 5.5 * u, 30 * u, phase_colors[k], z=zc + r_out + 13 * u)
+        # The opened part: far inside wall, rotor, then the near wall and faces.
+        sc.shell_x(xb, y, zc, r_in, r_out, opened, steel, a0, a1, part="back")
+        sc.cyl_x(xb, y, zc, r_rotor, opened - 14 * u, body)
+        sc.lines_x(xb, y, zc, r_rotor, opened - 14 * u,
+                   [pole + side * (32 + 9 * k) for side in (-1, 1) for k in range(12)], field,
+                   sw=sc.sw)
+        sc.shell_x(xb, y, zc, r_in, r_out, opened, steel, a0, a1, part="front")
+        # Core packs on the two cut faces, and one bar of winding in the slot beside each.
+        for a in (a0, a1):
+            bar = phase_colors[_belt_seen(a)]
+            sc.quad([(xb, *sc._yz(y, zc, r_in + 2 * u, a)), (xb, *sc._yz(y, zc, r_slot, a)),
+                     (xe, *sc._yz(y, zc, r_slot, a)), (xe, *sc._yz(y, zc, r_in + 2 * u, a))], bar, 0.75)
+            sc.truss([((xb, *sc._yz(y, zc, r_slot, a)), (xe, *sc._yz(y, zc, r_slot, a)))], steel)
+            for k in range(1, int(opened / (15 * u))):
+                xk = xb + k * 15 * u
+                sc.truss([((xk, *sc._yz(y, zc, r_slot, a)), (xk, *sc._yz(y, zc, r_out, a)))], steel)
+        slot_face(xe, a0, a1)
+        # Far side of the turbine: the shaft, its bearing and the shaft end.
+        sc.cyl_x(xe - 14 * u, y, zc, r_shaft, 52 * u, steel)
+        pedestal(xe + 38 * u)
+        sc.cyl_x(xe + 68 * u, y, zc, r_shaft, 10 * u, steel)
+    solid = sc.solids[-1]
+    mid = xb + opened * 0.5
+    return {"solid": solid, "axis": zc,
+            "rotor": (mid, *sc._yz(y, zc, r_rotor, pole)),
+            "field": (xb + opened * 0.3, *sc._yz(y, zc, r_rotor, pole + 50)),
+            "core_ring": (xa + full * 0.5, *sc._yz(y, zc, r_out, 60)),
+            "gap": (xe - 14 * u, *sc._yz(y, zc, (r_rotor + r_in) / 2, 150)),
+            "core": (mid, *sc._yz(y, zc, (r_slot + r_out) / 2, a1)),
+            "winding": (xe, *sc._yz(y, zc, (r_in + r_slot) / 2 + u, 360 - step * 2.5)),
+            "terminals": (xa + 31 * u, y, zc + r_out + 43 * u),
+            "shaft": (xe + 12 * u, y, zc + r_shaft),
+            "bearing": (xe + 53 * u, y + 16 * u, zc + 16 * u),
+            "coupling": (xa - 171 * u, y, zc + 26 * u),
+            "bearing_far": (xa - 117 * u, y + 16 * u, zc + 16 * u)}
+
+
 def power_transformer(sc, x, y, pal, phases=(-20, 0, 20), hv_side=1, lv="bushing"):
     """A three-phase power transformer: plinth, tank, a radiator bank on its
     +y side, and one bushing per phase in two rows, the tall high-voltage row
