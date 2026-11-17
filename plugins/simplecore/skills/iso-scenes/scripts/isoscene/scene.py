@@ -117,17 +117,26 @@ class Scene:
                        f'<ellipse {ellipse} fill="none" stroke="{edge}" stroke-width="{self.sw}"/>')
         return self._add((x - r, y - r, z, x + r, y + r, z + h), markup)
 
-    def disc(self, x, y, r, color, z=0.0, tone=1.0, edge=None):
+    def disc(self, x, y, r, color, z=0.0, tone=1.0, edge=None, lip=0.0):
         """A thin horizontal disc drawn with one outline: an insulator shed, a
         flange. Stacked discs keep their outlines apart, where thin cylinders
-        would print a top and a side line almost on top of each other."""
+        would print a top and a side line almost on top of each other. `lip`
+        gives the disc a thickness as a shaded band under its near rim, with
+        no second outline: that is what makes a stack of sheds read as solid."""
         cx, cy = self.at(x, y, z)
-        ellipse = f'cx="{cx:.1f}" cy="{cy:.1f}" rx="{r * 1.2247:.1f}" ry="{r * 0.7071:.1f}"'
+        rx, ry = r * 1.2247, r * 0.7071
+        ellipse = f'cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx:.1f}" ry="{ry:.1f}"'
         paper = self.c.t["bg"]
-        markup = (f'<ellipse {ellipse} fill="{paper}" stroke="none"/>'
-                  f'<ellipse {ellipse} fill="{color}" fill-opacity="{0.16 * tone:.2f}" '
-                  f'stroke="{edge or color}" stroke-width="{self.sw}"/>')
-        return self._add((x - r, y - r, z, x + r, y + r, z + 0.5), markup)
+        markup = ""
+        if lip:
+            band = (f"M{cx - rx:.1f},{cy:.1f} A{rx:.1f},{ry:.1f} 0 0 0 {cx + rx:.1f},{cy:.1f} "
+                    f"L{cx + rx:.1f},{cy + lip:.1f} A{rx:.1f},{ry:.1f} 0 0 1 {cx - rx:.1f},{cy + lip:.1f} Z")
+            markup += (f'<path d="{band}" fill="{paper}" stroke="none"/>'
+                       f'<path d="{band}" fill="{color}" fill-opacity="{0.55 * tone:.2f}" stroke="none"/>')
+        markup += (f'<ellipse {ellipse} fill="{paper}" stroke="none"/>'
+                   f'<ellipse {ellipse} fill="{color}" fill-opacity="{0.16 * tone:.2f}" '
+                   f'stroke="{edge or color}" stroke-width="{self.sw}"/>')
+        return self._add((x - r, y - r, z - lip, x + r, y + r, z + 0.5), markup)
 
     def cyl_x(self, x, y, z, r, length, color, tone=1.0, edge=None):
         """A cylinder lying along the world x axis: axis from (x, y, z) to

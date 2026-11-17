@@ -19,7 +19,8 @@ def _insulator(sc, x, y, z, height, pal, sheds=8, r=10):
     sc.cyl(x, y, r * 0.45, height, pal["porcelain"], z=z, rim=False)
     step = (height - 6) / sheds
     for k in range(sheds):
-        sc.disc(x, y, r if k % 2 == 0 else r * 0.75, pal["porcelain"], z=z + 4 + step * k)
+        sc.disc(x, y, r if k % 2 == 0 else r * 0.75, pal["porcelain"], z=z + 4 + step * k,
+                lip=min(3.0, step * 0.45))
 
 
 def current_transformer(sc, x, y, pal, line_z=118):
@@ -65,7 +66,7 @@ def gantry(sc, x, y0, y1, pal, height=158, phases=(), line_z=118):
     for y in phases:
         with sc.group():
             for k in range(4):
-                sc.disc(x, y, 6.5, pal["porcelain"], z=line_z + 5 + 7 * k)
+                sc.disc(x, y, 6.5, pal["porcelain"], z=line_z + 5 + 7 * k, lip=3.0)
 
 
 def bus_support(sc, x, y, pal, line_z=118):
@@ -123,10 +124,10 @@ def busbar(sc, xs, y0, y1, pal, bus_z=150):
         for y in (y0, y1):
             with sc.group():
                 sc.box_at(x, y, 16, 16, 4, pal["steel"])
-                sc.box_at(x, y, 7, 7, 59, pal["steel"], z=4)
-                _insulator(sc, x, y, 63, bus_z - 4 - 63, pal, sheds=8, r=7)
-                sc.cyl(x, y, 4, 4, pal["steel"], z=bus_z - 4)
-        sc.box(x - 2.5, y0 - 10, bus_z, 5, y1 - y0 + 20, 5, pal["live"])
+                sc.box_at(x, y, 9, 9, 59, pal["steel"], z=4)
+                _insulator(sc, x, y, 63, bus_z - 4 - 63, pal, sheds=8, r=9)
+                sc.cyl(x, y, 5, 4, pal["steel"], z=bus_z - 4)
+        sc.box(x - 4, y0 - 10, bus_z, 8, y1 - y0 + 20, 7, pal["live"])
     return {"solid": sc.solids[-1], "tap": lambda k, y: (xs[k], y, bus_z - 1.1)}
 
 

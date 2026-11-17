@@ -115,6 +115,11 @@ does not block a cable.
   was moved 60 units for a busbar in the next and went through the wall. After moving anything,
   compare its footprint with every wall, island edge and device around it; the engine now refuses
   an overlap, and what it cannot see is a device hanging over the edge of its island.
+- **A part made of flat outlines needs a shaded thickness.** An insulator drawn as a stack of
+  bare ellipses on a thin post was sent back as having no depth. `disc(..., lip=)` puts a darker
+  band under the near rim of each shed with no second outline, so the stack reads as solid and
+  the lint finds no coincident lines; the catalogue's insulators and suspension strings use it. A
+  slender part (a post, a tube) is drawn at least 8 units across, or it prints as a line.
 - **Put what is outdoors outdoors.** A wall-mounted or rooftop part (an antenna) stands on the
   wall, not on the indoor unit it serves.
 - **An indoor area is drawn cut away**: low back walls on the two far edges, never a roof.
