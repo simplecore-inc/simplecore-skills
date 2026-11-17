@@ -86,6 +86,18 @@ does not block a cable.
   the edge and the lint reports `COINCIDENT-LINES`; move the edge's height or the phase spacing.
 - **Two devices with the same `x - y` stand in one column on the page.** The nearer hides the
   farther. Give every device its own `x - y`, or accept the overlap on purpose.
+- **A conductor ends clear of the box of the device it ends on.** The paint order compares
+  boxes, and a conductor whose box runs into a device's box is ordered by centre depth, which
+  puts it behind the device or in front of it by accident. End it beside the device (a terminal
+  that sticks out) or above it (the top of a bushing that is its own solid, not part of the
+  tank's group), so one axis separates the two boxes.
+- **A raised conductor covers whatever stands behind it.** A conductor at height `h` is drawn
+  `h` higher on the page, where an object `2h` farther back in `-x` or `-y` stands. Put low
+  objects (buildings, cabinets) on the near side of an overhead line, and let a service
+  conductor run from the pole towards the viewer to a mast on the roof.
+- **A lattice is see-through.** `truss` draws members only; a conductor behind a lattice column
+  shows between its members, which is correct, and a label must not rely on the column to hide
+  anything.
 - **Put what is outdoors outdoors.** A wall-mounted or rooftop part (an antenna) stands on the
   wall, not on the indoor unit it serves.
 - **An indoor area is drawn cut away**: low back walls on the two far edges, never a roof.
@@ -94,7 +106,8 @@ does not block a cable.
 
 ## Solids
 
-`box` · `box_at` · `cyl` (upright) · `cyl_x` (lying along x) · `disc` (one outline: insulator
+`box` · `box_at` · `cyl` (upright) · `cyl_x` (lying along x) · `truss` (thin members as one open
+frame: a lattice column) · `disc` (one outline: insulator
 sheds, flanges) · `wire` (a conductor in the air, with a paper casing). Parts of one device go
 inside `with sc.group():` so the device moves through the depth order as one solid. Solids are
 ordered by comparing bounding boxes pair by pair; a part that interpenetrates another falls back
@@ -106,7 +119,9 @@ or duct band), `cable`.
 ## Catalogue
 
 `power` holds substation equipment: `current_transformer`, `voltage_transformer`, `bus_support`,
-`gantry`, `kiosk`, `cabinet` (kinds `switch`, `relay`, `server`, `clock`), `antenna`. Each
+`gantry`, `kiosk`, `cabinet` (kinds `switch`, `relay`, `server`, `clock`), `antenna`; and the
+grid outside the fence: `power_plant`, `power_transformer`, `line_tower`, `distribution_pole`,
+`building`. Each
 returns the device's solid and its connection points. A new device belongs in the catalogue of
 its field, with its ports on visible faces; a layout or a wording true of one project stays in
 that project's figure module.

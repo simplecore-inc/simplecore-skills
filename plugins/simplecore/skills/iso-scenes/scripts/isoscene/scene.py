@@ -142,6 +142,16 @@ class Scene:
                   + self._line(hull, edge, close=True) + self._line(near, edge, close=True))
         return self._add((x, y - r, z - r, x + length, y + r, z + r), markup)
 
+    def truss(self, members, color, sw=None):
+        """Thin members drawn as one open frame: a lattice column, a bracing.
+        `members` is a list of (p, q) world points. The frame has no faces, so
+        what stands behind it shows through."""
+        markup = "".join(self._line([self.at(*p), self.at(*q)], color, sw) for p, q in members)
+        points = [point for member in members for point in member]
+        lo = tuple(min(pt[i] for pt in points) for i in range(3))
+        hi = tuple(max(pt[i] for pt in points) for i in range(3))
+        return self._add(lo + hi, markup)
+
     def wire(self, p, q, color, sw=2.8):
         """A straight conductor in the air between two world points."""
         # A paper-coloured casing under the stroke: where the conductor passes
