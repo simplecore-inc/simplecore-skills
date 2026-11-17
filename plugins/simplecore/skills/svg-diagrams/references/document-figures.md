@@ -626,6 +626,12 @@ which fits the plate to the glyph box (6 a side, 3 above and below), or passes
 module that calls the toolkit's pill as `[edge-pill]` (`EDGE-PILL`). The type
 size does not move to make a label fit: shorten the label or open the gap.
 
+The same plate holds a value read off a plot. A label that has to sit among
+curves, on an axis or on a projection line is drawn with `edge_label` (paper
+fill, a hairline border), never bare with a halo or a borderless mask: a halo
+leaves the curves running up to the letters, and a user sent such a label back
+asking for a border. Bare text is for a label in open paper.
+
 ## Text never crosses a line unmasked
 
 A label a line runs through is unreadable at print size. Either move the label

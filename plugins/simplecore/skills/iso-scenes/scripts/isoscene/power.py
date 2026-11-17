@@ -195,10 +195,20 @@ def power_plant(sc, x, y, color, pal, phases=(-20, 0, 20), out_z=58.1):
             sc.box(x + 42, y - 44 + 24 * k, 12, 2, 14, 20, pal["steel"])
         for dy in phases:
             sc.box(x + 42, y + dy - 3, out_z - 3, 5, 6, 6, pal["steel"])
+        for k in range(3):
+            sc.cyl(x - 10 + 10 * k, y - 22 + 22 * k, 3.5, 5, pal["steel"], z=60)
     hall = sc.solids[-1]
+    # Behind the hall: the boiler house, the stack on its base and the flue between them.
+    with sc.group():
+        sc.box(x + 4, y - 104, 0, 38, 48, 84, color, tone=0.8)
+        sc.box(x + 10, y - 98, 84, 26, 36, 12, pal["steel"])
+    with sc.group():
+        sc.box(x - 8, y - 86, 36, 12, 16, 12, pal["steel"])
     with sc.group():
         sc.box_at(x - 20, y - 78, 26, 26, 6, pal["steel"])
         sc.cyl(x - 20, y - 78, 9, 150, color, z=6)
+        for z in (62, 112):
+            sc.disc(x - 20, y - 78, 11.5, pal["steel"], z=z, lip=3)
     return {"solid": hall, "out": [(x + 47.1, y + dy, out_z) for dy in phases]}
 
 
