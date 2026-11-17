@@ -1,0 +1,121 @@
+---
+name: iso-scenes
+description: Use when an explanatory document needs an isometric scene of physical equipment and the path a signal or a cable takes through it - a substation yard, a control room, a rack row, a plant bay - drawn as static SVG with labels and step numbers inside the figure, several ground areas (islands) of different sizes on one board, realistic devices built from solids, and cables whose routing is checked by machine. Use it for training material, manuals and design documents where a flat box-and-arrow diagram cannot show where things are. Not for a single ornamental object, an interactive page or a 3D render. Triggers - isometric scene, equipment layout figure, training figure, 등각 장면, 설비 배치도, 교육용 도식, 아일랜드 배치, 입체 도식, 변전소 그림.
+---
+
+# Isometric scenes for explanatory documents
+
+Draws a scene of real equipment on the document-figure canvas of `simplecore:svg-diagrams`, so a
+scene shares the document's board width, type ladder, palette and `verify.py` with every flat
+figure beside it. Load `simplecore:svg-diagrams` first and follow its document-figure discipline;
+this skill adds the scene.
+
+**Paths.** `<skill>` is this skill's directory, ${CLAUDE_SKILL_DIR}. The library is
+`<skill>/scripts/isoscene/`. Never hardcode an absolute or home-directory path.
+
+## What a scene has to explain
+
+A scene shows **where** things are and **which way** something travels. It does not show what the
+signal becomes; pair it with a flat storey under it (one panel per numbered step) or with the
+prose. Number the scene's labels with the same step numbers the text uses, and say in the text
+that the numbers match.
+
+## Wiring a project
+
+A figure module reaches the library from the toolkit the build already found:
+
+```python
+import sys
+from pathlib import Path
+from common import toolkit_dir
+sys.path.insert(0, str(Path(toolkit_dir()).resolve().parents[1] / "iso-scenes" / "scripts"))
+from isoscene import Scene, power
+```
+
+Keep those lines in one project helper and list it under `helpers` in
+`.claude/document-figures.json`. A scene draws two paper-coloured strokes, the casing around a
+conductor (7.8) and the halo around a label (5); a project that declares a stroke ladder adds
+both to `strokes`.
+
+## The world
+
+x and y lie on the ground, z points up, one unit is about one drawn unit. The viewer looks from
++x, +y: of every solid the **+x face, the +y face and the top** are visible, and the -x and -y
+faces never are. Everything below follows from that.
+
+```python
+c = canvas(1200, 760)
+sc = Scene(c, ox, oy)            # page position of the world origin
+pal = power.palette(c)
+sc.island(0, 0, 400, 280, c.t["fg_dim"])           # a ground area
+ct = power.current_transformer(sc, 70, 0, pal)      # a device: returns its ports
+mu = power.kiosk(sc, 300, 160, c.teal, pal)
+sc.cable([ct["port"], (70, 215), (300, 215), mu["side"](0.5)], c.yellow, arrow=True)
+sc.label(mu, "머징유닛(MU)", n=3, accent=c.teal)
+sc.paint()
+```
+
+## Rules the engine enforces
+
+`paint()` raises on each of these, with the offending cable or label named. Fix the layout; do
+not loosen the rule.
+
+| Rule | Why |
+|---|---|
+| A cable runs only along the two floor directions | An oblique run reads as a line in the air |
+| A cable end declared `"face"` meets the foot of a visible face, square to it, away from the corners | A cable that leaves along a face's edge reads as that edge continued, and one that ends on a hidden face is never seen arriving |
+| No two cables cross or overlap; a cable that meets another ends `"join"` and gets a dot | A crossing reads as a connection |
+| No cable runs under a device's footprint | The cable vanishes and reappears with no visible path |
+| A label touches no solid, conductor, cable, other label or board edge | The engine tries positions around its target in the order of `prefer` and takes the first free one |
+
+A device's footprint is what stands on the ground: a roof, a tank or a head that overhangs it
+does not block a cable.
+
+## Rules the engine cannot see
+
+- **Give each cable its own lane.** Parallel cables in front of a row of cabinets run on
+  separate lanes a constant distance apart, and each drops into its cabinet. Assign the lanes so
+  no drop crosses a lane that is occupied at that point: write the occupied interval of each
+  lane down before choosing.
+- **A conductor in the air stops at a terminal.** A line that passes through a device's head
+  leaves the reader unable to tell whether it touches. End it on the device's terminal and start
+  a new one on the far side, as `current_transformer` returns `line_in` and `line_out`.
+- **A nearer conductor must not lie along a farther edge.** With phases spaced `s` apart and
+  conductors at height `h`, a nearer conductor coincides on the page with any farther edge along
+  the same direction at height `z` and depth offset `dy` when `z - dy = h - s`. The casing hides
+  the edge and the lint reports `COINCIDENT-LINES`; move the edge's height or the phase spacing.
+- **Two devices with the same `x - y` stand in one column on the page.** The nearer hides the
+  farther. Give every device its own `x - y`, or accept the overlap on purpose.
+- **Put what is outdoors outdoors.** A wall-mounted or rooftop part (an antenna) stands on the
+  wall, not on the indoor unit it serves.
+- **An indoor area is drawn cut away**: low back walls on the two far edges, never a roof.
+- **Check a domain fact before drawing it.** Where a device stands, what connects to what and in
+  which order are claims a reader will take from the picture; draw only what a source supports.
+
+## Solids
+
+`box` · `box_at` · `cyl` (upright) · `cyl_x` (lying along x) · `disc` (one outline: insulator
+sheds, flanges) · `wire` (a conductor in the air, with a paper casing). Parts of one device go
+inside `with sc.group():` so the device moves through the depth order as one solid. Solids are
+ordered by comparing bounding boxes pair by pair; a part that interpenetrates another falls back
+to centre depth, so keep parts of different devices apart.
+
+Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
+or duct band), `cable`.
+
+## Catalogue
+
+`power` holds substation equipment: `current_transformer`, `voltage_transformer`, `bus_support`,
+`gantry`, `kiosk`, `cabinet` (kinds `switch`, `relay`, `server`, `clock`), `antenna`. Each
+returns the device's solid and its connection points. A new device belongs in the catalogue of
+its field, with its ports on visible faces; a layout or a wording true of one project stays in
+that project's figure module.
+
+## Verify
+
+1. Build and run `verify.py` as for any document figure. Lint has to be clean.
+2. Render and read the picture at full size, then crop and enlarge every place a conductor
+   passes a device and every cable end.
+3. Read it as somebody who has never seen the equipment: where does the eye start, which way
+   does the signal go, what is each object. A scene that needs its caption to be followed is
+   redrawn.
