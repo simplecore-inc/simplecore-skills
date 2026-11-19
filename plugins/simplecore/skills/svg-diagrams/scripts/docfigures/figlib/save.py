@@ -136,6 +136,11 @@ def save(c, name, board=None, margin=None, *, width=None):
         changed = changed.replace(SANS, FONT_STACK)
     if FIGURE["plain"]:
         changed = changed.replace("<svg ", '<svg data-list-mode="plain" ', 1)
+    if c.__dict__.get("_logo_slots"):
+        # Logos are swapped in last, after the board fit and the type and face
+        # rewrites, none of which may reach inside a logo.
+        from figlib.logos import resolve_slots
+        changed = resolve_slots(c, changed, name)
     if changed != markup:
         path.write_text(changed, encoding="utf-8")
     print("wrote", path)

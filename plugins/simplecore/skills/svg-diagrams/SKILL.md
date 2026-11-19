@@ -140,6 +140,18 @@ an icon** (`brain-circuit` · `cpu` · `sparkles` · `bot`), so a reader can tel
 a glance which part of the picture a model drives. Sizing and set discipline:
 `references/document-figures.md`.
 
+**Logos.** A figure that names the products a document uses (an orchestrator, a
+database, a workflow engine) places their SVG logos with the document-figure
+library's `logo` · `logo_title` · `logo_row` · `logo_card`, read by file stem
+from the directory the project's settings name under `logos`. A logo names one
+product; a line icon marks a kind of thing. Use a logo only where the product
+itself is the point (a technology stack, a deployment, which tool runs which
+stage) and never as decoration beside a generic box. The logo is inlined with
+its ids and styles scoped to its placement, and every check reads it as one
+named box with a printed-height floor. Keep each logo's source and trademark
+note beside the files in the logo directory. Settings, functions and checks:
+`references/document-figures.md`, Product logos.
+
 Sub-route: programmatic / most diagrams → import `svgkit.py`; a quick copy-paste one-off shown in a browser → `references/svg-templates.md` XML; a figure for a document → `scripts/docfigures/`. **Pick ONE convention per file** - do not mix svgkit markers (`arr-<name>`) and template markers (`ah`) in the same SVG; lint checks markers per file and will not catch a mixed file.
 
 Layout patterns per domain, with canvas sizes for a standalone picture: `references/domain-templates.md`.

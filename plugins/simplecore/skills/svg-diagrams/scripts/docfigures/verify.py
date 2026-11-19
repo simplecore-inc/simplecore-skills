@@ -39,6 +39,10 @@ run. The reviews list what to look at and fail nothing.
   lint           the toolkit's static lint, with DEAD-MARGIN judged per board
   contrast       every label clears the contrast floor on its own ground: 4.5
                  under the large-text size and 3.0 at it, or `contrastFloor`
+  logo           every placed logo prints at or above `logos.minHeightPx`,
+                 carries no label over it, overlaps no other logo, and was
+                 swapped in by save(); every other check reads a logo as one
+                 named box and never its insides
   references     every link and placement resolves, captions match, copies
                  are current, nothing is left unplaced
   over-wide item, content edge, legend edge, strip, height    reviews
@@ -64,6 +68,7 @@ from figlib.checks_drawing import (bullet_mode, dash_pattern_errors,  # noqa: E4
                                    strip_reviews, stroke_width_errors, stub_lines,
                                    sub_body_share, width_errors)
 from figlib.checks_breaks import line_break_errors  # noqa: E402
+from figlib.checks_logos import logo_errors  # noqa: E402
 from figlib.checks_refs import references  # noqa: E402
 from figlib.svgread import board_of, texts, toolkit_dir  # noqa: E402,F401
 
@@ -269,6 +274,9 @@ def run(cfg, prefixes=(), render_dir=None):
             lambda i: f"{i[0]}: {i[1]} {i[2]:g} (limit {i[3]:g})")
     r.check("contrast", contrast_errors(svgs, cfg), "every label clears the floor",
             lambda line: line)
+    r.check("logo", logo_errors(svgs, cfg),
+            "every logo above the floor, clear of labels and of each other",
+            lambda i: f"{i[0]}: {i[1]}")
     ref = references(cfg)
     if ref is None:
         print("[references] not configured")

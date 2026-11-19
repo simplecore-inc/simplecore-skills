@@ -24,6 +24,8 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
+from svglogo import opaque_view, outside_logos
+
 ATTR_RE = re.compile(r'([\w:-]+)="([^"]*)"')
 TEXT_RE = re.compile(r"<text\b([^>]*)>(.*?)</text>", re.S)
 
@@ -293,11 +295,14 @@ def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2,
     """
     from PIL import Image
 
-    raw = Path(svg_path).read_text(encoding="utf-8")
+    full = Path(svg_path).read_text(encoding="utf-8")
+    # A placed logo stays in the render, as the ground a label next to it is
+    # read against, but its own words are the product's and are not labels.
+    raw = opaque_view(full)
     out = []
     with tempfile.TemporaryDirectory() as tmp:
         bare = Path(tmp) / "bare.svg"
-        bare.write_text(TEXT_RE.sub("", raw), encoding="utf-8")
+        bare.write_text(outside_logos(full, lambda s: TEXT_RE.sub("", s)), encoding="utf-8")
         png = Path(tmp) / "bare.png"
         render(str(bare), str(png), scale)
         if not png.exists():

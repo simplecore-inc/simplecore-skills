@@ -23,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from audit import CHROME  # noqa: E402
+from svglogo import opaque_view  # noqa: E402
 
 MIN_INSET = 8
 
@@ -60,7 +61,8 @@ document.body.setAttribute('data-out', JSON.stringify(out));
 
 
 def measure(svg_path):
-    svg = Path(svg_path).read_text(encoding="utf-8")
+    # a placed logo's own words are not labels of the figure
+    svg = opaque_view(Path(svg_path).read_text(encoding="utf-8"))
     page = f"<!doctype html><html><body>{svg}{SCRIPT}</body></html>"
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
         f.write(page)

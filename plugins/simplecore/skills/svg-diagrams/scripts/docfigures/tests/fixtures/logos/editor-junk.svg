@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" viewBox="0 0 40 40" onload="alert(1)" fill="#ff006e">
+  <title>junk</title><desc>editor output</desc>
+  <metadata><rdf>x</rdf></metadata>
+  <sodipodi:namedview pagecolor="#ffffff"/>
+  <script>alert(1)</script>
+  <g inkscape:label="Layer 1" inkscape:groupmode="layer" data-name="x">
+    <circle cx="20" cy="20" r="18" onclick="alert(2)"/>
+    <animate attributeName="r" from="1" to="18" dur="1s"/>
+  </g>
+</svg>

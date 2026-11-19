@@ -31,7 +31,7 @@ LIBRARY = Path(__file__).resolve().parent
 sys.path.insert(0, str(LIBRARY))
 
 import figconfig  # noqa: E402
-from figlib.svgread import texts  # noqa: E402
+from figlib.svgread import _read, texts  # noqa: E402
 
 
 def norm(s):
@@ -122,7 +122,7 @@ def check(cfg):
                 if extra:
                     problems.append(f"{rel}: the plan names what figure {label} does not "
                                     "print: " + " · ".join(f"「{s}」" for s in extra))
-                raw = svg.read_text(encoding="utf-8")
+                raw = _read(svg)
                 dashed = "stroke-dasharray=" in raw
                 if dash_word:
                     says = any((ln.startswith("- ") or ln.startswith("|")) and dash_word in ln

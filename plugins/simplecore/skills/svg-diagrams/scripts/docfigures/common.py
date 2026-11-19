@@ -17,8 +17,8 @@ padding. Draw with these helpers rather than with fixed heights - the lint
 `TEXT-ON-LINE`) reports exactly the defects a fixed height produces.
 
 The code lives in `figlib/`: `settings` (the config's values), `text` (the
-wrap and the glyph model), `save` (canvas, `@figure`, `save`), `boxes` and
-`marks`. This module re-exports all of it, including the names the config
+wrap and the glyph model), `save` (canvas, `@figure`, `save`), `boxes`,
+`marks` and `logos` (product logos from the project's logo directory). This module re-exports all of it, including the names the config
 declares.
 """
 from figlib.settings import *  # noqa: F401,F403
@@ -29,3 +29,4 @@ from figlib.save import *  # noqa: F401,F403
 from figlib.boxes import *  # noqa: F401,F403
 from figlib.marks import *  # noqa: F401,F403
 from figlib.marks import badge_  # noqa: F401
+from figlib.logos import *  # noqa: F401,F403

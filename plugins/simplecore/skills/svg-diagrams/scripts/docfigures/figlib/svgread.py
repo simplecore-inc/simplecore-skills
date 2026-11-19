@@ -33,8 +33,20 @@ def text_width(cfg, text, size):
     return tw(text, size, False)
 
 
-def _read(svg):
+if str(LIBRARY.parent) not in sys.path:
+    sys.path.append(str(LIBRARY.parent))
+from svglogo import opaque_view  # noqa: E402
+
+
+def _raw(svg):
+    """The saved file exactly, placed logos included."""
     return svg.read_text(encoding="utf-8")
+
+
+def _read(svg):
+    """The saved figure as every content check reads it: each placed logo is
+    one named box, so its own shapes and words are not judged as the figure's."""
+    return opaque_view(_raw(svg))
 
 
 def _head(svg):

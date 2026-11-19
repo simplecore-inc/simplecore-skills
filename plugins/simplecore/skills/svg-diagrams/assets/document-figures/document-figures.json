@@ -62,6 +62,12 @@
   // contrastFloor is left unset: every label is then held to WCAG's floor for
   // its printed size, 4.5 under the large-text size and 3.0 at it. A number
   // holds every label to it; null turns the check off.
+  // Product logos by file stem (logo(c, x, y, "postgresql") reads
+  // <dir>/postgresql.svg). height is the default in units; minHeightPx is the
+  // least printed height verify.py accepts (12px = 9pt). Keep each logo's
+  // source and trademark note beside the files. null: no logos.
+  "logos": null,
+  // "logos": { "dir": "docs/assets/logos", "height": 30, "minHeightPx": 12 },
   "references": null,
   "plans": null
 }

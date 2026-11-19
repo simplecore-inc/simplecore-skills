@@ -49,6 +49,10 @@ HELPER_NAMES = ("MICRO", "BODY", "LEAD", "CARD", "SECTION", "EMPH", "DISPLAY")
 STROKE_NAMES = ("HAIRLINE", "STROKE", "THICK")
 DEFAULT_STROKES = {"HAIRLINE": 1.4, "STROKE": 1.9, "THICK": 2.8}
 DASH_GLOSS_MODES = ("several", "every")
+# The least printed height of a placed logo, in px at 96 dpi: 12px is 9pt,
+# the line height of small print, under which a mark's inner detail fills in
+# and a wordmark's letters drop below the tag rung's 6.4pt floor.
+DEFAULT_LOGO_FLOOR_PX = 12.0
 
 
 class ConfigError(Exception):
@@ -191,6 +195,16 @@ class FigureConfig:
             absent = [n for n in STROKE_NAMES if n not in strokes]
             if absent:
                 raise ConfigError(f"{self.path}: 'strokes' lacks {', '.join(absent)}")
+        logos = self.data.get("logos")
+        if logos is not None:
+            if not isinstance(logos, dict) or not isinstance(logos.get("dir"), str):
+                raise ConfigError(f"{self.path}: 'logos' must be an object naming its 'dir'")
+            for key in ("height", "minHeightPx", "gap"):
+                value = logos.get(key)
+                if value is not None and (isinstance(value, bool)
+                                          or not isinstance(value, (int, float))
+                                          or not math.isfinite(value) or value <= 0):
+                    raise ConfigError(f"{self.path}: logos.{key} must be a positive number")
 
     def referenced(self, key, default=None, default_key=None):
         """The value of `key`, read from the file it names when it is `{from, key}`."""
@@ -338,6 +352,19 @@ class FigureConfig:
             return None
         return (_hex(spec.get("pass"), "verdict.pass"),
                 _hex(spec.get("block"), "verdict.block"))
+
+    @property
+    def logos(self):
+        """{dir, height, minHeightPx, gap} with `dir` resolved, or None when the
+        project declares no logo directory. `height` and `gap` are None when
+        unset; the drawing layer derives them from the floor."""
+        spec = self.data.get("logos")
+        if spec is None:
+            return None
+        return {"dir": self.resolve(spec["dir"]),
+                "height": spec.get("height"),
+                "minHeightPx": float(spec.get("minHeightPx", DEFAULT_LOGO_FLOOR_PX)),
+                "gap": spec.get("gap")}
 
     def get(self, key, default=None):
         return self.data.get(key, default)

@@ -828,6 +828,68 @@ model produced, or the act of producing it. Mark the act.
   the figure is about, or leave the figure unmarked and say why in the module.
   A set where the mark is on most items has stopped carrying information.
 
+## Product logos
+
+A logo names one product the document uses; a line icon marks a kind of
+thing. Place a logo where the product is the point (a technology-stack
+figure, a deployment, the tool behind each lifecycle stage, the cards of a flat
+storey under a scene), never as ornament on a generic box, and keep the
+project's trademark and source notes beside the files in the logo directory.
+
+The settings name the directory: `"logos": {"dir": "docs/assets/logos",
+"height": 28, "minHeightPx": 12, "gap": 16}`. A logo is called by its file
+stem, so `"postgresql"` reads `<dir>/postgresql.svg`; a stem with no file
+stops the build with the path it looked for, never a gap or a placeholder.
+
+| Function | Returns |
+|---|---|
+| `logo(c, x, y, name, h=None)` | the box `(x, y, w, h)`; width from the logo's `viewBox` |
+| `logo_size(name, h=None)` | `(w, h)` before drawing |
+| `logo_title(c, x, y, name, text, *, h, size=CARD, gap=10, weight=700, color)` | box of the run; `y` is the name's baseline, the logo centred where `icon_title` puts an icon |
+| `logo_title_w(name, text, ...)` | width of that run |
+| `logo_row(c, x, y, names, width, *, h, gap, row_gap, align)` | height used; one height, even gaps, wrapping within `width` |
+| `logo_row_w(names, *, h, gap)` · `logo_row_h(names, width, ...)` | one line's width · the wrapped height |
+| `logo_card(c, x, y, w, accent, title, names, *, h, logo_h, gap, align, **card)` | `(x, y, w, h)`; a `card()` holding a title and a logo row |
+| `logo_card_h(w, title, names, ...)` | its height, for a row of equal cards |
+
+`LOGO_H`, `LOGO_GAP` and `LOGO_FLOOR_PX` export the defaults. Size a logo card
+from `logo_row_w(names) + 2 * PAD` or centre its row (`align="middle"`): a row
+that stops short of the card's right side is read by the lint as uneven inset
+(`FRAME-PADDING-UNEVEN`).
+
+**What is inlined.** While a figure is drawn a logo is an unfilled placeholder
+rect, so the board fit, the ink box and the type snapping treat it as one box.
+`save()` swaps it for a nested `<svg data-logo="<stem>" id="lg-<figure>-<n>"
+viewBox="...">`, every id and every `url(#…)` and `href="#…"` inside it
+rewritten under that id, so two logos that name a gradient alike, one logo
+placed twice, and figures from one set inlined into one HTML page never
+collide. The logo's `<style>` rules (tag, `#id` and `.class` selectors) are
+resolved into each element's own `style` and the block and the classes are
+dropped, so a page stylesheet and a second logo with the same class names
+reach nothing; its colours are kept as drawn. Scripts, event handlers,
+animation, editor elements and metadata are stripped. The build refuses a logo
+that carries a raster `<image>`, foreign content, a reference outside itself,
+a filter (PowerPoint drops the element), or a selector or `@` rule it cannot
+resolve. Live `<text>` in a logo is kept with its face pinned by an inline
+`!important`, so a page that forces one face does not re-face it, and the build
+prints a notice: an outlined logo prints the same on every machine.
+
+**What the checks see.** Every reader of a saved figure (`verify.py`'s checks,
+`audit.py lint`, `contrast`, `hotspots`, `insets.py`, `figplans.py`) reads it
+with each logo replaced by one rect named by `data-logo`, so a logo's shapes,
+strokes and words are never judged as the figure's while its box still counts
+for overlap and for the board edge. `verify.py` adds `[logo]`: a logo printed
+under `logos.minHeightPx` (default 12px, 9pt, the line height of small print;
+on a board placed at 0.526 px per unit that is 22.8 units), a label set over a
+logo, two logos overlapping, and a placeholder left by a figure saved without
+the library's `save()`. No check sees a logo drawn over a scene's shapes; look
+at the render.
+
+**On an isometric scene.** The scene draws on the same canvas, so the logo
+functions are called after `sc.paint()`: a logo plate beside a device at a page
+point from `sc.at(x, y, z)` (or `sc.top(solid)`), and the flat storey under the
+scene with `logo_card` like any card.
+
 ## The library and the project's settings file
 
 A project draws with this skill's `scripts/docfigures/` and never copies it.
@@ -914,6 +976,7 @@ importable as a module constant.
 | `register` | | `{words, allow}`: the project's working-word pattern and passing strings, for the register check | none |
 | `sectionNumbers` | | `false` turns off the section-number check | `true` |
 | `contrastFloor` | | WCAG ratio every label clears on its own ground; unset, a label is held to 4.5 under the large-text size (18pt, or 14pt bold, as printed) and to 3.0 at it; a number holds every label to it; `null` turns it off | 4.5 · 3.0 by printed size |
+| `logos` | | `{dir, height, minHeightPx, gap}`: the folder of logo SVGs by stem, the default drawn height in units, the least printed height in px, the gap in a row | none; `height` a quarter above the floor, `minHeightPx` 12, `gap` 0.6 of the height |
 | `references` | | `{manuscripts, caption, placements: [{glob, pattern, copies}]}` for the reference check | none |
 | `plans` | | `{manuscripts, blockStart, row, caption, name, pagePad, embed}` for `figplans.py`; `caption` has groups `caption`, `page`, `index` | none |
 

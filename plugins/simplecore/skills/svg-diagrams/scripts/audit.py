@@ -21,6 +21,7 @@ import tempfile
 import os
 
 import lintrules
+from svglogo import opaque_view
 
 
 def _find_chrome():
@@ -334,6 +335,9 @@ def _strip_halos(svg):
 def lint(svg_path):
     with open(svg_path) as f:
         svg = f.read()
+    # a placed logo is one named box: its own shapes and words are the
+    # product's artwork, not the figure's, and are never linted as either
+    svg = opaque_view(svg)
     svg = _strip_halos(svg)
     # strip XML comments first: commented-out draft markup must not be linted
     # as real elements (phantom flags / crashes on partial fragments)
@@ -3027,7 +3031,7 @@ def hotspots(svg_path, outdir, scale=4):
     overview" into a systematic pass. Read the produced PNGs after render.
     """
     with open(svg_path) as f:
-        svg = re.sub(r'<!--.*?-->', '', f.read(), flags=re.S)
+        svg = re.sub(r'<!--.*?-->', '', opaque_view(f.read()), flags=re.S)
     pts = []
     for tag in re.finditer(r'<line\b([^>]*)/?>', svg):
         a = tag.group(1)

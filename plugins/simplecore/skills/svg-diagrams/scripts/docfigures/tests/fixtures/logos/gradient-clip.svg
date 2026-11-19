@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="20 10 160 60">
+  <defs>
+    <linearGradient id="a" x1="0" x2="1"><stop offset="0" stop-color="#e63946"/><stop offset="1" stop-color="#f4a261"/></linearGradient>
+    <clipPath id="c"><circle cx="50" cy="40" r="26"/></clipPath>
+    <path id="mark" d="M0 0h12v12h-12z"/>
+  </defs>
+  <style>.cls-1{fill:#e63946}.cls-2{fill:url(#a)}</style>
+  <g transform="translate(4 0)">
+    <g transform="scale(1)">
+      <rect class="cls-2" x="20" y="12" width="60" height="56" clip-path="url(#c)"/>
+    </g>
+    <rect class="cls-1" x="90" y="22" width="80" height="36" rx="6"/>
+    <use xlink:href="#mark" x="150" y="12"/>
+  </g>
+</svg>
