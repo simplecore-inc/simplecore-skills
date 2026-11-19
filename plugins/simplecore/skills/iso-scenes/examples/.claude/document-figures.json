@@ -1,0 +1,20 @@
+{
+  // Example scenes of the iso-scenes catalogue. The boards are placed as in a
+  // printed proposal: a 1200-unit board across a 170 mm text column (631 px),
+  // so one unit prints at 0.526 px and the 6.4pt floor needs 17 units.
+  "out": "figures",
+  "modules": ["fig_*.py"],
+  "helpers": ["scenekit.py"],
+  "boards": { "1200": 631 },
+  "boardNames": { "FULL": 1200 },
+  "placeScale": 1.0,
+  "margin": 28,
+  "sideMargin": 28,
+  "ladder": [17, 19, 21, 23, 25, 27, 30],
+  "names": { "MICRO": 17, "BODY": 21, "LEAD": 23, "CARD": 23, "SECTION": 25,
+             "EMPH": 27, "DISPLAY": 30 },
+  "steps": { "STEP": 28 },
+  "strokes": { "HAIRLINE": 1.4, "STROKE": 1.9, "THICK": 2.8, "CASING": 7.8, "HALO": 5 },
+  "theme": "paper",
+  "heightReview": { "1200": 900 }
+}

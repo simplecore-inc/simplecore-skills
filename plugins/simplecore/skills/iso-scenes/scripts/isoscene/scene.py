@@ -26,7 +26,7 @@ class Scene:
         self.c, self.ox, self.oy, self.sw = canvas, ox, oy, stroke
         self.casing, self.halo = casing, halo
         self.floor, self.solids, self.cables, self._group = [], [], [], None
-        self.labels = []
+        self.labels, self.callouts = [], []
 
     # -- projection ---------------------------------------------------------
     def at(self, x, y, z=0.0):
@@ -150,6 +150,19 @@ class Scene:
         markup = (self._fill(hull, color, 0.30 * tone) + self._fill(near, color, 0.10 * tone)
                   + self._line(hull, edge, close=True) + self._line(near, edge, close=True))
         return self._add((x, y - r, z - r, x + length, y + r, z + r), markup)
+
+    def cyl_y(self, x, y, z, r, length, color, tone=1.0, edge=None):
+        """A cylinder lying along the world y axis: axis from (x, y, z) to
+        (x, y + length, z). The +y end cap faces the viewer."""
+        edge = edge or color
+        ring = [(r * math.cos(t), r * math.sin(t))
+                for t in (2 * math.pi * k / 28 for k in range(28))]
+        far = [self.at(x + dx, y, z + dz) for dx, dz in ring]
+        near = [self.at(x + dx, y + length, z + dz) for dx, dz in ring]
+        hull = _hull(far + near)
+        markup = (self._fill(hull, color, 0.24 * tone) + self._fill(near, color, 0.12 * tone)
+                  + self._line(hull, edge, close=True) + self._line(near, edge, close=True))
+        return self._add((x - r, y, z - r, x + r, y + length, z + r), markup)
 
     @contextmanager
     def ordered(self):
@@ -401,6 +414,69 @@ class Scene:
         self.labels.append({"target": target, "text": text, "n": n, "accent": accent,
                             "color": color, "size": size, "prefer": prefer})
 
+    def callout(self, point, text, *, n=None, accent=None, size=None,
+                prefer=("left", "right")):
+        """A name for a part inside a device, at the world point a catalogue
+        function returned for it: a dot on the part, a hairline leader and the
+        name in free space beside the scene. `label()` keeps a name off the
+        whole device and so cannot name a part inside one. Callouts are placed
+        after the labels; a leader may cross solids but never another leader
+        or a placed name, and the name itself touches nothing."""
+        self.callouts.append({"point": point, "text": text, "n": n, "accent": accent,
+                              "size": size, "prefer": prefer})
+
+    def _place_callouts(self, hulls, lines, placed):
+        from common import BODY, MICRO, num_disc, num_disc_r
+        from svgkit import SANS, tw
+        leaders, failed = [], []
+        for spec in self.callouts:
+            size = spec["size"] or BODY
+            lead = (2 * num_disc_r(spec["n"], MICRO) + 8) if spec["n"] else 0
+            w, h = tw(spec["text"], size, mono=False) + lead, size * 1.2
+            px, py = self.at(*spec["point"])
+            found = None
+            for reach in (40, 70, 100, 140, 190, 250, 320, 400, 500):
+                for rise in (0, -30, 30, -60, 60, -100, 100, -150, 150, -210, 210):
+                    for side in spec["prefer"]:
+                        x0 = px - reach - w if side == "left" else px + reach
+                        r = (x0 - 4, py + rise - h / 2 - 3, x0 + w + 4, py + rise + h / 2 + 3)
+                        if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
+                            continue
+                        end = (r[2] + 3, py + rise) if side == "left" else (r[0] - 3, py + rise)
+                        if any(_rect_hits_poly(r, poly) for poly in hulls):
+                            continue
+                        if any(_rect_hits_seg(r, a, b) for a, b in lines + leaders):
+                            continue
+                        if any(_rects_meet(r, q) for q in placed):
+                            continue
+                        if any(_rect_hits_seg(q, (px, py), end) for q in placed):
+                            continue
+                        if any(_segs_cross((px, py), end, a, b) for a, b in leaders):
+                            continue
+                        found = (r, end, side)
+                        break
+                    if found:
+                        break
+                if found:
+                    break
+            if not found:
+                failed.append(spec["text"])
+                continue
+            r, end, side = found
+            placed.append(r)
+            leaders.append(((px, py), end))
+            self.c.add(self._line([(px, py), end], self.c.t["fg_dim"]))
+            self.c.add(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3.2" fill="{self.c.t["fg"]}"/>')
+            x, base = r[0] + 4, (r[1] + r[3]) / 2 + size * 0.34
+            if spec["n"]:
+                num_disc(self.c, x + lead / 2 - 4, base - size * 0.34, spec["n"],
+                         spec["accent"] or self.c.t["fg"], size=MICRO)
+                x += lead
+            self.c.text(x, base, spec["text"], size=size, color=self.c.t["fg"], family=SANS,
+                        weight=600, anchor="start", halo=True, halo_width=self.halo)
+        if failed:
+            raise ValueError("no free place for the callout(s): " + ", ".join(failed))
+
     def _place_labels(self, hulls, lines):
         from common import BODY, MICRO, num_disc, num_disc_r
         from svgkit import SANS, tw
@@ -459,6 +535,7 @@ class Scene:
                         family=SANS, weight=600, anchor="start", halo=True, halo_width=self.halo)
         if failed:
             raise ValueError("no free place for the label(s): " + ", ".join(failed))
+        return placed
 
     def _check_footprints(self):
         """Two things standing on the ground cannot share ground: a cabinet
@@ -491,8 +568,11 @@ class Scene:
         hulls = [_hull([self.at(x, y, z) for x in (s["bbox"][0], s["bbox"][3])
                         for y in (s["bbox"][1], s["bbox"][4])
                         for z in (s["bbox"][2], s["bbox"][5])]) for s in ordered]
-        self._place_labels(hulls, lines)
+        placed = self._place_labels(hulls, lines)
+        if self.callouts:
+            self._place_callouts(hulls, lines, placed)
         self.floor, self.solids, self.cables, self.labels = [], [], [], []
+        self.callouts = []
 
     def top(self, solid):
         """Page point above a solid's highest corner, for a label over it."""
@@ -500,12 +580,15 @@ class Scene:
         return self.at((x0 + x1) / 2, (y0 + y1) / 2, z1)[0], self.at(x0, y0, z1)[1]
 
 
-def _meets_face(point, other, foot, corner=0.2):
+def _meets_face(point, other, foot, corner=0.2, clear=16.0):
     """The cable end is on the +x or +y edge of a footprint, away from the
-    corners, and its last run is square to that edge."""
+    corners, and its last run is square to that edge. Away means a fifth of
+    the face, or `clear` units on a face long enough that a fifth is more: a
+    cable reads as the face's edge continued when it is near the corner, not
+    when it is a fraction of a long row away from it."""
     (px, py), (qx, qy) = point, other
     x0, y0, _, x1, y1, _ = foot
-    mx, my = (x1 - x0) * corner, (y1 - y0) * corner
+    mx, my = min((x1 - x0) * corner, clear), min((y1 - y0) * corner, clear)
     if abs(px - x1) < 0.6 and y0 + my <= py <= y1 - my:
         return abs(qy - py) < 0.01 and qx > px
     if abs(py - y1) < 0.6 and x0 + mx <= px <= x1 - mx:
@@ -558,6 +641,21 @@ def _rect_hits_seg(r, a, b):
         else:
             hi = min(hi, t)
     return lo <= hi
+
+
+def _rects_meet(r, q):
+    return r[0] < q[2] and q[0] < r[2] and r[1] < q[3] and q[1] < r[3]
+
+
+def _segs_cross(p, q, a, b):
+    """Two page segments cross or touch."""
+    def turn(o, s, t):
+        v = (s[0] - o[0]) * (t[1] - o[1]) - (s[1] - o[1]) * (t[0] - o[0])
+        return 0 if abs(v) < 1e-9 else (1 if v > 0 else -1)
+    d1, d2, d3, d4 = turn(a, b, p), turn(a, b, q), turn(p, q, a), turn(p, q, b)
+    if d1 != d2 and d3 != d4:
+        return True
+    return False
 
 
 def _rect_hits_poly(r, poly):
