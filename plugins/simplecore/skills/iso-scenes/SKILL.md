@@ -208,7 +208,10 @@ behind, the shell's back, what stands inside, the shell's front, what stands in 
 
 A part inside a device is named with `callout(point, text, n=, accent=, prefer=)`: a dot on
 the world point the device returned, a hairline leader and the name in free space. Callouts
-are placed after the labels; a leader never crosses another leader or a placed name.
+are placed after the labels; a leader never crosses another leader or a placed name. The sides
+`prefer` tries are `left`, `right`, `up` and `down` (above or below the part with a short vertical
+leader, for a part on a wall whose sides are taken); `above` and `below` are label words and a
+callout reads them as `right`.
 
 Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
 or duct band), `cable`.

@@ -448,7 +448,12 @@ class Scene:
         name in free space beside the scene. `label()` keeps a name off the
         whole device and so cannot name a part inside one. Callouts are placed
         after the labels; a leader may cross solids but never another leader
-        or a placed name, and the name itself touches nothing."""
+        or a placed name, and the name itself touches nothing.
+
+        `prefer` lists the sides tried in order: "left" and "right" put the
+        name beside the part, "up" and "down" put it above or below the part
+        with a vertical leader (a part on a wall whose sides are crowded).
+        Any other word is tried as "right"."""
         self.callouts.append({"point": point, "text": text, "n": n, "accent": accent,
                               "size": size, "prefer": prefer})
 
@@ -462,30 +467,42 @@ class Scene:
             w, h = tw(spec["text"], size, mono=False) + lead, size * 1.2
             px, py = self.at(*spec["point"])
             found = None
-            for reach in (40, 70, 100, 140, 190, 250, 320, 400, 500):
-                for rise in (0, -30, 30, -60, 60, -100, 100, -150, 150, -210, 210):
-                    for side in spec["prefer"]:
-                        x0 = px - reach - w if side == "left" else px + reach
-                        r = (x0 - 4, py + rise - h / 2 - 3, x0 + w + 4, py + rise + h / 2 + 3)
-                        if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
-                            continue
-                        end = (r[2] + 3, py + rise) if side == "left" else (r[0] - 3, py + rise)
-                        if any(_rect_hits_poly(r, poly) for poly in hulls):
-                            continue
-                        if any(_rect_hits_seg(r, a, b) for a, b in lines + leaders):
-                            continue
-                        if any(_rects_meet(r, q) for q in placed):
-                            continue
-                        if any(_rect_hits_seg(q, (px, py), end) for q in placed):
-                            continue
-                        if any(_segs_cross((px, py), end, a, b) for a, b in leaders):
-                            continue
-                        found = (r, end, side)
-                        break
-                    if found:
-                        break
-                if found:
-                    break
+            cands = [(reach, rise, side)
+                     for reach in (40, 70, 100, 140, 190, 250, 320, 400, 500)
+                     for rise in (0, -30, 30, -60, 60, -100, 100, -150, 150, -210, 210)
+                     for side in spec["prefer"]]
+            if all(side in ("up", "down") for side in spec["prefer"]):
+                # Above or below a part the shortest leader wins: a name
+                # straight over the part before one slid far along the row.
+                cands.sort(key=lambda t: math.hypot(t[0], t[1]))
+            for reach, rise, side in cands:
+                if side in ("up", "down"):
+                    # `reach` is the height above or below the part and
+                    # `rise` slides the name sideways along the row.
+                    x0 = px + rise - w / 2
+                    yc = py - reach if side == "up" else py + reach
+                    r = (x0 - 4, yc - h / 2 - 3, x0 + w + 4, yc + h / 2 + 3)
+                    ex = min(max(px, r[0] + 8), r[2] - 8)
+                    end = (ex, r[3] + 3) if side == "up" else (ex, r[1] - 3)
+                else:
+                    x0 = px - reach - w if side == "left" else px + reach
+                    r = (x0 - 4, py + rise - h / 2 - 3, x0 + w + 4, py + rise + h / 2 + 3)
+                    end = ((r[2] + 3, py + rise) if side == "left"
+                           else (r[0] - 3, py + rise))
+                if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
+                    continue
+                if any(_rect_hits_poly(r, poly) for poly in hulls):
+                    continue
+                if any(_rect_hits_seg(r, a, b) for a, b in lines + leaders):
+                    continue
+                if any(_rects_meet(r, q) for q in placed):
+                    continue
+                if any(_rect_hits_seg(q, (px, py), end) for q in placed):
+                    continue
+                if any(_segs_cross((px, py), end, a, b) for a, b in leaders):
+                    continue
+                found = (r, end, side)
+                break
             if not found:
                 failed.append(spec["text"])
                 continue
