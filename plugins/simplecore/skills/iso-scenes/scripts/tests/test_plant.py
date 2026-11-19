@@ -50,6 +50,22 @@ DEVICES = [
     ("phone", "plant.handheld(sc, 0, 0, c.purple, pal)"),
     ("tablet", "plant.handheld(sc, 0, 0, c.purple, pal, kind='tablet', facing='y')"),
     ("person", "plant.person(sc, 0, 0, c.t['muted'], pal)"),
+    ("person-stand-y", "plant.person(sc, 0, 0, c.t['muted'], pal, facing='y')"),
+    ("person-stand-back", "plant.person(sc, 0, 0, c.t['muted'], pal, facing='-x')"),
+    ("person-phone", "plant.person(sc, 0, 0, c.t['muted'], pal, holding='phone')"),
+    ("person-phone-y", "plant.person(sc, 0, 0, c.t['muted'], pal, facing='y', holding='phone')"),
+    ("person-tablet-back", "plant.person(sc, 0, 0, c.t['muted'], pal, facing='-y', holding='tablet')"),
+    ("person-sit", "plant.person(sc, 0, 0, c.t['muted'], pal, pose='sit')"),
+    ("person-sit-y", "plant.person(sc, 0, 0, c.t['muted'], pal, pose='sit', facing='y')"),
+    ("person-sit-back-x", "plant.person(sc, 0, 0, c.t['muted'], pal, pose='sit', facing='-x')"),
+    ("person-sit-back-y", "plant.person(sc, 0, 0, c.t['muted'], pal, pose='sit', facing='-y')"),
+    ("chair", "plant.chair(sc, 0, 0, c.t['muted'], pal, facing='y')"),
+    ("seated-desk-x", "plant.seat_at(sc, plant.control_desk(sc, 0, 0, c.blue, pal, facing='x'),"
+                      " c.t['muted'], pal)"),
+    ("seated-desk-y", "plant.seat_at(sc, plant.control_desk(sc, 0, 0, c.blue, pal, monitors=2,"
+                      " facing='y'), c.t['muted'], pal)"),
+    ("seated-desk-back", "plant.seat_at(sc, plant.control_desk(sc, 0, 0, c.blue, pal, facing='-x'),"
+                         " c.t['muted'], pal)"),
     ("building-saw", "plant.factory_building(sc, 0, 0, 160, 120, 60, c.blue, pal)"),
     ("building-flat", "plant.factory_building(sc, 0, 0, 160, 120, 60, c.blue, pal,"
                       " roof='flat', door='y')"),
@@ -124,6 +140,35 @@ class EngineChecks(unittest.TestCase):
         sc.cable([(fx, fy), (fx + 30, fy)], c.teal, ends=("face", "free"))
         with self.assertRaises(ValueError):
             sc._check_cables()
+
+    def test_default_person_keeps_its_result_and_footprint(self):
+        c, sc, pal = _scene()
+        who = plant.person(sc, 10, 20, c.t["muted"], pal)
+        self.assertEqual(who["head"], (10, 20, 81))
+        foot = who["solid"]["foot"]
+        # Within the ground the figure of cylinders stood on, so a scene
+        # laid out around it still clears its neighbours.
+        self.assertTrue(10 - 3.6 <= foot[0] and foot[3] <= 10 + 3.6, foot)
+        self.assertTrue(20 - 10.6 <= foot[1] and foot[4] <= 20 + 10.6, foot)
+
+    def test_seated_person_touches_the_desk_and_does_not_overlap_it(self):
+        for facing in ("x", "y", "-x", "-y"):
+            with self.subTest(facing=facing):
+                c, sc, pal = _scene()
+                desk = plant.control_desk(sc, 0, 0, c.blue, pal, facing=facing)
+                who = plant.seat_at(sc, desk, c.t["muted"], pal)
+                self.assertIn("seat", who)
+                self.assertIn("hand", who)
+                sc._check_footprints()
+
+    def test_person_refuses_an_unknown_pose_or_a_handheld_when_seated(self):
+        c, sc, pal = _scene()
+        with self.assertRaises(ValueError):
+            plant.person(sc, 0, 0, c.t["muted"], pal, pose="kneel")
+        with self.assertRaises(ValueError):
+            plant.person(sc, 0, 0, c.t["muted"], pal, pose="sit", holding="phone")
+        with self.assertRaises(ValueError):
+            plant.person(sc, 0, 0, c.t["muted"], pal, holding="radio")
 
     def test_cyl_y_box(self):
         c, sc, pal = _scene()

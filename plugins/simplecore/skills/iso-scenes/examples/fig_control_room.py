@@ -1,5 +1,6 @@
-"""A control room: a video wall on the back wall, an operator desk turned to
-it, the room's racks, and a handheld that receives the same alarm."""
+"""A control room: a video wall on the back wall, an operator seated at a desk
+whose monitors face the operator, with the wall beyond them, the room's
+racks, and a handheld that receives the same alarm."""
 from common import FULL, MICRO, STROKE, canvas, figure, save
 
 from scenekit import Scene, plant
@@ -15,12 +16,12 @@ def fig_control_room():
     wx, wy = room["wall_x"], room["wall_y"]
 
     wall = plant.video_wall(sc, wx, 290, 34, pal, cols=4, rows=2, alarm=(2, 1))
-    desk = plant.control_desk(sc, 210, 290, c.t["muted"], pal, monitors=3, facing="-x")
-    who = plant.person(sc, 268, 200, c.t["muted"], pal)
+    desk = plant.control_desk(sc, 210, 290, c.t["muted"], pal, monitors=3, facing="x")
+    who = plant.seat_at(sc, desk, c.t["muted"], pal)
     racks = plant.rack_row(sc, 440, wy + 31, 2, c.purple, pal, facing="y")
     phone = plant.handheld(sc, 520, 430, c.purple, pal, facing="y")
 
-    bx, by = desk["back"](0.5)
+    bx, by = desk["port"](0.8)
     rx, ry = racks[0]["port"](0.5)
     sc.cable([(bx, by), (320, by), (320, 160), (rx, 160), (rx, ry)], data, sw=STROKE)
 

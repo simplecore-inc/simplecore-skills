@@ -741,13 +741,184 @@ def handheld(sc, x, y, color, pal, kind="phone", facing="x", alert=True):
     return _result(sc, face, screen=face.point(6 + width / 2, 10, 5 + height - 16))
 
 
-def person(sc, x, y, color, pal):
-    """A standing figure built from upright cylinders: two legs, a body and
-    a head, about 80 units tall. It has no face and no arms; it marks where
-    somebody stands, not who."""
-    with sc.group():
-        for dy in (-7, 7):
-            sc.cyl(x, y + dy, 3.6, 38, color, tone=1.2)
-        sc.cyl(x, y, 9, 30, color, z=38)
-        sc.cyl(x, y, 6.5, 11, color, z=70, tone=0.8)
-    return {"solid": sc.solids[-1], "head": (x, y, 81)}
+class _Body:
+    """The local frame of a figure standing at (x, y) and looking at
+    `facing`: `a` runs forward, `b` to the figure's right, z up. Every part is
+    an axis-aligned box, an upright cylinder or a ball, so a part keeps its
+    shape in all four facings."""
+
+    _FORWARD = {"x": (1, 0), "y": (0, 1), "-x": (-1, 0), "-y": (0, -1)}
+
+    def __init__(self, sc, x, y, facing):
+        if facing not in self._FORWARD:
+            raise ValueError(f"facing must be x, y, -x or -y, not {facing!r}")
+        self.sc, self.x, self.y, self.facing = sc, x, y, facing
+        self.fx, self.fy = self._FORWARD[facing]
+        self.rx, self.ry = self.fy, -self.fx
+        # The side nearer the viewer (larger x + y): a hand that holds
+        # something shows it there.
+        self.near = 1 if self.rx + self.ry > 0 else -1
+
+    def point(self, a, b, z=0.0):
+        return (self.x + a * self.fx + b * self.rx, self.y + a * self.fy + b * self.ry, z)
+
+    def box(self, a0, a1, b0, b1, z0, z1, color, tone=1.0):
+        (xa, ya, _), (xb, yb, _) = self.point(a0, b0), self.point(a1, b1)
+        return self.sc.box(min(xa, xb), min(ya, yb), z0, abs(xb - xa), abs(yb - ya), z1 - z0,
+                           color, tone)
+
+    def cyl(self, a, b, r, z0, z1, color, tone=1.0):
+        px, py, _ = self.point(a, b)
+        return self.sc.cyl(px, py, r, z1 - z0, color, z=z0, tone=tone)
+
+    def ball(self, a, b, z, r, color, tone=1.0):
+        px, py, _ = self.point(a, b)
+        return self.sc.ball(px, py, z, r, color, tone)
+
+
+# A figure is about 80 units tall standing, so it stands at the scale of the
+# desks and cabinets (a desk top at 34 is a 75 cm desk to a 170 cm person).
+# Every measure below was chosen so that, at 0.53 px a unit, the head, the
+# neck, the shoulders, the arms and the two legs still print apart, and so
+# that no two edges of different parts print within 3 units of one line.
+_HEAD_R = 6.5
+
+
+def _upper_body(body, z, color, pal, arms="down", holding=None, torso=20):
+    """Torso, neck, head and arms above height z, the torso `torso` tall.
+    `arms` is "down" (hanging at the sides), "desk" (forearms forward at the
+    height of a desk top, 34, for a seated figure) or "hold" (one or both
+    forearms raised in front with a handheld). Returns (head, hand)."""
+    top = z + torso
+    body.box(-4, 4, -8.5, 8.5, z, top, color)
+    body.cyl(0, 0, 2.6, top, top + 4, color, tone=0.8)
+    head_z = top + 4 + _HEAD_R - 0.5
+    body.ball(0, 0, head_z, _HEAD_R, color, tone=1.1)
+    arm_b, r = 12.4, 2.4
+    hand = None
+    for side in (-1, 1):
+        b = side * arm_b
+        raised = arms == "desk" or (arms == "hold" and (holding == "tablet" or side == body.near))
+        if not raised:
+            body.cyl(0, b, r, z - 2, top - 1, color, tone=1.1)
+            continue
+        elbow = top - 11 if arms == "hold" else 38
+        body.cyl(-0.5, b, r, elbow, top - 1, color, tone=1.1)
+        reach = 10 if arms == "hold" else 16
+        inner = 3.5 if arms == "hold" else 0
+        lo, hi = sorted((b + side * 2.2, b - side * (2.2 + inner)))
+        body.box(-2.5, reach, lo, hi, elbow - 4, elbow, color, tone=1.1)
+        if hand is None or side == body.near:
+            hand = body.point(reach, b, elbow)
+    if arms == "hold":
+        elbow = top - 11
+        if holding == "tablet":
+            body.box(9, 13, -9, 9, elbow - 2, elbow + 9, pal["screen"], tone=1.6)
+            hand = body.point(11, 0, elbow + 4)
+        else:
+            b0 = body.near * (arm_b - 6)
+            lo, hi = sorted((b0, b0 + body.near * 6))
+            body.box(9, 13, lo, hi, elbow - 2, elbow + 9, pal["screen"], tone=1.6)
+            hand = body.point(11, b0 + body.near * 3, elbow + 4)
+    return body.point(0, 0, head_z + _HEAD_R + 0.5), hand
+
+
+def _chair(body, color, back=True):
+    """A swivel chair in the figure's frame: a round base, a post, the seat
+    (top at 12) and the back behind it. Returns the seat point."""
+    body.cyl(-4, 0, 8, 0, 4, color, tone=0.9)
+    body.cyl(-4, 0, 1.8, 4, 7, color)
+    # A round seat: a square one puts its front edge on one line with the
+    # back edge of the torso of a person seen from behind, and no depth of
+    # the seat clears that and the edges of the lap at once.
+    body.cyl(-3, 0, 9, 7, 12, color, tone=1.1)
+    if back:
+        # Narrower than the shoulders and 10 below them: from behind, the
+        # shoulders and the upper arms show above and beside the back.
+        body.box(-14, -10, -5, 5, 7, 38, color, tone=0.9)
+        body.cyl(-12, 0, 1.6, 4, 7, color)
+    return body.point(-3, 0, 12)
+
+
+def person(sc, x, y, color, pal, pose="stand", facing="x", holding=None, chair=None):
+    """A person: head, neck, a torso whose shoulders are wider than the
+    hips, two arms apart from the torso and two legs with feet, about 80
+    units tall standing. No face and no clothing detail; it marks where
+    somebody stands or sits and what they hold, not who.
+
+    `facing` is the way the person looks ("x", "y", or "-x"/"-y" for a back
+    turned to the viewer). `pose="stand"` stands on (x, y); `holding="phone"`
+    or `"tablet"` raises the forearm nearer the viewer (both for a tablet)
+    and puts the handheld in front of the chest. `pose="sit"` seats the
+    person on a swivel chair centred on (x, y), drawn in `chair` colour
+    (default the palette's steel) as part of the same device, so the chair
+    and the figure share one footprint and are ordered part by part; the
+    thighs lie along the seat, the shins stand down to the floor and the
+    forearms reach 16 units forward, 2 onto a desk the feet stop at.
+    Use `seat_at` to place a seated person at a `control_desk`.
+
+    Returns `head` (the top of the head), `hand` (the hand, or the handheld
+    when one is held) and, seated, `seat`."""
+    body = _Body(sc, x, y, facing)
+    if pose not in ("stand", "sit"):
+        raise ValueError(f"pose must be stand or sit, not {pose!r}")
+    if holding not in (None, "phone", "tablet"):
+        raise ValueError(f"holding must be phone, tablet or None, not {holding!r}")
+    if pose == "sit" and holding:
+        raise ValueError("a seated person rests the forearms on the desk; hold only standing")
+    out = {}
+    with sc.group(pairwise=True):
+        if pose == "stand":
+            for side in (-1, 1):
+                b0 = side * 5.2
+                lo, hi = sorted((b0 - side * 2.2, b0 + side * 2.2))
+                body.box(-3.4, 3.4, lo, hi, 0, 4, color, tone=0.9)
+                body.cyl(-0.8, b0, 2.3, 4, 36, color, tone=1.1)
+            body.box(-3.5, 3.5, -7, 7, 36, 43, color, tone=0.9)
+            head, hand = _upper_body(body, 43, color, pal, "hold" if holding else "down", holding)
+        else:
+            out["seat"] = _chair(body, chair or pal["steel"])
+            # The lap's top stays at 19: higher, its two top edges print on
+            # one line with edges of the forearms resting at desk height.
+            body.box(-6, 13, -5.5, 5.5, 12, 19, color, tone=0.9)
+            for side in (-1, 1):
+                b0 = side * 4.6
+                lo, hi = sorted((b0 - side * 2.2, b0 + side * 2.2))
+                body.cyl(10.5, b0, 2.2, 4, 12, color, tone=1.1)
+                body.box(8, 14, lo, hi, 0, 4, color, tone=0.9)
+            head, hand = _upper_body(body, 19, color, pal, "desk", torso=29.5)
+    out.update({"solid": sc.solids[-1], "facing": facing, "head": head, "hand": hand})
+    if pose == "stand" and facing == "x" and not holding:
+        # The point every caller of the standing figure has used.
+        out["head"] = (x, y, 81)
+    return out
+
+
+def chair(sc, x, y, color, pal=None, facing="x"):
+    """An empty swivel chair whose seat looks at `facing`, centred on (x, y):
+    round base, post, seat and back. A chair somebody sits on is drawn by
+    `person(pose="sit")`, never as a second device on the same ground."""
+    body = _Body(sc, x, y, facing)
+    with sc.group(pairwise=True):
+        seat = _chair(body, color)
+    return {"solid": sc.solids[-1], "facing": facing, "seat": seat}
+
+
+def seat_at(sc, desk, color, pal, f=0.5, chair=None):
+    """A seated person at a `control_desk`, on the side its screens look at,
+    facing the screens: the chair stands so that the feet stop at the desk's
+    front edge, the footprints touch and do not overlap, and the forearms
+    rest on the desk's edge. `f` is the place along the front from the
+    viewer's left. A desk facing "x" or "y" shows the person's back with the
+    screens beyond; one facing "-x" or "-y" puts the desk and the monitors'
+    backs in front of the person, who is then mostly hidden."""
+    face = desk["face"]
+    fx, fy = _Body._FORWARD[face.facing]
+    px, py, _ = face.point(f * face.width, face.depth)
+    # The feet reach a = 14 from the figure's centre: stand the centre that
+    # far out from the front, so the feet end on the desk's front edge. At
+    # 16 or more the far top edge of the torso prints on one line with the
+    # near edge of the desk top.
+    turned = {"x": "-x", "-x": "x", "y": "-y", "-y": "y"}[face.facing]
+    return person(sc, px + fx * 14, py + fy * 14, color, pal, pose="sit", facing=turned,
+                  chair=chair)

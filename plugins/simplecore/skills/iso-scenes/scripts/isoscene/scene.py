@@ -54,9 +54,13 @@ class Scene:
         return solid
 
     @contextmanager
-    def group(self):
+    def group(self, pairwise=False):
         """Parts added inside belong to one device: they are painted bottom to
-        top, far to near, and the device takes one place in the scene's order."""
+        top, far to near, and the device takes one place in the scene's order.
+        `pairwise=True` orders the parts by comparing their boxes pair by pair,
+        as the scene orders devices: a figure whose limbs touch its body side
+        by side and above one another needs it, because bottom-to-top puts an
+        arm on the far side of a body in front of the body."""
         outer, self._group = self._group, {"parts": []}
         try:
             yield
@@ -64,7 +68,10 @@ class Scene:
             parts, self._group = self._group["parts"], outer
         if not parts:
             return
-        parts.sort(key=lambda s: (s["bbox"][2], s["bbox"][0] + s["bbox"][1]))
+        if pairwise:
+            parts = _order(parts, self.at)
+        else:
+            parts.sort(key=lambda s: (s["bbox"][2], s["bbox"][0] + s["bbox"][1]))
         boxes = [s["bbox"] for s in parts]
         bbox = tuple(min(b[i] for b in boxes) for i in range(3)) + \
             tuple(max(b[i] for b in boxes) for i in range(3, 6))
@@ -116,6 +123,26 @@ class Scene:
                        f'stroke-linejoin="round"/>'
                        f'<ellipse {ellipse} fill="none" stroke="{edge}" stroke-width="{self.sw}"/>')
         return self._add((x - r, y - r, z, x + r, y + r, z + h), markup)
+
+    def ball(self, x, y, z, r, color, tone=1.0, edge=None):
+        """A sphere centred on (x, y, z): a head. This projection draws every
+        sphere as a circle of radius 1.2247 r, the width of a cylinder of the
+        same radius. The lower left, where the +y face of a box is darkest,
+        carries a darker crescent with no outline of its own."""
+        cx, cy = self.at(x, y, z)
+        rr = r * 1.2247
+        paper = self.c.t["bg"]
+        circle = f'cx="{cx:.1f}" cy="{cy:.1f}" r="{rr:.1f}"'
+        # The crescent: the circle's lower-left half, closed by a shallower arc.
+        a = (cx - rr * 0.7071, cy - rr * 0.7071)
+        b = (cx + rr * 0.7071, cy + rr * 0.7071)
+        crescent = (f"M{a[0]:.1f},{a[1]:.1f} A{rr:.1f},{rr:.1f} 0 0 0 {b[0]:.1f},{b[1]:.1f} "
+                    f"A{rr * 1.35:.1f},{rr * 1.35:.1f} 0 0 1 {a[0]:.1f},{a[1]:.1f} Z")
+        markup = (f'<circle {circle} fill="{paper}" stroke="none"/>'
+                  f'<circle {circle} fill="{color}" fill-opacity="{0.16 * tone:.2f}" stroke="none"/>'
+                  f'<path d="{crescent}" fill="{color}" fill-opacity="{0.20 * tone:.2f}" stroke="none"/>'
+                  f'<circle {circle} fill="none" stroke="{edge or color}" stroke-width="{self.sw}"/>')
+        return self._add((x - r, y - r, z - r, x + r, y + r, z + r), markup)
 
     def disc(self, x, y, r, color, z=0.0, tone=1.0, edge=None, lip=0.0):
         """A thin horizontal disc drawn with one outline: an insulator shed, a

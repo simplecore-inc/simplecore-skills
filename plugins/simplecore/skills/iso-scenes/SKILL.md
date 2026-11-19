@@ -174,16 +174,28 @@ does not block a cable.
   each box's edge values (`w - z` along the front, `u - z` along the side, `u - w` for vertical
   edges) and keep every pair 4 units apart; two rounds of moving a part by a unit to clear one
   lint finding only move the finding. The catalogue's machine is laid out that way.
+- **A person is drawn from parts whose silhouettes differ, not from same-width cylinders.** A
+  figure of a leg, a body and a head of nearly one width was read as a bottle or a post; a round
+  head narrower than the shoulders, a neck, arms standing apart from the torso and two legs a
+  printable gap apart are what make it read as a person at 35 px.
+- **Two parts side by side along a floor direction print only 0.87 of their distance apart.** Two
+  legs 8 units apart along y are 7 units apart on the page, and two cylinders of radius 2.6 then
+  touch; space limbs so the page gap is 3 units or more.
+- **A seated figure and its chair are one device.** Both stand on the ground, so drawn as two they
+  overlap footprints and the engine refuses them; a person at a desk stands its feet on the desk's
+  front edge (`seat_at`), because the desk's footprint covers its knee space.
 - **Check a domain fact before drawing it.** Where a device stands, what connects to what and in
   which order are claims a reader will take from the picture; draw only what a source supports.
 
 ## Solids
 
-`box` · `box_at` · `cyl` (upright) · `cyl_x` (lying along x) · `cyl_y` (lying along y, a
+`box` · `box_at` · `cyl` (upright) · `ball` (a sphere, drawn as a circle: a head) · `cyl_x` (lying along x) · `cyl_y` (lying along y, a
 pipe run in the other floor direction) · `truss` (thin members as one open
 frame: a lattice column) · `disc` (one outline: insulator
 sheds, flanges) · `wire` (a conductor in the air, with a paper casing). Parts of one device go
-inside `with sc.group():` so the device moves through the depth order as one solid. Solids are
+inside `with sc.group():` so the device moves through the depth order as one solid;
+`group(pairwise=True)` orders the parts by comparing their boxes, for a figure whose limbs touch
+its body beside and above one another. Solids are
 ordered by comparing bounding boxes pair by pair; a part that interpenetrates another falls back
 to centre depth, so keep parts of different devices apart.
 
@@ -245,7 +257,9 @@ of every device (`fig_catalogue`), built with the same config a printed proposal
 | `video_wall(sc, x, y, z, pal, cols, rows, facing, alarm)` | `panel_at(col, row)` | any grid, one alarm panel |
 | `signage(sc, x, y, color, pal, facing, mount)` | `screen`, `port` when standing | `mount="stand"` or `"hang"` |
 | `handheld(sc, x, y, color, pal, kind, facing)` | `port(f)`, `screen` | `"phone"`, `"tablet"`; drawn oversize, say so in the label |
-| `person(sc, x, y, color, pal)` | `head` | a standing figure of cylinders, no face or arms |
+| `person(sc, x, y, color, pal, pose, facing, holding, chair)` | `head`, `hand`, `seat` when seated | `pose="stand"` (about 80 tall, footprint within 7 x 15) or `"sit"` (on a swivel chair drawn as part of the figure); `facing` is the way the person looks, `-x`/`-y` shows the back; `holding="phone"` or `"tablet"` raises the forearm nearer the viewer with the handheld, standing only |
+| `chair(sc, x, y, color, pal, facing)` | `seat` | an empty swivel chair: round base, post, round seat, narrow back |
+| `seat_at(sc, desk, color, pal, f)` | as `person` | a seated person at a `control_desk`, on the side its screens face, looking at them; feet end on the desk's front edge, forearms rest on the desk. Facing `x`/`y` desks show the person's back with the screens beyond; `-x`/`-y` desks hide the person behind the monitors |
 
 ## Verify
 
