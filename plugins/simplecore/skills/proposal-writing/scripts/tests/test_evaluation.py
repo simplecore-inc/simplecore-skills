@@ -81,6 +81,38 @@ class Fixture(unittest.TestCase):
         return LOOKUP.format(**cells)
 
 
+class ItemsInOneCellTests(unittest.TestCase):
+    """A scoring table with no element column that sets several bulleted items in one cell."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "docs").mkdir()
+        (self.root / "docs" / "scoring.md").write_text(
+            "| 분야 | 세부평가사항 | 배점 |\n| --- | --- | --- |\n"
+            "| 전략 | ․ 사업 이해도<br>․ 추진 전략 | 14점5점 |\n| 기능 | ․ 기능 요구사항 | 17점 |\n", encoding="utf-8")
+        self.deck = project(self.root, {"evaluation": {
+            "scoring": {"file": "docs/scoring.md", "columns": {"item": "세부평가사항"}, "split": "<br>",
+                        "itemMark": "^[․\\s]+"},
+            "lookup": {"file": "docs/lookup.md", "columns": {"item": "평가항목", "pages": "답변 위치"}}}})
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_on(self, rows):
+        (self.root / "docs" / "lookup.md").write_text(
+            "| 평가항목 | 답변 위치 |\n| --- | --- |\n" + "".join(f"| {r} | Ⅲ-1 |\n" for r in rows), encoding="utf-8")
+        return evaluation.check(self.deck, None)
+
+    def test_each_item_of_a_cell_is_one_scoring_entry(self):
+        counts, bad, _ = self.run_on(["사업 이해도", "추진 전략", "기능 요구사항"])
+        self.assertEqual((counts["scoring"], bad), (3, []))
+
+    def test_item_missing_from_the_lookup(self):
+        _, bad, _ = self.run_on(["사업 이해도", "기능 요구사항"])
+        self.assertEqual(bad, ["no row for 「추진 전략」"])
+
+
 class EvaluationTests(Fixture):
     def test_complete_lookup_is_quiet(self):
         counts, bad, pending = self.run_on(self.good())

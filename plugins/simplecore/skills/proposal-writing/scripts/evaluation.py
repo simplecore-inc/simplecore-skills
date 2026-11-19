@@ -26,6 +26,8 @@ Config (`evaluation`):
       "scoring": { "file": "docs/rfp/scoring.md", "section": "## 붙임#5 …",   // required
                    "columns": { "item": "평가항목", "element": "평가요소" },  // element optional
                    "split": "<br>", "itemPattern": "^\\d\\.\\d" },           // optional
+                   // "itemMark": "^[․·\\s]+" takes a bullet off the head of an item; with no
+                   // element column, `split` parts several items set in one cell
       "lookup": { "file": "proposal/00-서식/조견표.md", "section": "## 인쇄 원고",
                   // or "deck": true to read the table as the deck prints it
                   "columns": { "item": "평가항목", "pages": "관련 페이지" } },  // element optional
@@ -101,13 +103,24 @@ def scoring(deck: DeckConfig, reader: DeckReader | None) -> list[tuple[str, str]
     pattern = re.compile(spec["itemPattern"]) if spec.get("itemPattern") else None
     split = spec.get("split")
     out = []
+    mark = re.compile(spec["itemMark"]) if spec.get("itemMark") else None
     for row, item in zip(table.rows, items):
-        item = item.replace("<br>", "").strip()
-        if not item or (pattern and not pattern.search(item)):
-            continue
         if not cols.get("element"):
-            if (item, "") not in out:
-                out.append((item, ""))
+            # A table with no element column may set several items in one cell: `split` parts
+            # them, and `itemMark` takes the tender's bullet off the head of each.
+            for part in (item.split(split) if split else [item]):
+                part = part.replace("<br>", "").strip()
+                if mark:
+                    part = mark.sub("", part, count=1).strip()
+                if not part or (pattern and not pattern.search(part)):
+                    continue
+                if (part, "") not in out:
+                    out.append((part, ""))
+            continue
+        item = item.replace("<br>", "").strip()
+        if mark:
+            item = mark.sub("", item, count=1).strip()
+        if not item or (pattern and not pattern.search(item)):
             continue
         cell = table.cell(row, table.column(cols["element"], where))
         for el in (cell.split(split) if split else [cell]):
