@@ -21,6 +21,9 @@ Config (`rfp`, required):
       "section": "^## (\\d+)\\. (.+)$",          // optional: a section heading, number and name
       "skipLines": ["^> 원본:"],                 // optional: lines that are not the tender's text
       "word": "제안요청서",                       // optional: the word a citation opens with
+      "citation": "제\\s?\\d+\\s?장",            // optional: how a citation writes the chapter, for a
+                                                //   tender numbered 제1장 · 제2장; its text, spaces
+                                                //   removed, is what `chapter` captures
       "scan": ["docs/tech"],                     // optional: directories read besides the manuscript
       "skipDirs": ["review"]                     // optional: directory names not read
     }
@@ -70,9 +73,21 @@ def chapters(deck: DeckConfig) -> dict[str, Chapter]:
     return out
 
 
-def citation(word: str) -> re.Pattern:
-    return re.compile(rf"{re.escape(word)}\s*([{NUMERALS}])\s*(?:장)?\s*\.?\s*(?:(\d+)\s*\.)?"
+def citation(word: str, chapter: str | None = None) -> re.Pattern:
+    """A citation: the word, the chapter, an optional section number and an optional name.
+
+    `chapter` is the project's own pattern for the chapter part, for a tender that does not
+    number its chapters with roman numerals.
+    """
+    token = f"(?:{chapter})" if chapter else rf"[{NUMERALS}]\s*(?:장)?"
+    return re.compile(rf"{re.escape(word)}\s*({token})\s*\.?\s*(?:(\d+)\s*\.)?"
                       r"\s*([가-힣A-Za-z][가-힣A-Za-z0-9 ]{0,24})?")
+
+
+def chapter_key(text: str) -> str:
+    """The chapter a citation names, as `rfp.chapter` captures it: 「Ⅲ장」 is Ⅲ, 「제 3 장」 is 제3장."""
+    key = re.sub(r"\s+", "", text)
+    return key[0] if key[0] in NUMERALS else key
 
 
 def judge(roman: str, number: str | None, tail: str | None, chs: dict[str, Chapter]) -> tuple[str, str] | None:
@@ -126,14 +141,14 @@ def files(deck: DeckConfig) -> list[Path]:
 def check(deck: DeckConfig) -> tuple[int, int, list[tuple[str, str, str]]]:
     """(chapters, files, [(where, level, message)])."""
     chs = chapters(deck)
-    rx = citation(deck.get("rfp.word", "제안요청서"))
+    rx = citation(deck.get("rfp.word", "제안요청서"), deck.get("rfp.citation", None))
     paths = files(deck)
     found = []
     for path in paths:
         rel = path.relative_to(deck.root).as_posix() if path.is_relative_to(deck.root) else str(path)
         for i, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
             for m in rx.finditer(line):
-                verdict = judge(m.group(1), m.group(2), m.group(3), chs)
+                verdict = judge(chapter_key(m.group(1)), m.group(2), m.group(3), chs)
                 if verdict:
                     found.append((f"{rel}:{i}", *verdict))
     return len(chs), len(paths), found

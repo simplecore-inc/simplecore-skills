@@ -222,6 +222,35 @@ class RfpCiteTests(Base):
         self.assertEqual(self.found("제안요청서 Ⅲ. 사업 개요"), [])
 
 
+class RfpCiteNumberedChapterTests(Base):
+    """A tender numbered 제1장 · 제2장: the citation's chapter pattern is the project's."""
+    extra = {"rfp": {"dir": "docs/rfp", "chapter": "^# (제\\d+장) ", "citation": "제\\s?\\d+\\s?장"}}
+
+    def setUp(self):
+        super().setUp()
+        (self.root / "docs" / "rfp").mkdir(parents=True)
+        (self.root / "docs" / "rfp" / "01.md").write_text(
+            "# 제1장 제안안내\n\n## 1. 개요\n\n## 2. 입찰 및 계약관련 사항\n", encoding="utf-8")
+        (self.root / "docs" / "rfp" / "03.md").write_text(
+            "# 제3장 제안서 작성 및 평가\n\n## 1. 제안서 작성 요령\n\n분량 80페이지 이내\n", encoding="utf-8")
+
+    def found(self, line: str):
+        self.md("04/a.md", line + "\n")
+        return [(lvl, msg) for _, lvl, msg in rfpcite.check(self.deck)[2]]
+
+    def test_chapter_and_section_the_tender_does_not_carry(self):
+        self.assertIn("no chapter 제9장", self.found("제안요청서 제9장을 따른다.")[0][1])
+        self.assertIn("no section 4", self.found("제안요청서 제3장 4. 일정")[0][1])
+
+    def test_name_that_belongs_to_another_chapter(self):
+        found = self.found("제안요청서 제3장 입찰 및 계약관련 사항 을 따른다")
+        self.assertEqual(found[0][0], "error")
+        self.assertIn("it is in 제1장", found[0][1])
+
+    def test_resolving_citations_are_quiet(self):
+        self.assertEqual(self.found("제안요청서 제3장 1.나 3)의 분량과 제안요청서 제 1 장 2. 입찰 및 계약관련 사항"), [])
+
+
 FACTS = """# 안내
 
 ## 5. 공유 사실
