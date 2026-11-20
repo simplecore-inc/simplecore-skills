@@ -448,6 +448,8 @@ class Scene:
             self.label((broken_at[0], broken_at[1], 0), break_text, color=break_color)
 
     def _cable_markup(self, spec):
+        if spec.get("broken_at") is not None:
+            return self._broken_markup(spec)
         pts = [self.at(x, y) for x, y in spec["points"]]
         color, radius = spec["color"], spec["radius"]
         out = ""
@@ -472,35 +474,43 @@ class Scene:
         tag = f' data-cable="{spec["index"]}"' if self.mark_cables else ""
         out += (f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{spec["sw"]}" '
                 f'stroke-linecap="round" stroke-linejoin="round"{tag}/>')
-        if spec.get("broken_at") is not None:
-            out += self._break_markup(spec)
         for which, point in ((0, pts[0]), (1, pts[-1])):
             if spec["ends"][which] == "join":
                 out += f'<circle cx="{point[0]:.1f}" cy="{point[1]:.1f}" r="4.2" fill="{color}"/>'
         return out
 
-    def _break_markup(self, spec, gap=18.0, tint=16.0, r=13.0):
-        """Paper over the cable at the break, the two ends in the break colour
-        and a crossed disc in the gap."""
-        bx, by = self.at(*spec["broken_at"])
-        pts = [self.at(x, y) for x, y in spec["points"]]
-        for (ax, ay), (cx, cy) in zip(pts, pts[1:]):
-            seg = math.hypot(cx - ax, cy - ay)
-            if seg and abs((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / seg < 0.6:
-                ux, uy = (cx - ax) / seg, (cy - ay) / seg
-                break
-        col, paper, sw = spec["break_color"], self.c.t["bg"], spec["sw"]
-        out = self._line([(bx - ux * gap, by - uy * gap), (bx + ux * gap, by + uy * gap)],
-                         paper, sw=sw + 3, cap="butt")
-        for sgn in (-1, 1):
-            p = (bx + sgn * ux * gap, by + sgn * uy * gap)
-            q = (bx + sgn * ux * (gap + tint), by + sgn * uy * (gap + tint))
-            out += self._line([p, q], col, sw=sw + 0.6)
-        d = r * 0.5
-        out += (f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="{r}" fill="{paper}" stroke="{col}" '
+    def _broken_markup(self, spec, gap=18.0, tint=16.0, r=13.0):
+        """A cut link: the cable stops `gap` short of the break on both sides,
+        its last `tint` units on each side drawn in the break colour, and a
+        crossed disc in the gap. No line is drawn over another."""
+        bx, by = spec["broken_at"]
+        pts = [tuple(p) for p in spec["points"]]
+        k = next(i for i, (a, b) in enumerate(zip(pts, pts[1:])) if _on_run((bx, by), a, b))
+        a, b = pts[k], pts[k + 1]
+        ux, uy = (b[0] - a[0], b[1] - a[1])
+        n = math.hypot(ux, uy)
+        ux, uy = ux / n, uy / n
+        at = lambda d: (bx + ux * d, by + uy * d)
+        col, sw = spec["break_color"], spec["sw"]
+        first = dict(spec, points=pts[:k + 1] + [at(-gap - tint)], arrow=False,
+                     ends=(spec["ends"][0], "free"), broken_at=None)
+        last = dict(spec, points=[at(gap + tint)] + pts[k + 1:],
+                    ends=("free", spec["ends"][1]), broken_at=None)
+        head, tail = self._cable_markup(first), self._cable_markup(last)
+        if self.mark_cables:
+            # The first half carries the whole route's corners for a check.
+            route = " ".join(f"{x:.1f},{y:.1f}" for x, y in (self.at(*p) for p in pts))
+            head = head.replace(' data-cable=', f' data-route="{route}" data-cable=', 1)
+            tail = tail.replace(' data-cable=', ' data-cable-part=')
+        out = head + tail
+        for d0, d1 in ((-gap - tint, -gap), (gap, gap + tint)):
+            out += self._line([self.at(*at(d0)), self.at(*at(d1))], col, sw=sw + 0.6)
+        cx, cy = self.at(bx, by)
+        paper, d = self.c.t["bg"], r * 0.5
+        out += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r}" fill="{paper}" stroke="{col}" '
                 f'stroke-width="{sw + 0.6}" data-break="1"/>')
-        out += self._line([(bx - d, by - d), (bx + d, by + d)], col, sw=sw + 0.6)
-        out += self._line([(bx - d, by + d), (bx + d, by - d)], col, sw=sw + 0.6)
+        out += self._line([(cx - d, cy - d), (cx + d, cy + d)], col, sw=sw + 0.6)
+        out += self._line([(cx - d, cy + d), (cx + d, cy - d)], col, sw=sw + 0.6)
         return out
 
     def _check_hidden(self, hulls, solids):
