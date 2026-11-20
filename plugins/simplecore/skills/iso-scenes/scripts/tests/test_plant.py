@@ -384,7 +384,8 @@ class CableMarks(unittest.TestCase):
         self.assertIn('data-break="1"', body)
         self.assertIn("단절", body)
         # Drawn as two halves: no line is laid over the cable at the cut.
-        self.assertEqual(body.count('fill="none" stroke="' + c.blue), 2)
+        self.assertEqual(body.count(f'fill="none" stroke="{c.blue}" stroke-width="2.8" '
+                                    f'stroke-linecap="round"'), 2)
         with self.assertRaises(ValueError):
             sc.cable([p, (p[0], lane), (q[0], lane), q], c.blue, broken_at=(60, lane + 50),
                      break_color=c.red)
