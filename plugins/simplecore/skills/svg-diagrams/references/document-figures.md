@@ -459,7 +459,7 @@ automatic:
 
 | Helper | What it sizes |
 |---|---|
-| `card(c, x, y, w, accent, title, lines, …)` | a titled card from its wrapped lines, set on `BODY`; a line is a string, `(text, colour)` or `(text, colour, weight)`, and svgkit's `(colour, text)` order reads the same; `h=` forces a taller box and `valign="middle"` keeps the padding even; `band=True` for a header band, `icon=` / `tag=` for the title line, `wash=` for a tint under the outline |
+| `card(c, x, y, w, accent, title, lines, …)` | a titled card from its wrapped lines, set on `BODY`; a line is a string, `(text, colour)` or `(text, colour, weight)`, and svgkit's `(colour, text)` order reads the same; `h=` forces a taller box and `valign="middle"` keeps the padding even; `band=True` for a header band, `icon=` / `tag=` for the title line, `wash=` for a tint under the outline; `num=` puts the card's step number in a disc inside the card on the title line, the title after it (or before the one centred line of an untitled card), and refuses a title that no longer fits: a number outside the box reads as belonging to neither box |
 | `cards_row(c, xs, y, w, items, accents)` | a row of cards at one height, the tallest content's |
 | `pill(…)` / `pill_h(size, pad_y)` | a one-line box and the height it needs |
 | `note(c, x, y, w, text, accent)` | a tinted band sized to its one or two lines, set on `BODY` |

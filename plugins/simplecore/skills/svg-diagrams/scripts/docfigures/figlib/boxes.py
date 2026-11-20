@@ -57,7 +57,7 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
          step=None, pad=PAD, pad_y=PAD_Y, fill=None, rx=10, sw=HAIRLINE,
          dash=None, title_color=None, color=None, align="start",
          title_gap=TITLE_GAP, stripe=None, opacity=None, wash=False,
-         valign="top", bullet="auto"):
+         valign="top", bullet="auto", num=None, num_size=None):
     """A card sized from its content: an optional title line (with an icon, a
     right-aligned tag, or a badge after it), then body items wrapped to the
     card's inner width. Padding is even above and below by construction.
@@ -66,7 +66,11 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
     are square (`Canvas.band`). `stripe` draws a 6px accent band on the left
     edge, `wash=True` (or an opacity) tints the box with its accent under the
     outline. `valign="middle"` centres the content when `h` is taller than the
-    content needs. Returns (x, y, w, h)."""
+    content needs. `num` puts a numbered disc inside the card, on the title
+    line at the left padding with the title after it (or before a single
+    centred line when the card has no title): a number outside the box reads
+    as belonging to neither box. `num_size` is the digit size (MICRO-like by
+    default, two thirds of the title). Returns (x, y, w, h)."""
     step = step_for(size, step)
     fill = c.t["box"] if fill is None else fill
     inner = w - 2 * pad
@@ -107,6 +111,17 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
         else:
             base = baseline_for_top(cursor, title_size)
         tx = x + pad + (8 if stripe else 0)
+        if num is not None:
+            if band or align == "middle" or icon:
+                raise ValueError("a card number needs a plain title at the left")
+            nsize = num_size or round(title_size * 0.65)
+            r = num_disc_r(num, nsize)
+            num_disc(c, tx + r, base - title_size * 0.36, num, accent, size=nsize)
+            tx += 2 * r + 8
+            over = tx + tw(title, title_size, False) - (x + w - pad)
+            if over > 0.5:
+                raise ValueError(f"card title {title!r} after its number runs {over:.1f} "
+                                 f"units past the card's padding")
         if icon:
             end = icon_title(c, tx, base, icon, title, accent, size=title_size)
         elif align == "middle":
@@ -131,6 +146,19 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
                    family=SANS, weight=600, anchor="end")
         cursor = (y + band_h + pad_y + shift) if band else \
             glyph_bottom(base, title_size) + title_gap
+    if num is not None and not title:
+        if len(body) != 1 or align != "middle":
+            raise ValueError("an untitled numbered card holds one centred line")
+        nsize = num_size or round(size * 0.75)
+        r = num_disc_r(num, nsize)
+        ln, lcol, lwt, _ = body[0]
+        base = baseline_for_top(cursor, size)
+        group = 2 * r + 8 + tw(ln, size, False)
+        left = x + (w - group) / 2
+        num_disc(c, left + r, base - size * 0.36, num, accent, size=nsize)
+        c.text(left + 2 * r + 8, base, ln, size=size, color=lcol or bcol, family=SANS,
+               weight=lwt)
+        return (x, y, w, h)
     for k, (ln, lcol, lwt, first) in enumerate(body):
         base = baseline_for_top(cursor, size) + k * step
         if align == "middle":

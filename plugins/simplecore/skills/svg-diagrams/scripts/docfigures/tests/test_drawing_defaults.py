@@ -160,3 +160,40 @@ save(c, "tagged", board=FULL)
         run = self.p.run("build.py")
         self.assertNotEqual(run.returncode, 0)
         self.assertIn("runs into the title", run.stdout + run.stderr)
+
+
+class CardNumber(Built):
+    """A card's number sits inside the card on its title line, the title after
+    it; a title that no longer fits is refused, and a card without a number
+    draws what it drew before."""
+
+    SOURCE = """from common import canvas, card, save, FULL
+c = canvas(1200, 200)
+card(c, 24, 24, {w}, c.blue, "계측 지점", ["계측 지점 식별자"]{num})
+card(c, 600, 24, 260, c.blue, None, ["원본 저장"], align="middle"{num})
+save(c, "numbered", board=FULL)
+"""
+
+    def test_number_inside_on_the_title_line(self):
+        _, markup = self.build(self.SOURCE.format(w=260, num=", num=3"), "numbered")
+        disc = re.search(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"', markup)
+        self.assertIsNotNone(disc)
+        cx, cy, r = (float(v) for v in disc.groups())
+        # inside the card, at its left padding
+        self.assertGreater(cx - r, 24)
+        self.assertLess(cx + r, 24 + 260)
+        self.assertGreater(cy - r, 24)
+        title = re.search(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*>계측 지점</text>', markup)
+        self.assertGreater(float(title.group(1)), cx + r)
+        self.assertLess(abs(float(title.group(2)) - 0.36 * 23 - cy), 3)
+        self.assertIn(">3</text>", markup)
+
+    def test_unnumbered_card_is_unchanged(self):
+        _, plain = self.build(self.SOURCE.format(w=260, num=""), "numbered")
+        self.assertNotIn("<circle", plain)
+
+    def test_title_that_no_longer_fits_is_refused(self):
+        self.p.write("figs/case.py", self.SOURCE.format(w=120, num=", num=3"))
+        run = self.p.run("build.py")
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn("after its number runs", run.stdout + run.stderr)
