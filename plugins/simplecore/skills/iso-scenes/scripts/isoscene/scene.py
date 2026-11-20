@@ -603,17 +603,22 @@ class Scene:
         sides = [s if s in ("left", "right", "up", "down") else "right" for s in spec["prefer"]]
         sides = list(dict.fromkeys(sides + ["left", "right", "up", "down"]))
         best, nearest = None, None
-        for reach in (10, 16, 22, 28, 36, 46, 58, 70, 85, 100, 120, 140, 190, 250):
+        for reach in (4, 10, 16, 22, 28, 34, 40, 46, 52, 58, 64, 70, 76, 82, 88, 96, 110, 130,
+                      160, 200, 250):
             for rise in (0, -12, 12, -24, 24, -36, 36, -48, 48, -64, 64, -84, 84, -110, 110):
                 for rank, side in enumerate(sides):
+                    # `reach` is the gap between the part and the name's
+                    # near edge on every side, so a short reach never puts
+                    # the name over its own part.
                     if side in ("up", "down"):
                         x0 = px + rise - w / 2
-                        yc = py - reach if side == "up" else py + reach
+                        off = reach + h / 2 + 6
+                        yc = py - off if side == "up" else py + off
                         r = (x0 - 4, yc - h / 2 - 3, x0 + w + 4, yc + h / 2 + 3)
                         ex = min(max(px, r[0] + 8), r[2] - 8)
                         end = (ex, r[3] + 3) if side == "up" else (ex, r[1] - 3)
                     else:
-                        x0 = px - reach - w if side == "left" else px + reach
+                        x0 = px - reach - w - 7 if side == "left" else px + reach + 7
                         r = (x0 - 4, py + rise - h / 2 - 3, x0 + w + 4, py + rise + h / 2 + 3)
                         end = ((r[2] + 3, py + rise) if side == "left"
                                else (r[0] - 3, py + rise))

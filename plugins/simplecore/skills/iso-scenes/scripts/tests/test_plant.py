@@ -289,6 +289,41 @@ class Leaders(unittest.TestCase):
         self.assertIn("수전 설비", str(caught.exception))
 
 
+    def _near(self, limit, prefer=("left", "right")):
+        """A point at (300, 30) on a 600 x 60 board: a pillar just right of it,
+        two boxes left of it with a gap at its height that a leader passes
+        through and a name does not fit, the board edges above and below."""
+        sc = Scene(canvas(600, 60), 0, 0, leaders="near", leader_max=limit)
+        rect = lambda x0, y0, x1, y1: [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        hulls = [rect(310, 0, 316, 60), rect(240, 0, 280, 24), rect(240, 36, 280, 60)]
+        failed = []
+        out = sc._nearest_callout({"text": "이름", "prefer": prefer}, 50, 20, 300, 30,
+                                  hulls, [], [], [], failed)
+        return out, failed
+
+    def test_near_mode_prefers_a_leader_crossing_no_solid(self):
+        (r, end, side), _ = self._near(100)
+        self.assertEqual(side, "left")
+        self.assertLessEqual(r[2], 240)
+        # Within a tighter limit only the leader across the pillar is left.
+        (r, end, side), _ = self._near(40)
+        self.assertEqual(side, "right")
+        out, failed = self._near(10)
+        self.assertIsNone(out)
+        self.assertIn("limit 10", failed[0])
+
+    def test_near_mode_breaks_ties_by_prefer(self):
+        for prefer, side in ((("left",), "left"), (("up",), "up"), (("down",), "down"),
+                             (("right", "left"), "right")):
+            sc = Scene(canvas(600, 400), 0, 0, leaders="near", leader_max=60)
+            out = sc._nearest_callout({"text": "이름", "prefer": prefer}, 50, 20, 300, 200,
+                                      [], [], [], [], [])
+            self.assertEqual(out[2], side)
+            # The name never covers its own part.
+            r = out[0]
+            self.assertFalse(r[0] <= 300 <= r[2] and r[1] <= 200 <= r[3])
+
+
 class ProductionLines(unittest.TestCase):
     """The production-line devices return their anchors and stay on their
     ground; a line fits the rectangle it was given or says what it needs."""
