@@ -249,7 +249,9 @@ once into the target's front, or route on the near side.
 A link that is cut is drawn with `cable(..., broken_at=(x, y), break_color=, break_text=)`: a
 gap on the run through that ground point, the two ends in `break_color`, a crossed disc the size
 of a step number in the gap and, when given, the state's word beside it. A bare gap reads as a
-drawing error. The cable is checked as one cable.
+drawing error. The cable is checked as one cable; it is drawn as two halves that stop short of the
+mark, so no line lies over another, and under `mark_cables` the first half carries the whole
+route's corners in `data-route`.
 
 Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
 or duct band), `cable`.
