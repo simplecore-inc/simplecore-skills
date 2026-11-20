@@ -74,6 +74,7 @@ not loosen the rule.
 | No two footprints overlap on the ground | A kiosk drawn through a wall reads as a mistake (a user sent one back), and the paint order of two interpenetrating things is decided by centre depth, not by what is in front |
 | No cable runs under a device's footprint | The cable vanishes and reappears with no visible path |
 | A label touches no solid, conductor, cable, other label or board edge | The engine tries positions around its target in the order of `prefer` and takes the first free one |
+| Under `Scene(..., leaders="near", leader_max=L)`, a label or callout sits within `L` page units of its part | A name that stands across the scene from its part, on a leader crossing machines, reads as belonging to whatever it lands beside (a user sent one back) |
 
 A device's footprint is what stands on the ground: a roof, a tank or a head that overhangs it
 does not block a cable.
@@ -222,6 +223,16 @@ are placed after the labels; a leader never crosses another leader or a placed n
 `prefer` tries are `left`, `right`, `up` and `down` (above or below the part with a short vertical
 leader, for a part on a wall whose sides are taken); `above` and `below` are label words and a
 callout reads them as `right`.
+
+`Scene(c, ox, oy, leaders="near", leader_max=L)` changes how both are placed. Among every free
+place on all four sides, the one nearest the part wins: for a label the gap between its box and
+the device's box, for a callout the length of its leader. A callout leader that crosses no other
+solid beats one that does when both are within `L`; `prefer` only breaks ties. A label or callout
+with no free place within `L` stops `paint()` with its text, its nearest distance and the limit.
+Fix the scene (move the part or its neighbours, give the hall more floor, shorten the name to a
+step number with the name on a card below); never raise `L` for one figure. The default,
+`leaders="first"`, takes the first free side in `prefer` at any distance. A project turns
+`"near"` on once for all its scenes where it imports `Scene`.
 
 Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
 or duct band), `cable`.

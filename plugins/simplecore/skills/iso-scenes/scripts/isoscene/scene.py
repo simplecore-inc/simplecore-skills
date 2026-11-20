@@ -20,11 +20,20 @@ C30 = math.cos(math.radians(30))
 
 
 class Scene:
-    def __init__(self, canvas, ox, oy, stroke=1.4, casing=7.8, halo=5):
+    def __init__(self, canvas, ox, oy, stroke=1.4, casing=7.8, halo=5, *,
+                 leaders="first", leader_max=None):
         # `casing` and `halo` are paper-coloured stroke widths; a project that
         # checks strokes against a ladder declares both beside its three weights.
+        # `leaders="near"` places every label and callout at the free spot
+        # nearest its part (`prefer` breaks ties) and refuses one farther than
+        # `leader_max` page units; "first" takes the first free side in `prefer`.
+        if leaders not in ("first", "near"):
+            raise ValueError(f"leaders must be 'first' or 'near', not {leaders!r}")
+        if leaders == "near" and not (leader_max and leader_max > 0):
+            raise ValueError("leaders='near' needs a positive leader_max")
         self.c, self.ox, self.oy, self.sw = canvas, ox, oy, stroke
         self.casing, self.halo = casing, halo
+        self.leaders, self.leader_max = leaders, leader_max
         self.floor, self.solids, self.cables, self._group = [], [], [], None
         self.labels, self.callouts = [], []
 
@@ -508,14 +517,24 @@ class Scene:
                               "size": size, "prefer": prefer})
 
     def _place_callouts(self, hulls, lines, placed):
-        from common import BODY, MICRO, num_disc, num_disc_r
-        from svgkit import SANS, tw
+        from common import BODY, MICRO, num_disc_r
+        from svgkit import tw
         leaders, failed = [], []
         for spec in self.callouts:
             size = spec["size"] or BODY
             lead = (2 * num_disc_r(spec["n"], MICRO) + 8) if spec["n"] else 0
             w, h = tw(spec["text"], size, mono=False) + lead, size * 1.2
             px, py = self.at(*spec["point"])
+            if self.leaders == "near":
+                found = self._nearest_callout(spec, w, h, px, py, hulls, lines + leaders, placed,
+                                              leaders, failed)
+                if found is None:
+                    continue
+                r, end, side = found
+                placed.append(r)
+                leaders.append(((px, py), end))
+                self._draw_callout(spec, size, lead, r, end, px, py)
+                continue
             found = None
             cands = [(reach, rise, side)
                      for reach in (40, 70, 100, 140, 190, 250, 320, 400, 500)
@@ -559,21 +578,75 @@ class Scene:
             r, end, side = found
             placed.append(r)
             leaders.append(((px, py), end))
-            self.c.add(self._line([(px, py), end], self.c.t["fg_dim"]))
-            self.c.add(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3.2" fill="{self.c.t["fg"]}"/>')
-            x, base = r[0] + 4, (r[1] + r[3]) / 2 + size * 0.34
-            if spec["n"]:
-                num_disc(self.c, x + lead / 2 - 4, base - size * 0.34, spec["n"],
-                         spec["accent"] or self.c.t["fg"], size=MICRO)
-                x += lead
-            self.c.text(x, base, spec["text"], size=size, color=self.c.t["fg"], family=SANS,
-                        weight=600, anchor="start", halo=True, halo_width=self.halo)
+            self._draw_callout(spec, size, lead, r, end, px, py)
         if failed:
             raise ValueError("no free place for the callout(s): " + ", ".join(failed))
 
+    def _draw_callout(self, spec, size, lead, r, end, px, py):
+        from common import MICRO, num_disc
+        from svgkit import SANS
+        self.c.add(self._line([(px, py), end], self.c.t["fg_dim"]))
+        self.c.add(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3.2" fill="{self.c.t["fg"]}"/>')
+        x, base = r[0] + 4, (r[1] + r[3]) / 2 + size * 0.34
+        if spec["n"]:
+            num_disc(self.c, x + lead / 2 - 4, base - size * 0.34, spec["n"],
+                     spec["accent"] or self.c.t["fg"], size=MICRO)
+            x += lead
+        self.c.text(x, base, spec["text"], size=size, color=self.c.t["fg"], family=SANS,
+                    weight=600, anchor="start", halo=True, halo_width=self.halo)
+
+    def _nearest_callout(self, spec, w, h, px, py, hulls, segs, placed, leaders, failed):
+        """Every free place for a callout on all four sides; the shortest
+        leader within `leader_max` wins, one crossing no other solid first and
+        the side order of `prefer` breaking ties. A callout with no free place
+        within the limit is added to `failed` with its nearest distance."""
+        sides = [s if s in ("left", "right", "up", "down") else "right" for s in spec["prefer"]]
+        sides = list(dict.fromkeys(sides + ["left", "right", "up", "down"]))
+        best, nearest = None, None
+        for reach in (10, 16, 22, 28, 36, 46, 58, 70, 85, 100, 120, 140, 190, 250):
+            for rise in (0, -12, 12, -24, 24, -36, 36, -48, 48, -64, 64, -84, 84, -110, 110):
+                for rank, side in enumerate(sides):
+                    if side in ("up", "down"):
+                        x0 = px + rise - w / 2
+                        yc = py - reach if side == "up" else py + reach
+                        r = (x0 - 4, yc - h / 2 - 3, x0 + w + 4, yc + h / 2 + 3)
+                        ex = min(max(px, r[0] + 8), r[2] - 8)
+                        end = (ex, r[3] + 3) if side == "up" else (ex, r[1] - 3)
+                    else:
+                        x0 = px - reach - w if side == "left" else px + reach
+                        r = (x0 - 4, py + rise - h / 2 - 3, x0 + w + 4, py + rise + h / 2 + 3)
+                        end = ((r[2] + 3, py + rise) if side == "left"
+                               else (r[0] - 3, py + rise))
+                    length = math.dist((px, py), end)
+                    if nearest is not None and length >= nearest:
+                        continue
+                    if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
+                        continue
+                    if (any(_rect_hits_poly(r, poly) for poly in hulls)
+                            or any(_rect_hits_seg(r, a, b) for a, b in segs)
+                            or any(_rects_meet(r, q) for q in placed)
+                            or any(_rect_hits_seg(q, (px, py), end) for q in placed)
+                            or any(_segs_cross((px, py), end, a, b) for a, b in leaders)):
+                        continue
+                    if length > self.leader_max:
+                        nearest = length if nearest is None else min(nearest, length)
+                        continue
+                    crosses = sum(1 for poly in hulls
+                                  if not _point_in_poly((px, py), poly)
+                                  and _seg_hits_poly((px, py), end, poly))
+                    key = (crosses > 0, round(length, 1), rank)
+                    if best is None or key < best[0]:
+                        best = (key, (r, end, side))
+        if best is None:
+            failed.append(f"{spec['text']} (nearest free place {nearest:.0f} from its part, "
+                          f"limit {self.leader_max:g})" if nearest is not None
+                          else spec["text"])
+            return None
+        return best[1]
+
     def _place_labels(self, hulls, lines):
-        from common import BODY, MICRO, num_disc, num_disc_r
-        from svgkit import SANS, tw
+        from common import BODY, MICRO, num_disc_r
+        from svgkit import tw
         placed, failed = [], []
         for spec in self.labels:
             size = spec["size"] or BODY
@@ -588,6 +661,13 @@ class Scene:
                 px, py = self.at(*target)
                 box = (px - 6, py - 6, px + 6, py + 6)
             cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+            if self.leaders == "near":
+                spot = self._nearest_label(spec, w, h, box, hulls, lines, placed, failed)
+                if spot is None:
+                    continue
+                self._draw_label(spec, size, lead, spot)
+                placed.append(spot)
+                continue
             spot = None
             for gap in (8, 16, 28, 44, 64, 90):
                 for side in spec["prefer"]:
@@ -620,16 +700,60 @@ class Scene:
                 failed.append(spec["text"])
                 continue
             placed.append(spot)
-            x, base = spot[0] + 4, spot[1] + 3 + size * 0.92
-            if spec["n"]:
-                r = num_disc(self.c, x + lead / 2 - 4, base - size * 0.34, spec["n"],
-                             spec["accent"] or self.c.t["fg"], size=MICRO)
-                x += lead
-            self.c.text(x, base, spec["text"], size=size, color=spec["color"] or self.c.t["fg"],
-                        family=SANS, weight=600, anchor="start", halo=True, halo_width=self.halo)
+            self._draw_label(spec, size, lead, spot)
         if failed:
             raise ValueError("no free place for the label(s): " + ", ".join(failed))
         return placed
+
+    def _draw_label(self, spec, size, lead, spot):
+        from common import MICRO, num_disc
+        from svgkit import SANS
+        x, base = spot[0] + 4, spot[1] + 3 + size * 0.92
+        if spec["n"]:
+            num_disc(self.c, x + lead / 2 - 4, base - size * 0.34, spec["n"],
+                     spec["accent"] or self.c.t["fg"], size=MICRO)
+            x += lead
+        self.c.text(x, base, spec["text"], size=size, color=spec["color"] or self.c.t["fg"],
+                    family=SANS, weight=600, anchor="start", halo=True, halo_width=self.halo)
+
+    def _nearest_label(self, spec, w, h, box, hulls, lines, placed, failed):
+        """The free place nearest the target's box on all four sides, `prefer`
+        breaking ties; a label whose nearest free place is farther than
+        `leader_max` is added to `failed` with that distance."""
+        sides = [s for s in spec["prefer"] if s in ("above", "below", "left", "right")]
+        sides = list(dict.fromkeys(sides + ["above", "right", "left", "below"]))
+        cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+        cands = []
+        for gap in (6, 10, 16, 22, 28, 36, 44, 54, 64, 76, 90, 110, 130):
+            for rank, side in enumerate(sides):
+                for shift in (0, -0.25, 0.25, -0.5, 0.5):
+                    if side == "above":
+                        rect = (cx - w / 2 + shift * w, box[1] - gap - h)
+                    elif side == "below":
+                        rect = (cx - w / 2 + shift * w, box[3] + gap)
+                    elif side == "right":
+                        rect = (box[2] + gap, cy - h / 2 + shift * h * 2)
+                    else:
+                        rect = (box[0] - gap - w, cy - h / 2 + shift * h * 2)
+                    r = (rect[0] - 4, rect[1] - 3, rect[0] + w + 4, rect[1] + h + 3)
+                    cands.append((round(_rect_gap(r, box), 1), rank, abs(shift), r))
+        cands.sort(key=lambda t: t[:3])
+        for dist, _, _, r in cands:
+            if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
+                continue
+            if any(_rect_hits_poly(r, poly) for poly in hulls):
+                continue
+            if any(_rect_hits_seg(r, a, b) for a, b in lines):
+                continue
+            if any(_rects_meet(r, q) for q in placed):
+                continue
+            if dist > self.leader_max:
+                failed.append(f"{spec['text']} (nearest free place {dist:.0f} from its part, "
+                              f"limit {self.leader_max:g})")
+                return None
+            return r
+        failed.append(spec["text"])
+        return None
 
     def _check_footprints(self):
         """Two things standing on the ground cannot share ground: a cabinet
@@ -735,6 +859,30 @@ def _rect_hits_seg(r, a, b):
         else:
             hi = min(hi, t)
     return lo <= hi
+
+
+def _rect_gap(r, q):
+    """Distance between two page rectangles, 0 when they meet."""
+    dx = max(q[0] - r[2], r[0] - q[2], 0.0)
+    dy = max(q[1] - r[3], r[1] - q[3], 0.0)
+    return math.hypot(dx, dy)
+
+
+def _point_in_poly(p, poly):
+    """A page point inside a counter-clockwise convex polygon."""
+    if len(poly) < 3:
+        return False
+    return all((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= 0
+               for a, b in zip(poly, poly[1:] + poly[:1]))
+
+
+def _seg_hits_poly(a, b, poly):
+    """A page segment enters a convex polygon."""
+    if len(poly) < 3:
+        return False
+    if _point_in_poly(a, poly) or _point_in_poly(b, poly):
+        return True
+    return any(_segs_cross(a, b, p, q) for p, q in zip(poly, poly[1:] + poly[:1]))
 
 
 def _rects_meet(r, q):

@@ -2,6 +2,7 @@
 
 Run from this directory: python3 -m unittest discover -s .
 """
+import math
 import os
 import shutil
 import subprocess
@@ -222,6 +223,70 @@ class EngineChecks(unittest.TestCase):
         sc.paint()
         self.assertFalse(_segs_cross((0, 0), (10, 10), (0, 10), (10, 20)))
         self.assertTrue(_segs_cross((0, 0), (10, 10), (0, 10), (10, 0)))
+
+
+def _leaders(markup):
+    """(dot, end) of every callout leader in painted markup: a two-point
+    path whose start is the centre of the dot drawn right after it."""
+    import re
+    pat = re.compile(r'<path d="M([\d.-]+),([\d.-]+) L([\d.-]+),([\d.-]+)"[^>]*/>'
+                     r'<circle cx="([\d.-]+)" cy="([\d.-]+)" r="3.2"')
+    return [((float(m[4]), float(m[5])), (float(m[2]), float(m[3])))
+            for m in pat.findall(markup) if (m[0], m[1]) == (m[4], m[5])]
+
+
+class Leaders(unittest.TestCase):
+    """leaders="first" takes the first free side in prefer whatever the
+    distance; leaders="near" takes the nearest free place and refuses one
+    beyond leader_max."""
+
+    def _crowded(self, **kw):
+        c = canvas(1200, 600)
+        sc = Scene(c, 600, 200, **kw)
+        pal = plant.palette(c)
+        # A cabinet to the left of the part pushes a left-side name far out.
+        board = plant.panel_board(sc, 0, 0, c.blue, pal, opened=True, clamps=(1,))
+        plant.switchgear(sc, -40, 160, c.blue, pal, cubicles=3)
+        sc.callout(board["clamp"](1), "이름", prefer=("left", "right"))
+        sc.paint()
+        return c
+
+    def test_first_mode_is_the_default(self):
+        c = canvas(1200, 600)
+        self.assertEqual(Scene(c, 0, 0).leaders, "first")
+        with self.assertRaises(ValueError):
+            Scene(c, 0, 0, leaders="near")
+        with self.assertRaises(ValueError):
+            Scene(c, 0, 0, leaders="closest", leader_max=50)
+
+    def test_near_mode_picks_a_shorter_leader(self):
+        first = _leaders("".join(self._crowded().body))
+        near = _leaders("".join(self._crowded(leaders="near", leader_max=120).body))
+        self.assertEqual(len(first), 1)
+        self.assertEqual(len(near), 1)
+        length = lambda seg: math.dist(*seg)
+        self.assertLessEqual(length(near[0]), 120)
+        self.assertLess(length(near[0]), length(first[0]))
+
+    def test_near_mode_refuses_beyond_the_limit(self):
+        with self.assertRaises(ValueError) as caught:
+            self._crowded(leaders="near", leader_max=3)
+        self.assertIn("이름", str(caught.exception))
+        self.assertIn("limit 3", str(caught.exception))
+
+    def test_near_label_sits_by_its_device(self):
+        c = canvas(1200, 600)
+        sc = Scene(c, 600, 200, leaders="near", leader_max=40)
+        pal = plant.palette(c)
+        sg = plant.switchgear(sc, 0, 0, c.blue, pal)
+        sc.label(sg, "수전 설비")
+        sc.paint()
+        with self.assertRaises(ValueError) as caught:
+            sc2 = Scene(canvas(300, 120), 150, 20, leaders="near", leader_max=2)
+            sg2 = plant.switchgear(sc2, 0, 0, c.blue, plant.palette(sc2.c))
+            sc2.label(sg2, "수전 설비")
+            sc2.paint()
+        self.assertIn("수전 설비", str(caught.exception))
 
 
 class ProductionLines(unittest.TestCase):
