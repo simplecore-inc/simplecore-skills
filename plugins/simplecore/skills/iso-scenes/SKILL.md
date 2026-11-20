@@ -73,6 +73,7 @@ not loosen the rule.
 | No two cables cross or overlap; a cable that meets another ends `"join"` and gets a dot | A crossing reads as a connection |
 | No two footprints overlap on the ground | A kiosk drawn through a wall reads as a mistake (a user sent one back), and the paint order of two interpenetrating things is decided by centre depth, not by what is in front |
 | No cable runs under a device's footprint | The cable vanishes and reappears with no visible path |
+| Under `cables_visible=True`, no cable run lies under a solid's outline on the page | A cable that passes behind a wall or a rack cannot be followed (a user sent one back) |
 | A label touches no solid, conductor, cable, other label or board edge | The engine tries positions around its target in the order of `prefer` and takes the first free one |
 | Under `Scene(..., leaders="near", leader_max=L)`, a label or callout sits within `L` page units of its part | A name that stands across the scene from its part, on a leader crossing machines, reads as belonging to whatever it lands beside (a user sent one back) |
 
@@ -235,6 +236,20 @@ Fix the scene (move the part or its neighbours, give the hall more floor, shorte
 step number with the name on a card below); never raise `L` for one figure. The default,
 `leaders="first"`, takes the first free side in `prefer` at any distance. A project turns
 `"near"` on once for all its scenes where it imports `Scene`.
+
+Two more settings serve a project that checks its figures by machine. `mark_cables=True` tags every
+cable path with `data-cable="<n>"`, so a check can read each route's bends and length from the SVG.
+`cables_visible=True` stops `paint()` on a cable run that a solid covers on the page (the floor is
+painted first, so a ground point inside a solid's outline is hidden), naming the cable, the hidden
+length and the covering part; an open door or an arm is judged by its own box, not the device's.
+A run behind a wall, a rack or a machine leaves the reader unable to follow it: open the wall,
+move the source in front of and to the left of its target so the cable leaves along x and turns
+once into the target's front, or route on the near side.
+
+A link that is cut is drawn with `cable(..., broken_at=(x, y), break_color=, break_text=)`: a
+gap on the run through that ground point, the two ends in `break_color`, a crossed disc the size
+of a step number in the gap and, when given, the state's word beside it. A bare gap reads as a
+drawing error. The cable is checked as one cable.
 
 Floor layer, painted first: `island` (a ground area with an edge thickness), `strip` (a trench
 or duct band), `cable`.

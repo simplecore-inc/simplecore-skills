@@ -336,6 +336,60 @@ class Leaders(unittest.TestCase):
             self.assertFalse(r[0] <= 300 <= r[2] and r[1] <= 200 <= r[3])
 
 
+class CableMarks(unittest.TestCase):
+    """mark_cables tags cable paths, cables_visible refuses a run a solid
+    covers, broken_at draws a cut link; none of them changes the default."""
+
+    def _two(self, **kw):
+        c = canvas(1200, 600)
+        sc = Scene(c, 600, 200, **kw)
+        pal = plant.palette(c)
+        a = plant.server_rack(sc, 0, 0, c.blue, pal, facing="y")
+        b = plant.server_rack(sc, 120, 0, c.blue, pal, facing="y")
+        return c, sc, pal, a, b
+
+    def test_mark_cables_tags_each_path(self):
+        c, sc, pal, a, b = self._two(mark_cables=True)
+        p, q = a["port"](0.5), b["port"](0.5)
+        sc.cable([p, (p[0], p[1] + 20), (q[0], p[1] + 20), q], c.blue)
+        sc.paint()
+        self.assertIn('data-cable="0"', "".join(c.body))
+        c, sc, pal, a, b = self._two()
+        sc.cable([p, (p[0], p[1] + 20), (q[0], p[1] + 20), q], c.blue)
+        sc.paint()
+        self.assertNotIn("data-cable", "".join(c.body))
+
+    def test_hidden_run_is_refused(self):
+        c, sc, pal, a, b = self._two(cables_visible=True)
+        # A run behind rack b: from a's front along the floor behind b.
+        p = a["port"](0.5)
+        sc.cable([p, (p[0], p[1] + 6), (200, p[1] + 6)], c.blue, ends=("face", "free"))
+        plant.server_rack(sc, 200, 100, c.blue, pal, facing="y")
+        with self.assertRaises(ValueError) as caught:
+            sc.paint()
+        self.assertIn("hidden", str(caught.exception))
+        # The same run in front of everything passes.
+        c, sc, pal, a, b = self._two(cables_visible=True)
+        sc.cable([p, (p[0], p[1] + 120), (200, p[1] + 120)], c.blue, ends=("face", "free"))
+        sc.paint()
+
+    def test_broken_at_draws_the_mark(self):
+        c, sc, pal, a, b = self._two()
+        p, q = a["port"](0.5), b["port"](0.5)
+        lane = p[1] + 30
+        sc.cable([p, (p[0], lane), (q[0], lane), q], c.blue, broken_at=(60, lane),
+                 break_color=c.red, break_text="단절")
+        sc.paint()
+        body = "".join(c.body)
+        self.assertIn('data-break="1"', body)
+        self.assertIn("단절", body)
+        with self.assertRaises(ValueError):
+            sc.cable([p, (p[0], lane), (q[0], lane), q], c.blue, broken_at=(60, lane + 50),
+                     break_color=c.red)
+        with self.assertRaises(ValueError):
+            sc.cable([p, (p[0], lane), (q[0], lane), q], c.blue, broken_at=(60, lane))
+
+
 class ProductionLines(unittest.TestCase):
     """The production-line devices return their anchors and stay on their
     ground; a line fits the rectangle it was given or says what it needs."""

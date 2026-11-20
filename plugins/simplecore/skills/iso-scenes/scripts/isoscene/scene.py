@@ -21,7 +21,7 @@ C30 = math.cos(math.radians(30))
 
 class Scene:
     def __init__(self, canvas, ox, oy, stroke=1.4, casing=7.8, halo=5, *,
-                 leaders="first", leader_max=None):
+                 leaders="first", leader_max=None, mark_cables=False, cables_visible=False):
         # `casing` and `halo` are paper-coloured stroke widths; a project that
         # checks strokes against a ladder declares both beside its three weights.
         # `leaders="near"` places every label and callout at the free spot
@@ -34,6 +34,10 @@ class Scene:
         self.c, self.ox, self.oy, self.sw = canvas, ox, oy, stroke
         self.casing, self.halo = casing, halo
         self.leaders, self.leader_max = leaders, leader_max
+        # `mark_cables` tags each cable path with data-cable so a check can
+        # read its route from the SVG; `cables_visible` refuses a cable run
+        # that a solid covers on the page.
+        self.mark_cables, self.cables_visible = mark_cables, cables_visible
         self.floor, self.solids, self.cables, self._group = [], [], [], None
         self.labels, self.callouts = [], []
 
@@ -85,6 +89,9 @@ class Scene:
         bbox = tuple(min(b[i] for b in boxes) for i in range(3)) + \
             tuple(max(b[i] for b in boxes) for i in range(3, 6))
         solid = self._add(bbox, "".join(s["markup"] for s in parts))
+        # The parts' own boxes: an open door or an arm leaves the space
+        # inside the device's box empty, and a cable seen there is not hidden.
+        solid["parts"] = [b for s in parts for b in s.get("parts", [s["bbox"]])]
         # What stands on the ground is the device's footprint; a roof or a
         # tank that overhangs it does not block a cable on the floor.
         feet = [b for b in boxes if b[2] <= 0.5]
@@ -267,6 +274,9 @@ class Scene:
         bbox = tuple(min(b[i] for b in boxes) for i in range(3)) + \
             tuple(max(b[i] for b in boxes) for i in range(3, 6))
         solid = self._add(bbox, "".join(s["markup"] for s in parts))
+        # The parts' own boxes: an open door or an arm leaves the space
+        # inside the device's box empty, and a cable seen there is not hidden.
+        solid["parts"] = [b for s in parts for b in s.get("parts", [s["bbox"]])]
         feet = [b for b in boxes if b[2] <= 0.5]
         if feet:
             solid["foot"] = (min(b[0] for b in feet), min(b[1] for b in feet), 0,
@@ -412,14 +422,30 @@ class Scene:
         a = self.at
         self.floor.append(self._fill([a(x0, y0), a(x1, y0), a(x1, y1), a(x0, y1)], color, opacity))
 
-    def cable(self, points, color, sw=2.8, arrow=False, ends=("face", "face"), radius=7):
+    def cable(self, points, color, sw=2.8, arrow=False, ends=("face", "face"), radius=7,
+              broken_at=None, break_color=None, break_text=None):
         """A cable on the ground through world points. Each end is declared:
         "face" (it meets the foot of a device's visible face, square to it and
         clear of the corners), "join" (it meets another cable) or "free".
         `paint()` refuses a cable that breaks its declaration, crosses or
-        overlaps another cable, or runs under a device."""
+        overlaps another cable, or runs under a device.
+
+        `broken_at` (a ground point on one of the runs) draws the link as cut
+        there: a gap, the two ends in `break_color` and a crossed disc the
+        size of a step number in the gap; `break_text` names the state beside
+        the mark. The cable is checked as one cable."""
+        if broken_at is not None:
+            if not break_color:
+                raise ValueError("broken_at needs break_color")
+            pts = [tuple(p) for p in points]
+            if not any(_on_run(tuple(broken_at), a, b) for a, b in zip(pts, pts[1:])):
+                raise ValueError(f"broken_at {tuple(broken_at)} is on none of the cable's runs")
         self.cables.append({"points": [tuple(p) for p in points], "color": color, "sw": sw,
-                            "arrow": arrow, "ends": ends, "radius": radius})
+                            "arrow": arrow, "ends": ends, "radius": radius,
+                            "broken_at": tuple(broken_at) if broken_at is not None else None,
+                            "break_color": break_color})
+        if broken_at is not None and break_text:
+            self.label((broken_at[0], broken_at[1], 0), break_text, color=break_color)
 
     def _cable_markup(self, spec):
         pts = [self.at(x, y) for x, y in spec["points"]]
@@ -443,12 +469,71 @@ class Scene:
             head = [(x2, y2), (bx - uy * 6, by + ux * 6), (bx + uy * 6, by - ux * 6)]
             out += f'<path d="{self._d(head)}" fill="{color}" stroke="none"/>'
         d += f" L{end[0]:.1f},{end[1]:.1f}"
+        tag = f' data-cable="{spec["index"]}"' if self.mark_cables else ""
         out += (f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{spec["sw"]}" '
-                f'stroke-linecap="round" stroke-linejoin="round"/>')
+                f'stroke-linecap="round" stroke-linejoin="round"{tag}/>')
+        if spec.get("broken_at") is not None:
+            out += self._break_markup(spec)
         for which, point in ((0, pts[0]), (1, pts[-1])):
             if spec["ends"][which] == "join":
                 out += f'<circle cx="{point[0]:.1f}" cy="{point[1]:.1f}" r="4.2" fill="{color}"/>'
         return out
+
+    def _break_markup(self, spec, gap=18.0, tint=16.0, r=13.0):
+        """Paper over the cable at the break, the two ends in the break colour
+        and a crossed disc in the gap."""
+        bx, by = self.at(*spec["broken_at"])
+        pts = [self.at(x, y) for x, y in spec["points"]]
+        for (ax, ay), (cx, cy) in zip(pts, pts[1:]):
+            seg = math.hypot(cx - ax, cy - ay)
+            if seg and abs((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / seg < 0.6:
+                ux, uy = (cx - ax) / seg, (cy - ay) / seg
+                break
+        col, paper, sw = spec["break_color"], self.c.t["bg"], spec["sw"]
+        out = self._line([(bx - ux * gap, by - uy * gap), (bx + ux * gap, by + uy * gap)],
+                         paper, sw=sw + 3, cap="butt")
+        for sgn in (-1, 1):
+            p = (bx + sgn * ux * gap, by + sgn * uy * gap)
+            q = (bx + sgn * ux * (gap + tint), by + sgn * uy * (gap + tint))
+            out += self._line([p, q], col, sw=sw + 0.6)
+        d = r * 0.5
+        out += (f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="{r}" fill="{paper}" stroke="{col}" '
+                f'stroke-width="{sw + 0.6}" data-break="1"/>')
+        out += self._line([(bx - d, by - d), (bx + d, by + d)], col, sw=sw + 0.6)
+        out += self._line([(bx - d, by + d), (bx + d, by - d)], col, sw=sw + 0.6)
+        return out
+
+    def _check_hidden(self, hulls, solids):
+        """A cable run that a solid covers on the page: the floor is painted
+        first, so a ground point inside a solid's outline is hidden."""
+        found = []
+        for n, spec in enumerate(self.cables):
+            pts = [self.at(x, y) for x, y in spec["points"]]
+            total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
+            walked, hidden, where, by = 0.0, 0.0, None, None
+            for a, b in zip(pts, pts[1:]):
+                seg = math.dist(a, b)
+                steps = max(1, int(seg / 2))
+                for k in range(steps):
+                    t = (k + 0.5) / steps
+                    p = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+                    at = walked + seg * t
+                    # the last units of a face end run into the device's foot
+                    if (spec["ends"][0] == "face" and at < 6) or \
+                            (spec["ends"][1] == "face" and total - at < 6):
+                        continue
+                    cover = next((k for k, h in enumerate(hulls) if _point_in_poly(p, h)), None)
+                    if cover is not None:
+                        hidden += seg / steps
+                        if where is None:
+                            where, by = p, solids[cover]["bbox"]
+                walked += seg
+            if hidden > 4:
+                found.append(f"cable {n}: {hidden:.0f} units hidden, first behind the solid "
+                             f"{tuple(round(v) for v in by)} at ({where[0]:.0f}, {where[1]:.0f}) "
+                             f"on the page")
+        if found:
+            raise ValueError("hidden cable runs:\n  " + "\n  ".join(found))
 
     def _check_cables(self):
         feet = [s.get("foot", s["bbox"]) for s in self.solids if s["bbox"][2] <= 0.5]
@@ -786,7 +871,8 @@ class Scene:
         for markup in self.floor:
             self.c.add(markup)
         lines = []
-        for spec in self.cables:
+        for k, spec in enumerate(self.cables):
+            spec["index"] = k
             self.c.add(self._cable_markup(spec))
             pts = [self.at(x, y) for x, y in spec["points"]]
             lines += list(zip(pts, pts[1:]))
@@ -796,6 +882,14 @@ class Scene:
         hulls = [_hull([self.at(x, y, z) for x in (s["bbox"][0], s["bbox"][3])
                         for y in (s["bbox"][1], s["bbox"][4])
                         for z in (s["bbox"][2], s["bbox"][5])]) for s in ordered]
+        if self.cables_visible:
+            covers, owners = [], []
+            for s in ordered:
+                for b in s.get("parts", [s["bbox"]]):
+                    covers.append(_hull([self.at(x, y, z) for x in (b[0], b[3])
+                                         for y in (b[1], b[4]) for z in (b[2], b[5])]))
+                    owners.append({"bbox": b})
+            self._check_hidden(covers, owners)
         placed = self._place_labels(hulls, lines)
         if self.callouts:
             self._place_callouts(hulls, lines, placed)
@@ -869,6 +963,12 @@ def _rect_hits_seg(r, a, b):
         else:
             hi = min(hi, t)
     return lo <= hi
+
+
+def _on_run(p, a, b, eps=0.6):
+    """A ground point on an axis-aligned run."""
+    return (min(a[0], b[0]) - eps <= p[0] <= max(a[0], b[0]) + eps
+            and min(a[1], b[1]) - eps <= p[1] <= max(a[1], b[1]) + eps)
 
 
 def _rect_gap(r, q):
