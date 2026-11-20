@@ -71,6 +71,30 @@ DEVICES = [
                       " roof='flat', door='y')"),
     ("hall", "plant.factory_hall(sc, -150, -150, 150, 150, c.t['fg_dim'], pal)"),
     ("pipe", "plant.pipe_run(sc, [(-150, 0), (100, 0), (100, 150)], 60, pal)"),
+    ("conveyor", "plant.conveyor(sc, 0, 0, 120, c.t['muted'], pal)"),
+    ("conveyor-belt-y", "plant.conveyor(sc, 0, 0, 100, c.t['muted'], pal, axis='y', kind='belt')"),
+    ("car", "plant.car_body(sc, 0, 0, c.t['muted'], pal)"),
+    ("car-skid-y", "plant.car_body(sc, 0, 0, c.t['muted'], pal, facing='y', skid=True)"),
+    ("car-wheels", "plant.car_body(sc, 0, 0, c.t['muted'], pal, wheels=True)"),
+    ("car-wheels-y", "plant.car_body(sc, 0, 0, c.t['muted'], pal, facing='y', wheels=True)"),
+    ("panel-part", "plant.panel_part(sc, 0, 0, c.t['muted'], pal, count=3)"),
+    ("press", "plant.press(sc, 0, 0, c.orange, pal)"),
+    ("press-coil", "plant.press(sc, 0, 0, c.orange, pal, feed='coil')"),
+    ("press-sheet-y", "plant.press(sc, 0, 0, c.orange, pal, facing='y', feed='sheet')"),
+    ("robot-weld", "plant.robot_arm(sc, 0, 0, c.orange, pal)"),
+    ("robot-weld-y", "plant.robot_arm(sc, 0, 0, c.orange, pal, facing='y')"),
+    ("robot-gripper-back", "plant.robot_arm(sc, 0, 0, c.orange, pal, facing='-y', tool='gripper')"),
+    ("robot-spray-back", "plant.robot_arm(sc, 0, 0, c.orange, pal, facing='-x', tool='spray')"),
+    ("booth", "plant.paint_booth(sc, 0, 0, 84, c.orange, pal)"),
+    ("booth-y", "plant.paint_booth(sc, 0, 0, 84, c.orange, pal, axis='y')"),
+    ("injection", "plant.injection_machine(sc, 0, 0, c.blue, pal)"),
+    ("injection-x", "plant.injection_machine(sc, 0, 0, c.blue, pal, facing='x')"),
+    ("bench", "plant.assembly_bench(sc, 0, 0, c.blue, pal)"),
+    ("bench-x", "plant.assembly_bench(sc, 0, 0, c.blue, pal, facing='x', trays=4)"),
+    ("fence", "plant.cell_fence(sc, -60, -40, 60, 40, pal)"),
+    ("line-vehicle", "plant.production_line(sc, 'vehicle', -200, -60, 120, 60, c.orange, pal)"),
+    ("line-electronics-y", "plant.production_line(sc, 'electronics', -40, -200, 40, 0, c.blue, pal, axis='y')"),
+    ("line-body-parts", "plant.production_line(sc, 'body_parts', -200, -50, 110, 50, c.orange, pal)"),
 ]
 
 
@@ -175,6 +199,18 @@ class EngineChecks(unittest.TestCase):
         solid = sc.cyl_y(10, 20, 30, 5, 40, c.blue)
         self.assertEqual(solid["bbox"], (5, 20, 25, 15, 60, 35))
 
+    def test_prism_box_and_refusals(self):
+        c, sc, pal = _scene()
+        solid = sc.prism("y", 10, 40, [(0, 0), (20, 0), (15, 8), (5, 8)], c.blue)
+        self.assertEqual(solid["bbox"], (0, 10, 0, 20, 40, 8))
+        # A profile given clockwise draws the same faces.
+        again = sc.prism("y", 10, 40, [(5, 8), (15, 8), (20, 0), (0, 0)], c.blue)
+        self.assertEqual(solid["markup"], again["markup"])
+        with self.assertRaises(ValueError):
+            sc.prism("z", 0, 1, [(0, 0), (1, 0), (1, 1)], c.blue)
+        with self.assertRaises(ValueError):
+            sc.prism("x", 0, 1, [(0, 0), (1, 0)], c.blue)
+
     def test_callout_leaders_never_cross(self):
         from isoscene.scene import _segs_cross
         c, sc, pal = _scene()
@@ -186,6 +222,93 @@ class EngineChecks(unittest.TestCase):
         sc.paint()
         self.assertFalse(_segs_cross((0, 0), (10, 10), (0, 10), (10, 20)))
         self.assertTrue(_segs_cross((0, 0), (10, 10), (0, 10), (10, 0)))
+
+
+class ProductionLines(unittest.TestCase):
+    """The production-line devices return their anchors and stay on their
+    ground; a line fits the rectangle it was given or says what it needs."""
+
+    def test_devices_return_their_anchors(self):
+        c, sc, pal = _scene()
+        conv = plant.conveyor(sc, 0, 0, 120, c.t["muted"], pal)
+        self.assertEqual(conv["top"], 16)
+        x0, y0, z0 = conv["at"](0.0)
+        x1, y1, z1 = conv["at"](1.0)
+        self.assertAlmostEqual(x1 - x0, 120)
+        self.assertEqual((y0, z0), (y1, z1))
+        cases = (("car", plant.car_body(sc, 0, 120, c.t["muted"], pal, z=16, wheels=True),
+                  ("roof", "side")),
+                 ("press", plant.press(sc, 200, 0, c.orange, pal, feed="coil"),
+                  ("ram", "bolster", "feed", "extent")),
+                 ("robot", plant.robot_arm(sc, 300, 0, c.orange, pal), ("tool", "elbow", "extent")),
+                 ("booth", plant.paint_booth(sc, 0, 250, 84, c.orange, pal), ("stack", "opening")),
+                 ("injection", plant.injection_machine(sc, 200, 250, c.blue, pal),
+                  ("mould", "hopper")),
+                 ("bench", plant.assembly_bench(sc, 400, 250, c.blue, pal), ("tray",)))
+        for name, result, keys in cases:
+            with self.subTest(device=name):
+                self.assertIn("solid", result)
+                for key in keys:
+                    self.assertIsNotNone(result[key], key)
+        sc._check_footprints()
+
+    def test_robot_tool_reaches_its_stated_distance(self):
+        for facing, axis, sign in (("x", 0, 1), ("y", 1, 1), ("-x", 0, -1), ("-y", 1, -1)):
+            with self.subTest(facing=facing):
+                c, sc, pal = _scene()
+                arm = plant.robot_arm(sc, 0, 0, c.orange, pal, facing=facing)
+                self.assertAlmostEqual(arm["tool"][axis] * sign, plant.ROBOT_REACH)
+
+    def test_unknown_options_are_refused(self):
+        c, sc, pal = _scene()
+        with self.assertRaises(ValueError):
+            plant.robot_arm(sc, 0, 0, c.orange, pal, tool="laser")
+        with self.assertRaises(ValueError):
+            plant.press(sc, 0, 0, c.orange, pal, feed="robot")
+        with self.assertRaises(ValueError):
+            plant.conveyor(sc, 0, 0, 100, c.t["muted"], pal, axis="z")
+        with self.assertRaises(ValueError):
+            plant.production_line(sc, "bakery", 0, 0, 400, 200, c.orange, pal)
+
+    def _fits(self, kind, x0, y0, x1, y1, axis):
+        c, sc, pal = _scene()
+        line = plant.production_line(sc, kind, x0, y0, x1, y1, c.orange, pal, axis=axis)
+        self.assertEqual(list(line["stations"]), list(plant.LINE_KINDS[kind]))
+        for station in line["stations"].values():
+            self.assertEqual(len(station["point"]), 3)
+        for solid in sc.solids:
+            bx0, by0, _, bx1, by1, _ = solid["bbox"]
+            self.assertGreaterEqual(bx0, x0 - 0.01, solid["bbox"])
+            self.assertGreaterEqual(by0, y0 - 0.01, solid["bbox"])
+            self.assertLessEqual(bx1, x1 + 0.01, solid["bbox"])
+            self.assertLessEqual(by1, y1 + 0.01, solid["bbox"])
+        sc._check_footprints()
+        return line
+
+    def test_each_line_fits_its_rectangle_at_several_sizes_on_both_axes(self):
+        for kind, (need_l, need_d) in plant.LINE_MIN.items():
+            for extra_l, extra_d in ((0, 0), (90, 20), (260, 60)):
+                for axis in ("x", "y"):
+                    with self.subTest(kind=kind, axis=axis, extra=(extra_l, extra_d)):
+                        length, depth = need_l + extra_l, need_d + extra_d
+                        if axis == "x":
+                            self._fits(kind, 10, 20, 10 + length, 20 + depth, axis)
+                        else:
+                            self._fits(kind, 10, 20, 10 + depth, 20 + length, axis)
+
+    def test_more_floor_repeats_stations(self):
+        small = self._fits("vehicle", 0, 0, 270, 100, "x")
+        large = self._fits("vehicle", 0, 0, 560, 100, "x")
+        self.assertGreater(len(large["devices"]), len(small["devices"]))
+
+    def test_a_rectangle_too_small_fails_naming_the_size_needed(self):
+        for kind, (need_l, need_d) in plant.LINE_MIN.items():
+            with self.subTest(kind=kind):
+                c, sc, pal = _scene()
+                with self.assertRaisesRegex(ValueError, f"at least {need_l} along x and {need_d}"):
+                    plant.production_line(sc, kind, 0, 0, need_l - 1, need_d + 10, c.orange, pal)
+                with self.assertRaises(ValueError):
+                    plant.production_line(sc, kind, 0, 0, need_l + 10, need_d - 1, c.orange, pal)
 
 
 class DevicesPassTheLint(unittest.TestCase):

@@ -184,13 +184,23 @@ does not block a cable.
 - **A seated figure and its chair are one device.** Both stand on the ground, so drawn as two they
   overlap footprints and the engine refuses them; a person at a desk stands its feet on the desk's
   front edge (`seat_at`), because the desk's footprint covers its knee space.
+- **An arm stands beside its work, never over it.** A forearm over a car body puts the two boxes
+  into each other and the scene orders them by centre depth; stand the arm so its tool tip
+  (`ROBOT_REACH` ahead of the base) stops short of the work in the floor plan, and put arms and
+  workers on the far side of a line, where they do not hide what they work on.
+- **Repeated devices in a row are spaced on paper too.** Two presses 46 apart print an edge of one
+  on an edge of the next; edges along x of two devices `d` apart line up when one sits `d` higher,
+  so a pitch is checked like the parts of one device (`production_line` spaces its presses 50).
+- **A label for a station goes on its point.** `label(station)` keeps the name outside the whole
+  station; on a long station it lands far from it. Name a station with `callout(station["point"])`.
 - **Check a domain fact before drawing it.** Where a device stands, what connects to what and in
   which order are claims a reader will take from the picture; draw only what a source supports.
 
 ## Solids
 
 `box` · `box_at` · `cyl` (upright) · `ball` (a sphere, drawn as a circle: a head) · `cyl_x` (lying along x) · `cyl_y` (lying along y, a
-pipe run in the other floor direction) · `truss` (thin members as one open
+pipe run in the other floor direction) · `prism` (a convex section lying along x or y: a car body, a
+hopper, a sloped roof; only the faces turned to the viewer are filled and each edge is stroked once) · `truss` (thin members as one open
 frame: a lattice column) · `disc` (one outline: insulator
 sheds, flanges) · `wire` (a conductor in the air, with a paper casing). Parts of one device go
 inside `with sc.group():` so the device moves through the depth order as one solid;
@@ -236,8 +246,9 @@ and returns `port(f)`, the foot of its front at the fraction `f` from the viewer
 `f` within the clear zone, about 0.2 to 0.8), or `back(f)` when it faces away; a wall device
 is placed by the wall-face point behind the middle of its bottom edge and its height `z`;
 every result carries `solid` for `label()`. `examples/` holds a scene per setting
-(`fig_factory_floor`, `fig_electrical_room`, `fig_server_room`, `fig_control_room`) and a sheet
-of every device (`fig_catalogue`), built with the same config a printed proposal uses.
+(`fig_factory_floor`, `fig_electrical_room`, `fig_server_room`, `fig_control_room`), a sheet
+of the room devices (`fig_catalogue`) and three factory halls with a production line each
+(`fig_production_lines`), built with the same config a printed proposal uses.
 
 | Device | Ports and points | Variants |
 |---|---|---|
@@ -263,6 +274,16 @@ of every device (`fig_catalogue`), built with the same config a printed proposal
 | `person(sc, x, y, color, pal, pose, facing, holding, chair)` | `head`, `hand`, `seat` when seated | `pose="stand"` (about 80 tall, footprint within 7 x 15) or `"sit"` (on a swivel chair drawn as part of the figure); `facing` is the way the person looks, `-x`/`-y` shows the back; `holding="phone"` or `"tablet"` raises the forearm nearer the viewer with the handheld, standing only |
 | `chair(sc, x, y, color, pal, facing)` | `seat` | an empty swivel chair: round base, post, round seat, narrow back |
 | `seat_at(sc, desk, color, pal, f)` | as `person` | a seated person at a `control_desk`, on the side its screens face, looking at them; feet end on the desk's front edge, forearms rest on the desk. Facing `x`/`y` desks show the person's back with the screens beyond; `-x`/`-y` desks hide the person behind the monitors |
+| `conveyor(sc, x, y, length, color, pal, axis, width, height, kind)` | `top`, `at(f)` (the bed's centre line from the low end), `extent`; no floor port | `kind="roller"` or `"belt"` |
+| `car_body(sc, x, y, color, pal, facing, z, skid, wheels)` | `roof`, `side`, `extent` | nose towards `facing`, standing at `z` (a conveyor's `top`); `skid=True` in the body shop, `wheels=True` at assembly |
+| `panel_part(sc, x, y, color, pal, facing, z, length, width, count)` | `top` | a stamped panel with a window opening; `count` stacks them |
+| `press(sc, x, y, color, pal, facing, feed, die)` | `port(f)`, `ram`, `bolster`, `feed`, `extent` | window looks at `facing`, the way the sheet travels; `feed="coil"` (uncoiler and strip) or `"sheet"` (blanks on a pallet) behind it |
+| `robot_arm(sc, x, y, color, pal, facing, tool)` | `tool` (the tip, `ROBOT_REACH` ahead of the base), `elbow`, `extent` | `tool="weld"`, `"gripper"` or `"spray"`; reaches towards `facing` |
+| `paint_booth(sc, x, y, length, color, pal, axis, width, height)` | `port(f)`, `stack`, `opening`, `extent` | conveyors stop at its two ends |
+| `injection_machine(sc, x, y, color, pal, facing)` | `port(f)`, `mould`, `hopper`, `extent` | clamp unit at the viewer's left, barrel and hopper, drive box with a screen |
+| `assembly_bench(sc, x, y, color, pal, facing, length, trays)` | `port(f)`, `tray(k)`, `extent` | two pedestals, parts trays, a back board with a screen |
+| `cell_fence(sc, x0, y0, x1, y1, pal, height, low, tall, open)` | `sides` | tall on the far sides `tall` names, low elsewhere; `open` leaves sides out |
+| `production_line(sc, kind, x0, y0, x1, y1, color, pal, axis, people, product, worker)` | `stations` (`{name: {"solid", "point", "extent"}}` in the order of `LINE_KINDS[kind]`), `devices`, `flow`, `extent` | `"vehicle"` (body, paint, assembly), `"electronics"` (moulding, assembly), `"body_parts"` (press, welding); laid along `axis` at the far side of the rectangle, work flowing towards the viewer; stations repeat to use the length; a rectangle under `LINE_MIN[kind]` raises `ValueError` naming the size needed; prints no text |
 
 ## Verify
 

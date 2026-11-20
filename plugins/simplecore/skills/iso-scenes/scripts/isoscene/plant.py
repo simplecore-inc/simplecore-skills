@@ -922,3 +922,20 @@ def seat_at(sc, desk, color, pal, f=0.5, chair=None):
     turned = {"x": "-x", "-x": "x", "y": "-y", "-y": "y"}[face.facing]
     return person(sc, px + fx * 14, py + fy * 14, color, pal, pose="sit", facing=turned,
                   chair=chair)
+
+
+# -- production lines ----------------------------------------------------------------
+
+# Production-line equipment lives in `production` and is reached here, so a
+# figure writes `plant.press(...)` as it writes `plant.machine(...)`. The
+# names resolve on first use, which keeps the import order free.
+_PRODUCTION = ("conveyor", "car_body", "panel_part", "press", "robot_arm", "paint_booth",
+               "injection_machine", "assembly_bench", "cell_fence", "production_line",
+               "LINE_KINDS", "LINE_MIN", "ROBOT_REACH")
+
+
+def __getattr__(name):
+    if name in _PRODUCTION:
+        from . import production
+        return getattr(production, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

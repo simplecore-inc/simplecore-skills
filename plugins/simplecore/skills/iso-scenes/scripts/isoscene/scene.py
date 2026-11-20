@@ -191,6 +191,56 @@ class Scene:
                   + self._line(hull, edge, close=True) + self._line(near, edge, close=True))
         return self._add((x - r, y, z - r, x + r, y + length, z + r), markup)
 
+    def prism(self, axis, a0, a1, profile, color, tone=1.0, edge=None):
+        """A convex prism lying along the world `axis` ("x" or "y") from a0 to
+        a1, its section the convex polygon `profile` of (c, z) points, c being
+        the other floor coordinate: a car body seen from its side, a hopper, a
+        sloped roof. Only the faces turned to the viewer are filled, each
+        shaded by how much it looks along +x, +y and up, as a box's faces are,
+        and every visible edge is stroked once."""
+        if axis not in ("x", "y"):
+            raise ValueError(f"axis must be x or y, not {axis!r}")
+        if len(profile) < 3:
+            raise ValueError("a prism needs a profile of three points or more")
+        pts = [tuple(map(float, p)) for p in profile]
+        area = sum(p[0] * q[1] - q[0] * p[1] for p, q in zip(pts, pts[1:] + pts[:1]))
+        if area < 0:
+            pts.reverse()
+        lo, hi = min(a0, a1), max(a0, a1)
+
+        def world(a, c, z):
+            return (a, c, z) if axis == "x" else (c, a, z)
+
+        faces = []  # (world points, outward normal)
+        for (c0, z0), (c1, z1) in zip(pts, pts[1:] + pts[:1]):
+            # Counter-clockwise in (c, z): the outward normal is (dz, -dc).
+            nc, nz = z1 - z0, -(c1 - c0)
+            normal = (0.0, nc, nz) if axis == "x" else (nc, 0.0, nz)
+            faces.append(([world(lo, c0, z0), world(lo, c1, z1), world(hi, c1, z1),
+                           world(hi, c0, z0)], normal))
+        faces.append(([world(hi, c, z) for c, z in pts], (1.0, 0, 0) if axis == "x" else (0, 1.0, 0)))
+        markup, edges = "", {}
+        for points, (nx, ny, nz) in faces:
+            if nx + ny + nz <= 1e-9:
+                continue
+            px, py, pz = max(nx, 0), max(ny, 0), max(nz, 0)
+            shade = (0.22 * px + 0.36 * py + 0.09 * pz) / (px + py + pz)
+            page = [self.at(*p) for p in points]
+            markup += self._fill(page, color, shade * tone)
+            for p, q in zip(page, page[1:] + page[:1]):
+                key = tuple(sorted((tuple(round(v, 1) for v in p), tuple(round(v, 1) for v in q))))
+                if key[0] != key[1]:
+                    edges[key] = (p, q)
+        d = " ".join(self._d([p, q], False) for p, q in edges.values())
+        markup += (f'<path d="{d}" fill="none" stroke="{edge or color}" stroke-width="{self.sw}" '
+                   f'stroke-linejoin="round" stroke-linecap="round"/>')
+        cs, zs = [p[0] for p in pts], [p[1] for p in pts]
+        if axis == "x":
+            bbox = (lo, min(cs), min(zs), hi, max(cs), max(zs))
+        else:
+            bbox = (min(cs), lo, min(zs), max(cs), hi, max(zs))
+        return self._add(bbox, markup)
+
     @contextmanager
     def ordered(self):
         """Parts added inside belong to one device and are painted in the order
