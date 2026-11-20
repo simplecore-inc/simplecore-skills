@@ -312,6 +312,18 @@ class Leaders(unittest.TestCase):
         self.assertIsNone(out)
         self.assertIn("limit 10", failed[0])
 
+    def test_near_leader_never_follows_a_floor_direction(self):
+        # A bar through the point blocks every name level with it, a block
+        # round the point pushes names out to the side, so the nearest place
+        # is a little above or below and beside: a leader near 30 degrees.
+        rect = lambda x0, y0, x1, y1: [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        hulls = [rect(100, 192, 500, 208), rect(260, 120, 340, 280)]
+        sc = Scene(canvas(600, 400), 0, 0, leaders="near", leader_max=120)
+        r, end, side = sc._nearest_callout({"text": "이름", "prefer": ("left", "right")}, 50, 20,
+                                           300, 200, hulls, [], [], [], [])
+        slant = math.degrees(math.atan2(abs(end[1] - 200), abs(end[0] - 300)))
+        self.assertGreaterEqual(abs(slant - 30), 9, (side, end))
+
     def test_near_mode_breaks_ties_by_prefer(self):
         for prefer, side in ((("left",), "left"), (("up",), "up"), (("down",), "down"),
                              (("right", "left"), "right")):

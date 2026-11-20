@@ -227,7 +227,9 @@ callout reads them as `right`.
 `Scene(c, ox, oy, leaders="near", leader_max=L)` changes how both are placed. Among every free
 place on all four sides, the one nearest the part wins: for a label the gap between its box and
 the device's box, for a callout the length of its leader. A callout leader that crosses no other
-solid beats one that does when both are within `L`; `prefer` only breaks ties. A label or callout
+solid beats one that does when both are within `L`; `prefer` only breaks ties. A leader is never
+drawn within 9 degrees of a floor direction, because it would print as one more edge of the scene
+and lie on the edges it passes. A label or callout
 with no free place within `L` stops `paint()` with its text, its nearest distance and the limit.
 Fix the scene (move the part or its neighbours, give the hall more floor, shorten the name to a
 step number with the name on a card below); never raise `L` for one figure. The default,

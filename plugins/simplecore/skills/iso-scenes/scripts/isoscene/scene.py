@@ -625,6 +625,11 @@ class Scene:
                     length = math.dist((px, py), end)
                     if nearest is not None and length >= nearest:
                         continue
+                    # A leader along a floor direction prints as one more edge
+                    # of the scene and lies on the edges it passes.
+                    slant = math.degrees(math.atan2(abs(end[1] - py), abs(end[0] - px) or 1e-9))
+                    if length > 8 and abs(slant - 30) < 9:
+                        continue
                     if r[0] < 8 or r[2] > self.c.w - 8 or r[1] < 4 or r[3] > self.c.h - 4:
                         continue
                     if (any(_rect_hits_poly(r, poly) for poly in hulls)
