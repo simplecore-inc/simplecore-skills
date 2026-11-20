@@ -393,6 +393,51 @@ class CableMarks(unittest.TestCase):
             sc.cable([p, (p[0], lane), (q[0], lane), q], c.blue, broken_at=(60, lane))
 
 
+class ArrowHeads(unittest.TestCase):
+    """An arrowhead points along its cable's last run for every direction,
+    and the line never turns back behind its last bend."""
+
+    def _draw(self, pts, **kw):
+        import re
+        c = canvas(1200, 600)
+        sc = Scene(c, 600, 300, **kw)
+        sc.cable(pts, c.blue, arrow=True, ends=("free", "free"))
+        sc.paint()
+        body = "".join(c.body)
+        head = [tuple(map(float, p.split(","))) for p in
+                re.search(r'<path d="M([\d.,\- L]+) Z" fill', body).group(1).split(" L")]
+        line = re.search(r'<path d="(M[^"]+)" fill="none"', body).group(1)
+        nums = [float(v) for v in re.findall(r"-?\d+\.?\d*", line)]
+        return sc, head, list(zip(nums[0::2], nums[1::2]))
+
+    def test_head_points_along_the_last_run_in_every_direction(self):
+        for dx, dy in ((60, 0), (-60, 0), (0, 60), (0, -60)):
+            sc, head, line = self._draw([(0, 0), (dx, dy)])
+            tip, b1, b2 = head
+            base = ((b1[0] + b2[0]) / 2, (b1[1] + b2[1]) / 2)
+            ex, ey = sc.at(dx, dy)
+            sx, sy = sc.at(0, 0)
+            self.assertAlmostEqual(tip[0], ex, delta=0.2)
+            self.assertAlmostEqual(tip[1], ey, delta=0.2)
+            # tip - base points the same way as the run
+            self.assertGreater((tip[0] - base[0]) * (ex - sx) + (tip[1] - base[1]) * (ey - sy), 0)
+
+    def test_short_last_run_never_turns_back(self):
+        sc, head, line = self._draw([(0, 0), (80, 0), (80, -8)])
+        corner_end, end = line[-2], line[-1]
+        bend = sc.at(80, 0)
+        tip = sc.at(80, -8)
+        run = (tip[0] - bend[0], tip[1] - bend[1])
+        # the final segment of the drawn line goes towards the tip, not back
+        self.assertGreaterEqual((end[0] - corner_end[0]) * run[0] + (end[1] - corner_end[1]) * run[1], -1e-6)
+        c = canvas(1200, 600)
+        sc = Scene(c, 600, 300, cables_visible=True)
+        sc.cable([(0, 0), (80, 0), (80, -8)], c.blue, arrow=True, ends=("free", "free"))
+        with self.assertRaises(ValueError) as caught:
+            sc.paint()
+        self.assertIn("shorter than its arrowhead", str(caught.exception))
+
+
 class ProductionLines(unittest.TestCase):
     """The production-line devices return their anchors and stay on their
     ground; a line fits the rectangle it was given or says what it needs."""

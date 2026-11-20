@@ -462,11 +462,22 @@ class Scene:
             ex, ey = bx + (cx - bx) / lc * r, by + (cy - by) / lc * r
             d += f" L{sx:.1f},{sy:.1f} Q{bx:.1f},{by:.1f} {ex:.1f},{ey:.1f}"
         end = pts[-1]
+        corner_r = 0.0
+        if len(pts) > 2:
+            (ax, ay), (bx, by), (cx, cy) = pts[-3], pts[-2], pts[-1]
+            corner_r = min(radius, math.hypot(bx - ax, by - ay) / 2,
+                           math.hypot(cx - bx, cy - by) / 2)
         if spec["arrow"]:
             (x1, y1), (x2, y2) = pts[-2], pts[-1]
             length = math.hypot(x2 - x1, y2 - y1)
             ux, uy = (x2 - x1) / length, (y2 - y1) / length
-            end = (x2 - ux * 9, y2 - uy * 9)
+            if length < 13 + corner_r and self.cables_visible:
+                # The line would end behind its own last bend and turn back,
+                # so the head reads as pointing away from the target.
+                raise ValueError(f"cable {spec.get('index', '?')}: last run {length:.0f} units is "
+                                 f"shorter than its arrowhead and bend ({13 + corner_r:.0f})")
+            # The line stops under the head, never behind the last bend.
+            end = (x2 - ux * min(9, max(length - corner_r, 0)), y2 - uy * min(9, max(length - corner_r, 0)))
             bx, by = x2 - ux * 13, y2 - uy * 13
             head = [(x2, y2), (bx - uy * 6, by + ux * 6), (bx + uy * 6, by - ux * 6)]
             out += f'<path d="{self._d(head)}" fill="{color}" stroke="none"/>'

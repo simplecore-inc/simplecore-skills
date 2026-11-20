@@ -73,6 +73,7 @@ not loosen the rule.
 | No two cables cross or overlap; a cable that meets another ends `"join"` and gets a dot | A crossing reads as a connection |
 | No two footprints overlap on the ground | A kiosk drawn through a wall reads as a mistake (a user sent one back), and the paint order of two interpenetrating things is decided by centre depth, not by what is in front |
 | No cable runs under a device's footprint | The cable vanishes and reappears with no visible path |
+| Under `cables_visible=True`, a cable with an arrow has a last run longer than its head and bend | A shorter run ends behind its own bend and turns back, so the head reads as pointing away from the target (a user sent one back); without the setting the line stops under the head |
 | Under `cables_visible=True`, no cable run lies under a solid's outline on the page | A cable that passes behind a wall or a rack cannot be followed (a user sent one back) |
 | A label touches no solid, conductor, cable, other label or board edge | The engine tries positions around its target in the order of `prefer` and takes the first free one |
 | Under `Scene(..., leaders="near", leader_max=L)`, a label or callout sits within `L` page units of its part | A name that stands across the scene from its part, on a leader crossing machines, reads as belonging to whatever it lands beside (a user sent one back) |
