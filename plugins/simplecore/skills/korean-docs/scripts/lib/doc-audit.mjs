@@ -757,7 +757,7 @@ function isNGaEnding(whole, rest) {
 // 아이 · 제이 · 케이 · 브이 · 와이). 「에스브이 데이터」 and 「알에스브이 30만 건」 read as 에스브+이,
 // and a correct script is reported as a particle error.
 const PARTICLE_TAIL_SKIP =
-  /(에이|아이|제이|케이|브이|와이|레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|수용가|국가|증가|참가|원가|단가|추가|물가|저가|대가|불가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니|마을|가을|노을|고을|코듀로이)$/;
+  /(에이|아이|제이|케이|브이|와이|레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|수용가|국가|증가|참가|원가|단가|추가|물가|저가|대가|불가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니|코듀로이)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);
@@ -781,12 +781,15 @@ function hasFinalConsonant(ch) {
 // as before because no Korean word ends in 와 after a consonant.
 const CONJUNCTION_FOLLOWS = /^\s+[가-힣]/;
 
-function checkParticles(lines) {
+// A word the glossary registers as a standard term is a whole word, so a term that merely ends in a
+// particle syllable (a place name ending in 마을) is not read as stem plus particle.
+function checkParticles(lines, knownWords = new Set()) {
   const hits = [];
   lines.forEach((line, idx) => {
     for (const m of line.matchAll(PARTICLE_RE)) {
       const [, stem, particle] = m;
       const whole = stem + particle;
+      if (knownWords.has(whole)) continue;
       if (PARTICLE_STEM_SKIP.test(stem)) continue;
       if (/[는은던]$/.test(stem)) continue;
       if (PARTICLE_WORD_SKIP.test(whole) || PARTICLE_TAIL_SKIP.test(whole)) continue;
@@ -1193,7 +1196,7 @@ export function annotationRanges(content, keys) {
   return ranges;
 }
 
-export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set(), resolvedPlaceholders = [], disabledChecks = new Map()) {
+export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set(), resolvedPlaceholders = [], disabledChecks = new Map(), knownWords = new Set()) {
   const content = readFileSync(filePath, 'utf8');
   const isSvg = !isLocaleResource && /\.svg$/i.test(filePath);
   const isProse = !isSvg && !isLocaleResource;
@@ -1254,7 +1257,7 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     }
   }
 
-  for (const hit of checkParticles(lines)) {
+  for (const hit of checkParticles(lines, knownWords)) {
     errors.push({...hit, count: 1, rule: {
       source: 'particle', label: 'particle disagreement', level: 'error', threshold: 1,
       suggestion: 'choose 이/가 · 을/를 · 과/와 by the final consonant of the preceding syllable',
@@ -1536,6 +1539,9 @@ export function runDocAudit(args, cliPath) {
   const base = loadBaseGlossary({noBase: args.noBase, domains: config.domains});
 
   const {rules, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
+  const knownWords = new Set(
+    [...base.terms.values(), ...(project?.terms.values() ?? [])].map((term) => term.korean).filter(Boolean),
+  );
 
   if (args.listRules) {
     for (const r of rules) {
@@ -1636,7 +1642,7 @@ export function runDocAudit(args, cliPath) {
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const res = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders, disabledChecks);
+    const res = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders, disabledChecks, knownWords);
     const {errors, warnings} = res;
     errorCount += errors.length;
     warningCount += warnings.length;

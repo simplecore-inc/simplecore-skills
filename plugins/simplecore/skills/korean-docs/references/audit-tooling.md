@@ -186,7 +186,10 @@ bans stop in writing. The author marks the script, with a reason beside the mark
 
 - `particle` (error): 이/가 · 을/를 · 과/와 after a Hangul word of two syllables or more. Verb
   stems, adnominal endings and words that merely end in those syllables are skipped. 은/는 overlaps
-  with the adnominal ending, so it is judged only right after a closing 」 or 』.
+  with the adnominal ending, so it is judged only right after a closing 」 or 』. A word registered
+  in the 한국어 column of a 용어 대역표 (base or project) is a whole word and is skipped, which is
+  how a project term that merely ends in a particle syllable (a place name ending in 마을) is
+  declared; a tail in the checker's own skip list is for words true of any project.
 - `interpolated-particle` (error): a particle right after a placeholder whose value is unknown
   when the sentence is written (`{{name}}` · `{name}` · `%s` · `%1$s`).
 - `reference-particle` (error): a particle after a placeholder `audit.resolvedPlaceholders`
