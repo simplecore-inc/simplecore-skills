@@ -70,8 +70,11 @@ later generate then promote reports one outcome per file:
 A conflict is the expected outcome when the template and the customisation both append after the
 last method of a class.
 
-**Resolving a conflict.** Edit the promoted file itself, using the `.conflict` file to see both sides
-of each hunk, then promote again. The next promote closes the conflict only when the resolved region
+**Resolving a conflict.** Resolve the marked hunks in the `.conflict` file and save the result over the
+promoted file, then promote again. The promoted file itself was left untouched, so it lacks every
+template change of that run, the ones that merged cleanly included; the `.conflict` file is the
+merge result and already carries them. Editing the promoted file by hand instead loses those
+changes: after the base is recorded they read as the customisation's own deletions. The next promote closes the conflict only when the resolved region
 equals the template's side of the hunk (it then reports `current`). Any other resolution, such as a
 combination of the template change and the customisation, merges the same two changes against the
 same stored base and reports the same hunks again, because `promote` has no flag that records a
