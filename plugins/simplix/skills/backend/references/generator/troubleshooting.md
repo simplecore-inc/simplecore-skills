@@ -12,8 +12,10 @@ npm install -g @simplix-boot/cli
 npx @simplix-boot/cli generate EntityName
 
 # Or link the one in a framework checkout
-cd <simplix checkout>/simplix-cli && npm link
+cd <simplix checkout>/simplix-cli && npm ci && npm link
 ```
+
+A linked `simplix-boot` that stops resolving was linked under another Node.js version, or its checkout was moved, deleted, or switched to a branch without `simplix-cli`: `npm ls -g --depth=0` shows where the link points, and `npm link` in the folder restores it (`commands.md` § Installing the CLI).
 
 ## A Template Fails to Render
 

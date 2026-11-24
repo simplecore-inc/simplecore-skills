@@ -2,7 +2,7 @@
 
 What `simplix-boot help`, `simplix-boot init`, `simplix-boot version`, `simplix-boot generated` and `simplix-boot templates` do and when a developer runs each. `config`, `generate` and `promote` have their own references: `../entity/yml-configuration.md` and `promote-workflow.md`.
 
-`simplix-boot` is the executable of the npm package `@simplix-boot/cli`, which is released with the SimpliX framework under the framework's version. Install it with `npm install -g @simplix-boot/cli`, or from a framework checkout with `npm link` inside its `simplix-cli` folder.
+`simplix-boot` is the executable of the npm package `@simplix-boot/cli`, which is released with the SimpliX framework under the framework's version (§ Installing the CLI).
 
 **Rules every command follows.** A command other than `init`, `version` and `help` runs inside a project: the project root is the nearest directory at or above the working directory that holds `.simplix/`, so a command may be run from any folder below it. An option the command does not declare, and an argument beyond the declared ones, stop the command before it does anything (exit 1). Progress and reports go to standard output; the reason a command stopped goes to standard error. `simplix-boot <command> --help` prints the usage and options of one command.
 
@@ -15,6 +15,33 @@ What `simplix-boot help`, `simplix-boot init`, `simplix-boot version`, `simplix-
 | `simplix-boot version` | nothing, except with `--write` or `--update` | before generating on a new machine, after the generator is updated, and when a command stops on the version gate |
 | `simplix-boot generated` | renders into the git-ignored `generated/` tree | after every promote, and before a template change is trusted |
 | `simplix-boot templates` | nothing, except with `--eject` | to see which templates are the project's own, and to copy a built-in template into the project before editing it |
+
+## Installing the CLI
+
+| Way | Command | What runs |
+|---|---|---|
+| Without installing | `npx @simplix-boot/cli <command>` | the latest version published to npm |
+| Global install | `npm install -g @simplix-boot/cli` | the published version installed at that moment |
+| Link a framework checkout | `npm ci` and `npm link` inside `<simplix checkout>/simplix-cli` | the checkout's current source |
+
+**Linking a framework checkout.** `npm link` registers `simplix-boot` as a global command through a symbolic link from the global package folder to the `simplix-cli` folder, so nothing is copied and the command runs the checkout's source as it is on disk.
+
+```bash
+cd <simplix checkout>/simplix-cli
+npm ci        # the CLI's runtime dependencies
+npm link      # simplix-boot now points at this folder
+simplix-boot --version
+npm ls -g --depth=0   # the @simplix-boot/cli line ends with "-> <the simplix-cli folder>"
+```
+
+- A source change in the checkout (a `git pull`, an edited template) takes effect at once; link again only after the conditions below.
+- A change to `simplix-cli/package.json` dependencies needs `npm ci` in that folder again.
+- A Node.js version manager keeps one global package folder per Node.js version, so the link exists only for the version it was made under. After switching versions, run `npm link` again.
+- The link follows the checkout's working tree: on a branch that has no `simplix-cli` folder, or after the checkout is moved or deleted, the command no longer runs.
+- A linked CLI runs the checkout's development version (`-SNAPSHOT`). `version --write` records its `X.Y.Z`, so pin a project from a linked CLI only when the team and CI can run that version too.
+- `npm unlink -g @simplix-boot/cli` removes the link.
+
+Before running a generator command in a session, check that it resolves: `simplix-boot --version`. When it does not, link the framework checkout as above or install the published package; never fall back to writing the generated files by hand.
 
 ## `simplix-boot help`
 
