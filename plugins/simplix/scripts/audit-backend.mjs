@@ -1336,7 +1336,7 @@ const RULES = [
     id: "entity-without-generator-input",
     invariant: "#15",
     level: "error",
-    desc: "A controller extends SimpliXBaseController<E, ...> while E has no .simplix/entity/E.yml - the surface is maintained by hand, so the generator can never regenerate it and every contract gap has to be closed in Java. Write the yml (`yo simplix:config E`), generate, diff and promote; an internalized child has no controller at all",
+    desc: "A controller extends SimpliXBaseController<E, ...> while E has no .simplix/entity/E.yml - the surface is maintained by hand, so the generator can never regenerate it and every contract gap has to be closed in Java. Write the yml (`simplix-boot config E`), generate, diff and promote; an internalized child has no controller at all",
     appliesTo: isController,
     check: (c, _rel, ctx) => {
       const inputs = ctx?.generatorInputs;

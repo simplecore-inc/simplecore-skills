@@ -2,17 +2,26 @@
 
 Customizing SimpliX generator `.java.template` files.
 
-> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, template paths under `.simplix/templates/`, regeneration workflow after editing. For generator-level commands see **promote-workflow.md** and `../entity/yml-configuration.md` § Code Generation; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
+> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, the built-in templates and the project templates under `.simplix/templates/` that replace them, support classes, regeneration workflow after editing. For generator-level commands see **promote-workflow.md** and `../entity/yml-configuration.md` § Code Generation; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
 
 ---
 
 ## Template Files
 
+The CLI ships the templates below in the `templates/` folder of the `@simplix-boot/cli` package, so a project generates without holding any template. A file under the project's `.simplix/templates/` **replaces the built-in template of the same relative path**: the project's copy is rendered when it exists, the built-in one otherwise, decided file by file.
+
+- `simplix-boot templates` lists every template with its origin (`project` or `built-in`).
+- `simplix-boot templates --eject <template>` copies one built-in template into `.simplix/templates/` to be edited there (`commands.md` § `simplix-boot templates`).
+- A project copy does not receive the built-in template's later changes. Hold a copy only of a template the project really changes, and compare it with the built-in one after each CLI update.
+- The built-in templates import framework and searchable-jpa classes and no class of an application. A member whose code needs an application class takes that class from the configuration (§ Support Classes).
+
 ```
-.simplix/templates/
+templates/                                   (built in; the same relative paths under .simplix/templates/ replace them)
 ├── controller/
-│   └── rest/
-│       └── EntityRestController.java.template
+│   ├── rest/
+│   │   └── EntityRestController.java.template
+│   └── web/
+│       └── EntityWebController.java.template   # rendered only when the config names a controllerWeb target
 ├── service/
 │   ├── EntityService.java.template
 │   └── EntityTreeService.java.template      # tree entities
@@ -25,7 +34,7 @@ Customizing SimpliX generator `.java.template` files.
     └── EntityTreeServiceTest.java.template
 ```
 
-The generator renders a template only for a component that `.simplix/generator-simplix.json` names under `target.targetPath` (`service`, `controllerRest`, `controllerWeb`, `dto`, `repository`), and takes each template's path from the `template` map of the same file. A config whose `targetPath` names no `repository`, as the generator's own documented configuration does, never renders `EntityRepository.java.template`: the repository is written by hand beside the entity (`../entity/repository-patterns.md` § File Location), and the generator only computes its package so that the generated service can import it (`../entity/base-entity-patterns.md` § Path convention).
+The generator renders a template only for a component that `.simplix/generator-simplix.json` names under `target.targetPath` (`service`, `controllerRest`, `controllerWeb`, `dto`, `repository`), and takes each template's relative path from the `template` map of the same file, or the path shown above when the map does not name the component. `test/EntityRestControllerTest.java.template` is not built in: the controller test is generated only for a project that provides that template. A config whose `targetPath` names no `repository`, as the generator's own documented configuration does, never renders `EntityRepository.java.template`: the repository is written by hand beside the entity (`../entity/repository-patterns.md` § File Location), and the generator only computes its package so that the generated service can import it (`../entity/base-entity-patterns.md` § Path convention).
 
 ---
 
@@ -85,6 +94,36 @@ ymlConfig = {
   fields: { /* ... */ },
   sortOrderConfig: { /* ... */ }
 }
+```
+
+### Support Classes
+
+`supportClasses` gives a template the classes of the application that generated code calls. The project names them by key in `.simplix/generator-simplix.json`:
+
+```json
+{
+  "supportClasses": {
+    "searchFigures": "<base package>.app.search.SearchFigureDTOs",
+    "messages": "<base package>.app.util.MessageUtils",
+    "localizedSearchParams": "<base package>.app.search.LocalizedSearchParams"
+  }
+}
+```
+
+| Key | The built-in templates need it when | What the class provides |
+|-----|--------------------------------------|-------------------------|
+| `searchFigures` | the yml sets `statusCounts` or `aggregates`, or `timeAxisField` together with `figureScope` | nested `ValueCountDTO` (`of(ValueCount)`) and `AggregateValueDTO` (`of(AggregateValue)`, `empty(Aggregate)`), static `scoped(Map)` and `scoped(Optional)` |
+| `messages` | the yml sets `notFoundMessageKey` | static `get(String)` |
+| `localizedSearchParams` | the project answers a localized field through derived `<name>Search` and `<name>Sort<Lang>` columns | static `rewrite(Map, String...)` |
+
+A yml that asks for a member whose class is not configured stops `generate` with the yml key and the configuration key in the message. `localizedSearchParams` is the exception: it switches the derived-column handling on when configured and leaves such fields ordinary columns when not.
+
+In a template:
+
+```ejs
+<% const audit = supportClasses.find('auditTrail'); %>      <%# { fqn, name } or undefined %>
+<% const figures = supportClasses.require('searchFigures', 'statusCounts'); %>   <%# refuses the render when not configured %>
+import <%= figures.fqn %>;
 ```
 
 ---
@@ -281,11 +320,12 @@ console.log('Fields:', JSON.stringify(fields, null, 2));
 %>
 ```
 
-### Check Generator Logs
+### Read the Render Error
+
+A template that throws fails the run: `generate` prints the output file, the template that was rendered and the line the error came from, writes the files that did render, and exits 1 (`troubleshooting.md` § A Template Fails to Render).
 
 ```bash
-# Run with verbose output
-DEBUG=* yo simplix:generate EntityName --force
+simplix-boot generate EntityName --force
 ```
 
 ### Validate Template Syntax

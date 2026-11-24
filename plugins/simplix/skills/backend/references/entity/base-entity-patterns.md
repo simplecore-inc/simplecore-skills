@@ -14,7 +14,7 @@ Before writing the entity class, decide which domain Gradle module owns it. A pr
 
 ### Path convention
 
-The generator reads the entity and never writes it. The entity and its repository are written by hand in the domain module; `yo simplix:config` derives the yml's `modulePath` from the entity's package, and `yo simplix:generate` writes the service, controller and DTOs under the `target` paths of `.simplix/generator-simplix.json` with that `modulePath` substituted. The generator recognizes two package layouts, and `generator-simplix.json` records which one a project uses:
+The generator reads the entity and never writes it. The entity and its repository are written by hand in the domain module; `simplix-boot config` derives the yml's `modulePath` from the entity's package, and `simplix-boot generate` writes the service, controller and DTOs under the `target` paths of `.simplix/generator-simplix.json` with that `modulePath` substituted. The generator recognizes two package layouts, and `generator-simplix.json` records which one a project uses:
 
 | Layout | Entity | Repository | Enum | `generator-simplix.json` |
 |---|---|---|---|---|

@@ -1,48 +1,50 @@
 # Generator Commands Outside generate and promote
 
-What `yo simplix`, `yo simplix:init`, `yo simplix:version` and `yo simplix:generated` do and when a developer runs each. `config`, `generate` (alias `entity`) and `promote` have their own references: `../entity/yml-configuration.md` and `promote-workflow.md`.
+What `simplix-boot help`, `simplix-boot init`, `simplix-boot version`, `simplix-boot generated` and `simplix-boot templates` do and when a developer runs each. `config`, `generate` and `promote` have their own references: `../entity/yml-configuration.md` and `promote-workflow.md`.
 
-> **Scope (canonical):** the setup, version and state commands of the generator. The tracked-render rules these commands report on (fingerprint, stored base, three-way merge) are owned by `promote-workflow.md`.
+`simplix-boot` is the executable of the npm package `@simplix-boot/cli`, which is released with the SimpliX framework under the framework's version. Install it with `npm install -g @simplix-boot/cli`, or from a framework checkout with `npm link` inside its `simplix-cli` folder.
+
+**Rules every command follows.** A command other than `init`, `version` and `help` runs inside a project: the project root is the nearest directory at or above the working directory that holds `.simplix/`, so a command may be run from any folder below it. An option the command does not declare, and an argument beyond the declared ones, stop the command before it does anything (exit 1). Progress and reports go to standard output; the reason a command stopped goes to standard error. `simplix-boot <command> --help` prints the usage and options of one command.
+
+> **Scope (canonical):** the setup, version, state and template-origin commands of the generator. The tracked-render rules these commands report on (fingerprint, stored base, three-way merge) are owned by `promote-workflow.md`.
 
 | Command | Writes | When a developer runs it |
 |---|---|---|
-| `yo simplix` | nothing | to see the workflow and the command list, or to learn that `.simplix/` is missing |
-| `yo simplix:init` | `.simplix/entity/.gitkeep`, `.simplix/templates/.gitkeep` | once, in a project that has no `.simplix/` folder |
-| `yo simplix:version` | nothing, except with `--write` or `--update` | before generating on a new machine, after the generator is updated, and when a command stops on the version gate |
-| `yo simplix:generated` | renders into the git-ignored `generated/` tree | after every promote, and before a template change is trusted |
+| `simplix-boot help` | nothing | to see the workflow and the command list |
+| `simplix-boot init` | `.simplix/entity/.gitkeep`, `.simplix/templates/.gitkeep` | once, in a project that has no `.simplix/` folder |
+| `simplix-boot version` | nothing, except with `--write` or `--update` | before generating on a new machine, after the generator is updated, and when a command stops on the version gate |
+| `simplix-boot generated` | renders into the git-ignored `generated/` tree | after every promote, and before a template change is trusted |
+| `simplix-boot templates` | nothing, except with `--eject` | to see which templates are the project's own, and to copy a built-in template into the project before editing it |
 
-## `yo simplix` (the `app` generator)
+## `simplix-boot help`
 
-The default generator, run as `yo simplix` or `yo simplix:app`. It prints the generator version, then:
+Run as `simplix-boot help`, `simplix-boot --help` or `simplix-boot` with no argument. It prints the CLI version, the command list with one line per command, the order of work (`init` → `config` → edit the yml → `generate` → `promote`) and the template rule. `simplix-boot --version` prints the version alone.
 
-- With no `.simplix/` folder in the working directory: a note pointing to `yo simplix:init`, and nothing else.
-- With one: the order of work (`config` → edit the yml → `generate`/`entity`) and the command list.
+It reads and writes no project file and runs outside a project too. Nothing depends on it; run it to refresh memory of the commands.
 
-It reads and writes no project file. Nothing depends on it; run it to refresh memory of the commands.
-
-## `yo simplix:init`
+## `simplix-boot init`
 
 Creates the `.simplix/` folder with the empty `entity/` and `templates/` subfolders, each holding a `.gitkeep`. It does nothing when `.simplix/` already exists (it prints that the folder exists and stops), so it never overwrites a project's configuration or templates.
 
-It does **not** create `.simplix/generator-simplix.json`. After `init` the developer writes that file by hand (paths, base package, template names: `template-customization.md`), then pins the generator with `yo simplix:version --write`. `generate`, `promote` and `generated` refuse to run without that file; `config` reads it when it exists.
+It does **not** create `.simplix/generator-simplix.json`. After `init` the developer writes that file by hand (paths, base package, template names: `template-customization.md`), then pins the generator with `simplix-boot version --write`. `generate`, `promote` and `generated` refuse to run without that file; `config` reads it when it exists.
 
-## `yo simplix:version`
+## `simplix-boot version`
 
 The generator reads three versions: the generator that is running, the version the project records under `generator.version` in `.simplix/generator-simplix.json` (the file is found by searching upward from the working directory), and the latest version published to npm.
 
 | Form | Effect |
 |---|---|
-| `yo simplix:version` | Prints the three versions and one verdict: `match`, `outdated` (running is older than the project requires), `ahead` (running is newer than recorded), `unrecorded` (the project records none) or `unknown` (the two cannot be compared) |
+| `simplix-boot version` | Prints the three versions and one verdict: `match`, `outdated` (running is older than the project requires), `ahead` (running is newer than recorded), `unrecorded` (the project records none) or `unknown` (the two cannot be compared) |
 | `--json` | The same report as one JSON line on stdout and nothing else, for scripts |
 | `--write` | Records the running generator's `X.Y.Z` in `generator.version`, keeping the rest of the file byte for byte. Fails when `generator-simplix.json` does not exist |
-| `--update` | Runs `npm install -g` for the latest published version, or for `--to X.Y.Z`. The next `yo simplix` run uses it |
+| `--update` | Runs `npm install -g` for the latest published version, or for `--to X.Y.Z`. The next `simplix-boot` run uses it |
 | `--update --to X.Y.Z` | Installs that exact published version; anything that is not `X.Y.Z` is refused |
 
-**The version gate.** `config`, `generate`/`entity` and `promote` compare the running generator with `generator.version` before writing anything. An older generator stops the command with the update instructions, because templates and configuration keys move together and an older generator silently produces code the project no longer expects. A newer generator only warns, and a project that records no version gets a one-line notice. `--skip-version-check` overrides the gate for one run. Versions compare by their `X.Y.Z` core, so a `-SNAPSHOT` build satisfies the release it precedes.
+**The version gate.** `config`, `generate` and `promote` compare the running generator with `generator.version` before writing anything. An older generator stops the command with the update instructions, because templates and configuration keys move together and an older generator silently produces code the project no longer expects. A newer generator only warns, and a project that records no version gets a one-line notice. `--skip-version-check` overrides the gate for one run. Versions compare by their `X.Y.Z` core, so a `-SNAPSHOT` build satisfies the release it precedes.
 
 Run `--write` after deliberately moving to a newer generator, so the whole team and CI stop on an older one. Run `--update` when a command stops with "older than the version this project requires".
 
-## `yo simplix:generated`
+## `simplix-boot generated`
 
 Reports the state of every promoted file. It is the check that closes a promote (`promote-workflow.md` § Usage).
 
@@ -65,3 +67,16 @@ Reports the state of every promoted file. It is the check that closes a promote 
 | `--json` | One JSON line `{ "files": [{ "path", "entity", "state" }], "counts": { "<state>": n } }` instead of the text lines |
 
 Exit code 1 when any file is `stale`, `conflict` or `no-base`, and also when `generator-simplix.json` is missing or a render fails. Because step 2 leaves the renders in `generated/`, run the "no files remain in `generated/`" check of `promote-workflow.md` § Post-Promote Verification **before** this command.
+
+## `simplix-boot templates`
+
+The CLI ships the templates `generate` renders from. A file under the project's `.simplix/templates/` replaces the built-in template of the same relative path, file by file (`template-customization.md` § Template Files).
+
+| Form | Effect |
+|---|---|
+| `simplix-boot templates` | One line per template: `project` for a file under `.simplix/templates/`, `built-in` for one the CLI ships, and a note on a project file that replaces a built-in one |
+| `--eject` | Copies every built-in template into `.simplix/templates/`, keeping a project file that already exists |
+| `--eject <template>` | Copies that one built-in template, named by its relative path (`dto/EntityDTOs.java.template`); a name the CLI does not ship is refused |
+| `--force` | With `--eject`, overwrites the project's copy |
+
+Run `simplix-boot templates` after the CLI is updated: a template the project holds its own copy of does not receive the built-in template's later changes, so each `project` line is a file to compare by hand.

@@ -1,16 +1,37 @@
 # Generator Troubleshooting
 
-Common errors and fixes when running `yo simplix:generate`.
+Common errors and fixes when running `simplix-boot generate`.
 
 ## Generator Not Found
 
 ```bash
 # Install globally
-npm install -g yo generator-simplix
+npm install -g @simplix-boot/cli
 
-# Or run via npx
-npx yo simplix:generate EntityName
+# Or run without installing
+npx @simplix-boot/cli generate EntityName
+
+# Or link the one in a framework checkout
+cd <simplix checkout>/simplix-cli && npm link
 ```
+
+## A Template Fails to Render
+
+```
+   ✖ generated/main/java/.../EntityNameDTOs.java
+     Failed to render dto/EntityDTOs.java.template: <template path>:<line> ...
+✖ 1 of 4 files failed to render for EntityName: EntityNameDTOs.java
+```
+
+The command exits 1, writes the files that did render, and `simplix-boot generated` stops at the same entity. The line names the template that was rendered (the project's copy when one exists) and the line the error came from. Fix the template or the yml value it reads, then run `simplix-boot generate EntityName --force` again.
+
+## A yml Key Needs a Support Class
+
+```
+EntityName.yml uses statusCounts or aggregates, which needs supportClasses.searchFigures in .simplix/generator-simplix.json
+```
+
+A built-in template refuses a yml key whose generated code calls a class the application writes for itself. Name that class under `supportClasses` in `.simplix/generator-simplix.json` (`template-customization.md` § Support Classes).
 
 ## YML Not Found (Entity configuration not found)
 
@@ -21,7 +42,7 @@ Error: Entity configuration not found
 **Fix**: Run config first.
 
 ```bash
-yo simplix:config EntityName --force
+simplix-boot config EntityName --force
 ```
 
 ## Import Errors in Generated Code
@@ -86,12 +107,13 @@ converter behave alike.
   class nested inside the entity. The symptom is an injected `ObjectProvider<StepSpecService>` for
   a service that does not exist. Give the value type its own file in the domain module, under the
   scan path; a generator that predates the `value` kind shows the same symptom for every such
-  field, and `yo simplix:version --update` is the fix.
+  field, and `simplix-boot version --update` is the fix.
 - **The DTO imports a value's type only through the template's `typeKind === 'value'` branch.** A
   project template copied before the kind existed lacks it, and its fresh DTO then refers to
   `StepSpec` without importing it. Copy the branch (`// Handle a value type kept in the row`, after
-  the enum branch of the import block) from the generator's `sample/.simplix/templates/dto/EntityDTOs.java.template`
-  into the project's `.simplix/templates/dto/EntityDTOs.java.template`.
+  the enum branch of the import block) from the CLI's built-in `dto/EntityDTOs.java.template` (the
+  `templates/` folder of the installed `@simplix-boot/cli` package) into the project's
+  `.simplix/templates/dto/EntityDTOs.java.template`.
 - **A conflict on a value field after that is a customisation, not a generator defect.** A held DTO
   that draws the list through its own view type (`List<StepView>` where the template writes
   `List<StepSpec>`) collides with the template's line by design: keep the held line in the file and

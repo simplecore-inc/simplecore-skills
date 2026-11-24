@@ -11,8 +11,8 @@
  *   node scripts/skill-audit.mjs --only <id>[,<id>]   one or more classes, every finding
  *   node scripts/skill-audit.mjs --project <dir>      also diff the `simplix` commands and flags the
  *                                                     text names against the CLI installed in <dir>
- *   node scripts/skill-audit.mjs --generator <dir>    also diff the `yo simplix:` names and flags against the
- *                                                     generator checkout <dir> (the folder holding generators/)
+ *   node scripts/skill-audit.mjs --generator <dir>    also diff the `simplix-boot` commands and flags against the
+ *                                                     CLI in <dir> (the folder holding bin/simplix-boot.js)
  *   node scripts/skill-audit.mjs --source <a,b>       also list PascalCase names in backticks that none of the
  *                                                     comma-separated source roots spells anywhere
  *   node scripts/skill-audit.mjs --json               the findings as JSON, for another tool
@@ -441,44 +441,42 @@ function cliDrift(files, registry) {
 }
 
 
-/* ------------------------------------------------------------------ yo drift (needs the generator checkout) */
+/* ------------------------------------------------------------------ generator drift (needs the simplix-boot CLI) */
 
-function yoRegistry(dir) {
+function bootRegistry(dir) {
+  const run = (args) => execFileSync(process.execPath, [join(dir, "bin", "simplix-boot.js"), ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 60000 });
+  // The command list is the block under "Commands:"; other indented lines of the help are prose.
+  const listed = /^Commands:\n((?: {2}\S.*\n)+)/m.exec(run(["help"]));
+  if (!listed) throw new Error(`simplix-boot help in ${dir} prints no "Commands:" block`);
   const registry = {};
-  const gens = join(dir, "generators");
-  for (const name of readdirSync(gens)) {
-    const index = join(gens, name, "index.js");
-    if (!existsSync(index)) continue;
-    const source = readFileSync(index, "utf8");
-    registry[name] = new Set([...source.matchAll(/this\.option\(\s*['"]([a-z][a-z0-9-]*)['"]/g)].map((m) => `--${m[1]}`));
-    // An alias generator re-exports another one and takes its options.
-    const alias = /export\s*\{\s*default\s*\}\s*from\s*['"]\.\.\/([a-z-]+)\/index\.js['"]/.exec(source);
-    if (alias) registry[name].aliasOf = alias[1];
-  }
-  for (const [name, set] of Object.entries(registry)) {
-    if (set.aliasOf && registry[set.aliasOf]) for (const f of registry[set.aliasOf]) set.add(f);
+  for (const line of listed[1].split("\n").filter(Boolean)) {
+    const name = /^ {2}([a-z][a-z0-9-]*)\b/.exec(line)[1];
+    registry[name] = new Set([...run([name, "--help"]).matchAll(/^ {2}(--[a-z][a-z0-9-]*)/gm)].map((m) => m[1]));
   }
   return registry;
 }
 
-function yoDrift(files, registry) {
+function bootDrift(files, registry) {
   const drift = [];
   const named = new Set();
   for (const file of files.filter(isMarkdown)) {
     readFileSync(file, "utf8").split("\n").forEach((line, i) => {
-      for (const m of line.matchAll(/\byo\s+simplix:([a-z][a-z0-9-]*)((?:\s+[^`|)]*)?)/g)) {
-        named.add(m[1]);
+      for (const m of line.matchAll(/\bsimplix-boot\s+([a-z][a-z0-9-]*)((?:\s+[^`|)]*)?)/g)) {
+        if (m[1] === "help") continue;
         if (!registry[m[1]]) {
-          drift.push({ file, line: i + 1, text: `unknown generator: yo simplix:${m[1]}` });
+          // `simplix-boot` is also the name of the frontend's Spring Boot profile, so a word after it
+          // is a command only where the text writes it as code.
+          if (/`simplix-boot\s/.test(line)) drift.push({ file, line: i + 1, text: `unknown command: simplix-boot ${m[1]}` });
           continue;
         }
+        named.add(m[1]);
         for (const f of m[2].matchAll(/(--[a-z][a-z0-9-]*)/g)) {
-          if (!registry[m[1]].has(f[1])) drift.push({ file, line: i + 1, text: `yo simplix:${m[1]} has no ${f[1]}` });
+          if (!registry[m[1]].has(f[1])) drift.push({ file, line: i + 1, text: `simplix-boot ${m[1]} has no ${f[1]}` });
         }
       }
     });
   }
-  const unnamed = Object.keys(registry).filter((g) => !named.has(g)).map((g) => ({ file: PLUGIN, line: 0, text: `generator never named: yo simplix:${g}` }));
+  const unnamed = Object.keys(registry).filter((g) => !named.has(g)).map((g) => ({ file: PLUGIN, line: 0, text: `command never named: simplix-boot ${g}` }));
   return { drift, unnamed };
 }
 
@@ -551,10 +549,10 @@ function audit(plugin, options = {}) {
   if (options.known) {
     results.push({ id: "unknown-symbol", gate: false, desc: "a PascalCase name in backticks that no given source root spells (a renamed or invented part)", findings: unknownSymbols(files, options.known) });
   }
-  if (options.yo) {
-    const { drift, unnamed } = yoDrift(files, options.yo);
-    results.push({ id: "yo-drift", gate: true, desc: "a yo simplix generator or flag the text names that the installed generator does not have", findings: drift });
-    results.push({ id: "yo-unnamed", gate: false, desc: "a generator the checkout has that no instruction file names", findings: unnamed });
+  if (options.boot) {
+    const { drift, unnamed } = bootDrift(files, options.boot);
+    results.push({ id: "boot-drift", gate: true, desc: "a simplix-boot command or flag the text names that the CLI does not have", findings: drift });
+    results.push({ id: "boot-unnamed", gate: false, desc: "a command the CLI has that no instruction file names", findings: unnamed });
   }
   return results;
 }
@@ -602,12 +600,16 @@ function selfTest() {
     check("cli-drift: unknown flag found", drift.drift.some((f) => f.text === "simplix scaffold has no --bogus"));
     check("cli-drift: known flag quiet", !drift.drift.some((f) => f.text.includes("--module")));
     check("cli-drift: unknown command found", drift.drift.some((f) => f.text === "unknown command: simplix nonesuch"));
-    const yoReg = { generate: new Set(["--force"]) };
-    writeFileSync(join(skill, "references", "yo.md"), "Run `yo simplix:generate X --force --bogus` and `yo simplix:nonesuch`.\n");
-    const yoResult = yoDrift(collect(root), yoReg);
-    check("yo-drift: unknown flag found", yoResult.drift.some((f) => f.text === "yo simplix:generate has no --bogus"));
-    check("yo-drift: known flag quiet", !yoResult.drift.some((f) => f.text.includes("--force")));
-    check("yo-drift: unknown generator found", yoResult.drift.some((f) => f.text === "unknown generator: yo simplix:nonesuch"));
+    const bootReg = { generate: new Set(["--force"]), promote: new Set(["--module"]) };
+    writeFileSync(join(skill, "references", "boot.md"), "Run `simplix-boot generate X --force --bogus`, `simplix-boot nonesuch` and `simplix-boot help`.\n\nThe simplix-boot envelope is unwrapped first.\n");
+    const bootResult = bootDrift(collect(root), bootReg);
+    check("boot-drift: unknown flag found", bootResult.drift.some((f) => f.text === "simplix-boot generate has no --bogus"));
+    check("boot-drift: known flag quiet", !bootResult.drift.some((f) => f.text.includes("--force")));
+    check("boot-drift: unknown command found", bootResult.drift.some((f) => f.text === "unknown command: simplix-boot nonesuch"));
+    check("boot-drift: help is not a command to look up", !bootResult.drift.some((f) => f.text.includes("help")));
+    check("boot-drift: the profile name in prose is quiet", !bootResult.drift.some((f) => f.text.includes("envelope")));
+    check("boot-unnamed: a command nothing names is listed", bootResult.unnamed.some((f) => f.text === "command never named: simplix-boot promote"));
+    check("boot-unnamed: a named command is quiet", !bootResult.unnamed.some((f) => f.text.endsWith("simplix-boot generate")));
     const fe = join(root, "skills", "frontend");
     mkdirSync(join(fe, "references"), { recursive: true });
     writeFileSync(join(fe, "SKILL.md"), "## Non-Negotiable Invariants\n\n1. **A** - a.\n2. **B** - b.\n3. **C** - c.\n4. **D** - d.\n");
@@ -636,9 +638,9 @@ function selfTest() {
 if (flag("--self-test")) selfTest();
 
 const registry = value("--project") ? cliRegistry(resolve(value("--project"))) : undefined;
-const yo = value("--generator") ? yoRegistry(resolve(value("--generator"))) : undefined;
+const boot = value("--generator") ? bootRegistry(resolve(value("--generator"))) : undefined;
 const known = value("--source") ? identifierSet(value("--source").split(",").map((p) => resolve(p))) : undefined;
-const results = audit(PLUGIN, { registry, yo, known });
+const results = audit(PLUGIN, { registry, boot, known });
 const only = value("--only")?.split(",");
 const shown = only ? results.filter((r) => only.includes(r.id)) : results;
 

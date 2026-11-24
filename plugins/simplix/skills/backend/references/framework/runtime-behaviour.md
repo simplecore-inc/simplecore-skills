@@ -139,7 +139,7 @@ mapper already has and runs once.
   (`ApplicationContextRunner` over `SimpliXModelMapperAutoConfiguration`), and fails on any
   property that was non-null before and is null after. It reads the classpath, so a DTO added later
   is covered, and it fails the build on a framework version without the condition.
-- **The contract and the yml disagree here.** `yo simplix:config` writes `required: true` for
+- **The contract and the yml disagree here.** `simplix-boot config` writes `required: true` for
   every NOT NULL column, defaulted ones included, and the DTO template turns `required` into
   `@NotNull`. A NOT NULL column with an entity default is optional in the contract: set
   `required: false` on it in the yml, so a regeneration does not make the form demand it.

@@ -38,7 +38,7 @@ Handbooks for repositories built on SimpliX. Each skill states its own applicabi
 
 | Skill | Description |
 | ----- | ----------- |
-| `simplix:backend` | Spring Boot backend handbook - the non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `yo simplix` generator workflow, and DTO / security review. Ships the backend convention audit. |
+| `simplix:backend` | Spring Boot backend handbook - the non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `simplix-boot` generator workflow, and DTO / security review. Ships the backend convention audit. |
 | `simplix:frontend` | simplix-react frontend handbook - the non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit, the screen inventory and the duplicate-context check. |
 | `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through lenses anchored to the `simplix:frontend` invariants, and runs the mandatory censuses over every screen in scope. Ships the rendered-layout audit. |
 

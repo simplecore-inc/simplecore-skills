@@ -2,7 +2,7 @@
 
 Move generated CRUD code from `generated/` to `src/` after verification.
 
-> **Scope (canonical):** `yo simplix:promote` command, the tracked-render rules (fingerprint, stored base, three-way merge, conflicts), file-mapping table (service/controller/DTO/test destinations), verification steps. Runs after `yo simplix:generate`. For template issues encountered during generation, see **troubleshooting.md**; for template editing see **template-customization.md**; for `yo simplix:generated`, `version` and `init` see **commands.md**.
+> **Scope (canonical):** `simplix-boot promote` command, the tracked-render rules (fingerprint, stored base, three-way merge, conflicts), file-mapping table (service/controller/DTO/test destinations), verification steps. Runs after `simplix-boot generate`. For template issues encountered during generation, see **troubleshooting.md**; for template editing see **template-customization.md**; for `simplix-boot generated`, `version` and `init` see **commands.md**.
 
 ## Required Arguments
 
@@ -14,7 +14,7 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 | `--module` | **YES** | The yml's `promoteModule` (e.g. `admin/billing`); promote refuses to run without it |
 | `--adopt` | no | Record the current render as the base of existing files that have none (§ Usage) |
 | `--force` | no | Overwrite the promoted files, edits and removals included (§ Usage) |
-| `--skip-version-check` | no | Promote although the project requires a newer generator (`commands.md` § `yo simplix:version`) |
+| `--skip-version-check` | no | Promote although the project requires a newer generator (`commands.md` § `simplix-boot version`) |
 
 ## Why Promote?
 
@@ -29,7 +29,7 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 3. **Deletes the original from `generated/`** once the file is written, merged or left as it was (prevents duplicate class errors in a project that compiles `generated/`). A file whose outcome is `conflict` or `no-base` keeps its render in `generated/`, so the promote can run again after the fix
 4. Prints one outcome per file and a count per outcome, and exits non-zero on `conflict` or `no-base`
 
-A file whose render is missing from `generated/` is skipped with a warning to run `yo simplix:generate <Entity>` first.
+A file whose render is missing from `generated/` is skipped with a warning to run `simplix-boot generate <Entity>` first.
 
 ## File Mapping
 
@@ -47,10 +47,10 @@ The repository is not in the mapping: the generator does not write it (`template
 
 ```bash
 # Promote as a tracked render: write absent or untouched files, merge into edited ones
-yo simplix:promote EntityName --module <promoteModule>
+simplix-boot promote EntityName --module <promoteModule>
 
 # Report every promoted file; non-zero on stale, conflict and no-base
-yo simplix:generated
+simplix-boot generated
 ```
 
 Every promoted file opens with `// @simplix-generated` and `// @simplix-render <fingerprint> promote
@@ -76,18 +76,18 @@ equals the template's side of the hunk (it then reports `current`). Any other re
 combination of the template change and the customisation, merges the same two changes against the
 same stored base and reports the same hunks again, because `promote` has no flag that records a
 resolution (`--adopt` acts only on files that have no base, `--force` discards the edits). Record the
-fresh render as the base with the generator's own helpers, run from the project root against the
+fresh render as the base with the CLI's own helpers, run from the project root against the
 `generated/` file `generate` just wrote:
 
 ```js
 import fs from 'node:fs';
-import { carryStamp, recordBase, stampRender } from '<simplix-generator>/generators/utils/tracked-render.js';
+import { carryStamp, recordBase, stampRender } from '<npm root -g>/@simplix-boot/cli/src/lib/tracked-render.js';
 const stamped = stampRender(fs.readFileSync('<generated file>', 'utf8'), 'promote <Entity> --module <module>');
 fs.writeFileSync('<promoted file>', carryStamp(fs.readFileSync('<promoted file>', 'utf8'), stamped));
 recordBase(process.cwd(), '<promoted file>', stamped);
 ```
 
-Then `yo simplix:promote` reports `current` for the file and `yo simplix:generated` counts it as
+Then `simplix-boot promote` reports `current` for the file and `simplix-boot generated` counts it as
 edited. Do this only after the template's new parts are in the file by hand; recording the base
 over an unresolved file makes the template change look already merged.
 
@@ -101,7 +101,7 @@ normal tracked promote. Adopt once per project, for files promoted before tracke
 The collision check below still comes first: a hand-authored `XService` with no stamp reads as
 `no-base`, is kept, and fails promote.
 
-**IMPORTANT**: Always use `yo simplix:promote` instead of manual file operations. The command ensures:
+**IMPORTANT**: Always use `simplix-boot promote` instead of manual file operations. The command ensures:
 - Files are deleted from `generated/` once handled (no duplicate classes), except on `conflict` and `no-base`
 - Proper directory structure is created
 - Every file carries its fingerprint and a stored base, so the next template change reaches it
@@ -110,10 +110,10 @@ The collision check below still comes first: a hand-authored `XService` with no 
 
 ```bash
 # Generate CRUD files first
-yo simplix:generate CmsContentLink --force
+simplix-boot generate CmsContentLink --force
 
 # Promote to src/
-yo simplix:promote CmsContentLink --module <promoteModule>
+simplix-boot promote CmsContentLink --module <promoteModule>
 ```
 
 It reports one `From` / `To` pair per artefact (service, controller, DTOs, service test; the tree
@@ -121,7 +121,7 @@ service and its test are added when the render produced them), its outcome, and 
 
 **A changed yml needs `generate <Entity> --force` before the promote.** A `generate` without `--force`
 skips a render that already sits in `generated/` (a `SKIP ... already exists` line), so the promote
-writes the old render again and `yo simplix:generated` calls the file `stale`: a field added to the yml
+writes the old render again and `simplix-boot generated` calls the file `stale`: a field added to the yml
 is in no DTO. `--force` here overwrites only the `generated/` render, never a promoted file; the
 promote then merges it three ways. Check that the new field is in the DTO before the Gradle run.
 
@@ -136,9 +136,9 @@ Example: `promoteModule: <module>` creates `modules/<module>`; `promoteModule: <
 
 ## Before generating: the collision check (MANDATORY)
 
-**`yo simplix:promote --force` OVERWRITES `src/` files silently** (§ Usage), and a promote without it keeps an unstamped file only by failing. Before generating an entity `X`,
+**`simplix-boot promote --force` OVERWRITES `src/` files silently** (§ Usage), and a promote without it keeps an unstamped file only by failing. Before generating an entity `X`,
 verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
-`modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
+`modulePath` package. `simplix-boot generate X` + `promote` will clobber a same-named
 hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
 delete its logic.
 
@@ -199,7 +199,7 @@ before generating and there is nothing to rewrite here. Otherwise:
 
 ## Post-Promote Verification
 
-Run the first check before `yo simplix:generated`: that command renders every promoted entity into
+Run the first check before `simplix-boot generated`: that command renders every promoted entity into
 `generated/` again and leaves the renders there.
 
 ```bash
@@ -217,9 +217,9 @@ find generated -name "EntityName*" -type f
 
 ## Checklist
 
-- [ ] Run `yo simplix:promote EntityName --module <promoteModule>`, and resolve every reported conflict in the file
+- [ ] Run `simplix-boot promote EntityName --module <promoteModule>`, and resolve every reported conflict in the file
 - [ ] Verify no files remain in `generated/` for the entity (before the next step re-renders them)
-- [ ] `yo simplix:generated` exits 0, and `.simplix/bases/` is committed with the promoted files
+- [ ] `simplix-boot generated` exits 0, and `.simplix/bases/` is committed with the promoted files
 - [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
 - [ ] The service's ID-mismatch guard throws the `{error.<domain>.idCannotChange}` placeholder (#3)
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` reports 0 error-level hits on the promoted files

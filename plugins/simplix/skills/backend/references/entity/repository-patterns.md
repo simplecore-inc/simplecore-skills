@@ -330,7 +330,7 @@ The repository is written by hand, beside its entity in the same domain module; 
 {basePackage}/domain/repository/{module}/{EntityName}Repository.java     # type-first layout
 ```
 
-A tree repository (`{EntityName}TreeRepository.java`) sits in the same package. Read the project's existing `repository` packages for its modules, and write the repository before running `yo simplix:config`: the command looks the repository up to record a `repositoryModulePath` when it sits apart from the entity, and the generated service imports it.
+A tree repository (`{EntityName}TreeRepository.java`) sits in the same package. Read the project's existing `repository` packages for its modules, and write the repository before running `simplix-boot config`: the command looks the repository up to record a `repositoryModulePath` when it sits apart from the entity, and the generated service imports it.
 
 ---
 

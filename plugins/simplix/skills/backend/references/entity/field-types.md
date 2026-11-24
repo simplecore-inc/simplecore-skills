@@ -439,7 +439,7 @@ The field a record is named by on a screen carries `@NameField`
 as the entity's `nameField`, and a scaffolded list draws it as the first column, in the delete
 confirmation and as the detail title. Without a mark the scaffold guesses from the field names, so
 an entity whose first text field is a note names its records by the note. The yml's `nameField` is
-the generator's input and `yo simplix:config` seeds it from the mark; `yo simplix:entity` warns
+the generator's input and `simplix-boot config` seeds it from the mark; `simplix-boot generate` warns
 when the yml names another field than the mark, and Meta follows the mark. Leave an entity with no
 natural name (a log row, a join row) unmarked rather than marking its key.
 
