@@ -24,6 +24,15 @@ What `simplix-boot help`, `simplix-boot init`, `simplix-boot version`, `simplix-
 | Global install | `npm install -g @simplix-boot/cli` | the published version installed at that moment |
 | Link a framework checkout | `npm ci` and `npm link` inside `<simplix checkout>/simplix-cli` | the checkout's current source |
 
+**Release lines.** The CLI is published once per SimpliX release line, each under its own npm dist-tag. Install the line the project's framework belongs to; the templates of one line call framework classes of that line.
+
+| Project's SimpliX | Spring Boot | Package spec |
+|---|---|---|
+| 2.x | 4 | `@simplix-boot/cli` (dist-tag `latest`) |
+| 1.x | 3 | `@simplix-boot/cli@spring-boot-3x` |
+
+The spec is the same for `npx` and `npm install -g`. `simplix-boot version`, `version --update` and the version gate look up the running CLI's own line only, so a 1.x CLI is never told to move to 2.x. A linked checkout runs the line of the branch it has checked out (`main` is 2.x, `spring-boot-3x` is 1.x).
+
 **Linking a framework checkout.** `npm link` registers `simplix-boot` as a global command through a symbolic link from the global package folder to the `simplix-cli` folder, so nothing is copied and the command runs the checkout's source as it is on disk.
 
 ```bash

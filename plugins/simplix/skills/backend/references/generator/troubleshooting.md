@@ -5,7 +5,7 @@ Common errors and fixes when running `simplix-boot generate`.
 ## Generator Not Found
 
 ```bash
-# Install globally
+# Install globally (a SimpliX 1.x project on Spring Boot 3: @simplix-boot/cli@spring-boot-3x)
 npm install -g @simplix-boot/cli
 
 # Or run without installing
