@@ -76,20 +76,19 @@ equals the template's side of the hunk (it then reports `current`). Any other re
 combination of the template change and the customisation, merges the same two changes against the
 same stored base and reports the same hunks again, because `promote` has no flag that records a
 resolution (`--adopt` acts only on files that have no base, `--force` discards the edits). Record the
-fresh render as the base with the CLI's own helpers, run from the project root against the
-`generated/` file `generate` just wrote:
+fresh render as the base with the CLI itself: delete the stored base of that one file, then promote
+with `--adopt`, which now sees a file without a base, keeps its content and stores the render
+`generate` just wrote as its base.
 
-```js
-import fs from 'node:fs';
-import { carryStamp, recordBase, stampRender } from '<npm root -g>/@simplix-boot/cli/src/lib/tracked-render.js';
-const stamped = stampRender(fs.readFileSync('<generated file>', 'utf8'), 'promote <Entity> --module <module>');
-fs.writeFileSync('<promoted file>', carryStamp(fs.readFileSync('<promoted file>', 'utf8'), stamped));
-recordBase(process.cwd(), '<promoted file>', stamped);
+```bash
+# the stored base has the promoted file's path under .simplix/bases/
+rm .simplix/bases/<promoted file>
+simplix-boot promote <Entity> --module <module> --adopt
 ```
 
-Then `simplix-boot promote` reports `current` for the file and `simplix-boot generated` counts it as
-edited. Do this only after the template's new parts are in the file by hand; recording the base
-over an unresolved file makes the template change look already merged.
+The promote reports `adopted` for the file and `simplix-boot generated` counts it as edited. Do
+this only after the template's new parts are in the file by hand; recording the base over an
+unresolved file makes the template change look already merged.
 
 `--force` writes the fresh render over the promoted file whatever it holds, edits and removals
 included, and stores it as the base; it is never the regeneration path. `--adopt` acts only on files
