@@ -44,7 +44,7 @@ state; a question without its evidence in the state comes back near 0.5 for ever
 | Rewrite coverage | after a document set is rewritten or restructured, before it is called complete | one section of the old documents + the complete new documents of the same unit (module, chapter) | does the new set explain the subject of the old section (full, partial, none, not a topic); would a reader who needed the old section fail to find it |
 | Motion frames | after a motion story changes | frames captured along its timeline | a frame where something jumps, vanishes or overlaps |
 
-A rewrite-coverage flag is settled against the source the documents describe, never by copying the old section back: old documents carry statements that were never true. Beside the pass, run the deterministic baseline it cannot replace: identifiers the old text names, that still exist in the source and that the new text does not contain.
+A rewrite-coverage flag is settled against the source the documents describe, never by copying the old section back: old documents carry statements that were never true. Beside the pass, run the deterministic baseline it cannot replace: identifiers the old text names, that still exist in the source and that the new text does not contain. Judge what that baseline leaves name by name against its declaration (who may call it, whether an application replaces a bean by that name), never by how the name looks: a remainder summarised as internal names held bean names an application declares to replace a default, which the pass had only weak-flagged.
 
 ## What a pass leaves behind
 
