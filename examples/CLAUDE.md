@@ -24,7 +24,7 @@ When a repository is built on the SimpliX stack, its handbook skill is a first-t
 
 In a monorepo the marker sits in the subproject, so the gate applies per subproject and a cross-subproject task invokes both skills. Neither skill applies to the simplix-react framework repository itself - that one is the framework, not a project using it.
 
-These skills load only where the plugin is installed (`claude plugin install simplix@simplecore-skills`) or where the plugin directory is linked under `~/.claude/skills/`.
+These skills are the `simplix` plugin of the simplix-skills repository. They load only where that plugin is installed or its directory is linked under `~/.claude/skills/`.
 
 ### Local development servers
 

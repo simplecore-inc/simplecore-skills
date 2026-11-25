@@ -1,10 +1,9 @@
 # SimpleCORE Skills
 
 [![simplecore](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsimplecore-inc%2Fsimplecore-skills%2Fmain%2Fplugins%2Fsimplecore%2F.claude-plugin%2Fplugin.json&query=%24.version&label=simplecore&color=blue)](https://github.com/simplecore-inc/simplecore-skills/blob/main/plugins/simplecore/.claude-plugin/plugin.json)
-[![simplix](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsimplecore-inc%2Fsimplecore-skills%2Fmain%2Fplugins%2Fsimplix%2F.claude-plugin%2Fplugin.json&query=%24.version&label=simplix&color=blue)](https://github.com/simplecore-inc/simplecore-skills/blob/main/plugins/simplix/.claude-plugin/plugin.json)
 [![last updated](https://img.shields.io/github/last-commit/simplecore-inc/simplecore-skills/main?label=last%20updated&color=green)](https://github.com/simplecore-inc/simplecore-skills/commits/main)
 
-A collection of [Claude Code](https://claude.com/claude-code) skills maintained by SimpleCORE Inc., distributed as a plugin marketplace. The marketplace carries two plugins, each registering its skills under its own namespace - `simplecore:korean-docs`, `simplix:backend`, and so on - so they stay identifiable among the skills you have from other sources. Install either one on its own.
+A collection of [Claude Code](https://claude.com/claude-code) skills maintained by SimpleCORE Inc., distributed as a plugin marketplace. The marketplace carries the `simplecore` plugin, which registers its skills under its own namespace - `simplecore:korean-docs` and so on - so they stay identifiable among the skills you have from other sources. The handbooks for the SimpliX stack are the `simplix` plugin of the simplix-skills repository.
 
 ## Plugins
 
@@ -32,39 +31,14 @@ It also registers the commands, agents and hooks below, each documented further 
 
 `/simplecore:init` exists because these skills depend on wiring the user has no reason to know about. It writes nothing without agreement.
 
-### `simplix` - the SimpliX development stack
-
-Handbooks for repositories built on SimpliX. Each skill states its own applicability marker and stays silent elsewhere: `backend` applies to Spring Boot repositories extending the SimpliX base classes, `frontend` and `frontend-e2e` to repositories with a `simplix.config.ts` and `@simplix-react/*` dependencies.
-
-| Skill | Description |
-| ----- | ----------- |
-| `simplix:backend` | Spring Boot backend handbook - the non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `simplix-boot` generator workflow, and DTO / security review. Ships the backend convention audit. |
-| `simplix:frontend` | simplix-react frontend handbook - the non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit, the screen inventory and the duplicate-context check. |
-| `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through lenses anchored to the `simplix:frontend` invariants, and runs the mandatory censuses over every screen in scope. Ships the rendered-layout audit. |
-
-It also registers the command, agent and hooks below, each documented further down:
-
-| Component | What it does |
-| --- | --- |
-| `/simplix:init` | Writes the routing block into the instruction file and arms the gates |
-| `simplix:screen-auditor` agent | Audits one screen cluster in a browser and returns conclusions only |
-| SessionStart hook | Detects the stack, names the binding skills, and reports which wiring is missing |
-| Skill gate | Refuses a source edit until the subproject's handbook has been invoked |
-| Completion gate | Refuses to end a session that changed screens without driving them in a browser and running the convention audit |
-
-Both gates are inactive until the project declares them, and each skill checks for that on load and offers `/simplix:init` when a piece is missing.
-
-A rule added to a skill is generic: a project's names, paths, entities, ports, accounts and lists go to that project's instructions or configuration, and a rule that needs them reads them from configuration. Reading it otherwise is how an audit rule shipped with one project's module groups as its constant instead of reading `audit.moduleGroups` from `.claude/simplix.json`.
-
 ## Requirements
 
 - Claude Code 2.x
-- Node.js 18+ - used by the korean-docs audit tooling, the svg-diagrams layout/conversion scripts, and the simplix frontend audit scripts
+- Node.js 18+ - used by the korean-docs audit tooling and the svg-diagrams layout/conversion scripts
 - Python 3 - used by the svg-diagrams render audit script and figure library, the `bidkit` library, and the proposal-writing checks
 - Optional Python package, needed only by the steps that name it: Pillow (the svg-diagrams raster lint rule)
 - Chrome or Chromium, found on the usual install paths or named by `CHROME` - used by the svg-diagrams render, crop, hotspot and contrast steps
 - Optional: `npm install -g beautiful-mermaid` - used by svg-diagrams for Mermaid sequence, state, class and ER rendering and for ASCII output; a plugin install runs no package manager, so nothing installs it for you
-- A local browser driver (ego-browser, agent-browser, Playwright or the Claude in Chrome MCP) - used by `simplix:frontend-e2e`
 
 ## Installation
 
@@ -75,7 +49,6 @@ Inside a Claude Code session:
 ```text
 /plugin marketplace add simplecore-inc/simplecore-skills
 /plugin install simplecore@simplecore-skills
-/plugin install simplix@simplecore-skills
 ```
 
 Or from the terminal:
@@ -83,7 +56,6 @@ Or from the terminal:
 ```bash
 claude plugin marketplace add simplecore-inc/simplecore-skills
 claude plugin install simplecore@simplecore-skills
-claude plugin install simplix@simplecore-skills
 ```
 
 Restart your Claude Code session to load the installed components. Commands and hooks register automatically with their plugin - no manual configuration is needed.
@@ -95,7 +67,6 @@ Fetch the latest marketplace metadata, then update each installed plugin:
 ```bash
 claude plugin marketplace update simplecore-skills
 claude plugin update simplecore
-claude plugin update simplix
 ```
 
 A restart is required for updates to take effect.
@@ -172,124 +143,6 @@ Scope guard: the hook runs only in projects that have a project glossary - `.cla
 
 When the hook finds violations, the report is fed back to Claude, which fixes them and continues.
 
-## simplix: Detection, Command and Hooks
-
-### Stack detection
-
-The plugin recognizes a SimpliX project from its markers rather than from configuration you maintain:
-
-| Stack | Markers |
-| --- | --- |
-| Backend | a `.simplix/` generator directory, or a Gradle root whose `settings.gradle` / `build.gradle` / `gradle.properties` / `gradle/libs.versions.toml` names the framework group `dev.simplecore.simplix` outside a comment |
-| Frontend | a `simplix.config.{ts,mts,js,mjs}`, or a `package.json` depending on `@simplix-react/*` |
-
-The scan reads directory entries two levels deep, skips dependency and build output directories, and stops descending as soon as a directory matches - so a monorepo reports its subproject roots, not every Gradle module or workspace package. A repository that publishes under the `@simplix-react/` scope, or whose own Gradle group is `dev.simplecore.simplix`, is recognized as the framework itself, where the consumer handbooks do not apply.
-
-Run it directly at any time:
-
-```bash
-node "<plugin-root>/scripts/detect-simplix.mjs"           # human-readable
-node "<plugin-root>/scripts/detect-simplix.mjs" --json    # machine-readable
-node "<plugin-root>/scripts/detect-simplix.mjs" --root=../other-repo
-```
-
-Exit code 0 means at least one SimpliX subproject was found, 1 means none.
-
-### SessionStart hook
-
-At session start the plugin runs the detector against the working directory. When it matches, Claude receives a note naming each subproject, its markers, and the skill that gates it. A repository with no SimpliX marker produces no output at all, and a detector failure is silent - a hook must never be the reason a session cannot start.
-
-The note also reports whether any `CLAUDE.md` / `AGENTS.md` in the project, up to the repository root, already routes to the skills. When none does, Claude offers `/simplix:init` once and then continues with your task.
-
-### Skill-gate hook
-
-The handbooks encode conventions that diverge from the stock framework, so an edit written from memory produces defects a reviewer then has to catch. The instruction file already says "invoke the skill first"; this hook makes it hold when that instruction is skimmed. It denies a Write, Edit or MultiEdit of a source file until one of the gated skills has been invoked in the session, through the Skill tool or by typing its slash command; an edit made through Bash is outside it.
-
-Scope guard: nothing is gated until a project declares it in `.claude/simplix.json`, discovered by walking up from the edited file. Directory layout is the project's to state, never the hook's to assume.
-
-```json
-{
-  "audit": { "publicRouteDirs": ["checkout"] },
-  "skillGate": {
-    "skills": ["simplix:frontend", "simplix:frontend-e2e"],
-    "sourceDirs": ["modules/", "apps/", "packages/"]
-  }
-}
-```
-
-In a monorepo each subproject carries its own file, so a frontend edit asks for the frontend handbook and a backend edit for the backend one. `SIMPLIX_SKILL_GATE=off` lifts the gate for a mechanical migration driven by a script rather than by hand-editing.
-
-### Completion gate
-
-The skill gate guards the moment of editing. This one guards the moment of claiming done, because that is where verification is actually skipped: the build is green, the diff reads correctly, and nobody opened the page or ran the audit. A `Stop` hook refuses to end a session that changed UI files without `simplix:frontend-e2e` having been invoked, or without the convention audit having run in full (a `node` run of `audit-frontend.mjs`, not `--list`, `--selftest` or `--rule=`) - naming both omissions in one message so a session is interrupted once rather than twice.
-
-It fires **at most once per session**. The gate exists to make an omission visible, not to trap a session that has a good reason - a refactor with no reachable screen, a user who asked for code only. Claude answers the objection and stops again. `SIMPLIX_E2E_GATE=off` lifts it entirely.
-
-Declared beside the skill gate, and inactive without it:
-
-```json
-{
-  "e2eGate": {
-    "skill": "simplix:frontend-e2e",
-    "uiDirs": ["modules/", "apps/"]
-  }
-}
-```
-
-`uiExtensions` defaults to `[".tsx"]`; a backend subproject declares no `e2eGate` at all, since it serves no screens.
-
-`/simplix:init` writes both gates, and the detector reports which are armed:
-
-```bash
-node "<plugin-root>/scripts/detect-simplix.mjs"          # per subproject: gate armed / OFF
-node "<plugin-root>/scripts/detect-simplix.mjs" --json   # `wired` is true when nothing is missing
-```
-
-### `/simplix:init` command
-
-Writes the routing into an instruction file, so the gate holds in sessions where the plugin is not installed and for anyone else working in the repository.
-
-```text
-/simplix:init              # project block into .claude/CLAUDE.md, with the detected paths
-/simplix:init --global     # path-free block into ~/.claude/CLAUDE.md, covering every SimpliX project
-```
-
-Both blocks live in [`plugins/simplix/templates/claude-md-section.md`](plugins/simplix/templates/claude-md-section.md) - copy them by hand if you would rather not run the command. The command shows what it will insert and writes only after you agree; an existing SimpliX section is updated in place rather than duplicated.
-
-### Frontend scripts
-
-The `frontend` and `frontend-e2e` skills route to scripts that ship with the plugin. Run the source-reading ones from the frontend project root, or point them at it with `--root=<dir>`:
-
-```bash
-node "<plugin-root>/scripts/audit-frontend.mjs"             # machine-checkable convention rules
-node "<plugin-root>/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
-node "<plugin-root>/scripts/screen-inventory.mjs"           # every screen classified by shape
-node "<plugin-root>/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
-node "<plugin-root>/scripts/check-interpolation-types.mjs"  # formatted catalogue placeholders handed a number
-node "<plugin-root>/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
-node "<plugin-root>/scripts/compare-rendered.mjs" --app <url> --board <url> --root-slot <slot>  # a screen against its board frame, by control role
-node "<plugin-root>/scripts/skill-audit.mjs"                # counting audit of the plugin's own instruction files
-```
-
-`audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework - which route directories are open to anybody, for one, and the names that the rules guarding one product's own components read (`statusMapResurrect`, `dragThresholdCopy`, `cursorColResize`), which are off where a project declares none - so nothing about a particular repository's layout is baked into the script.
-
-**No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one.** Every rule carries both samples, and the ones whose invariant states an exception carry `miss` samples too - a rule that fires on its own exception teaches the next reader that this audit cries wolf. A rule that reads the tree around a file (a sibling detail panel, a generated model, a locale catalogue, a `package.json`) is proved against a throwaway tree the selftest writes, never against a stub of its own reader. The selftest also refuses a sample the file collection would never reach: a check that cannot fire is indistinguishable from a clean project.
-
-`--selftest` is spelt the same way in every audit script, and each stops on an option it does not know: a misspelling that fell through to a scan would report `0 files scanned, 0 findings`, which is what a clean project reports.
-
-### Backend script
-
-The `backend` skill ships one, run the same way - from the backend project root, or with `--root=<dir>`:
-
-```bash
-node "<plugin-root>/scripts/audit-backend.mjs"            # machine-checkable invariants
-node "<plugin-root>/scripts/audit-backend.mjs" --selftest # prove every rule both ways
-```
-
-It carries the mechanically visible subset of the handbook's invariants - `@PreAuthorize` and `@Operation` on every endpoint, permission group and action shape, the SearchDTO primary-key contract, scope forcing on both `search` overloads, the date/time and timezone rules, DTO and repository shape. Exit 1 on any error-level hit. It reads `src/main/java` at the root and under `modules/`, `packages/`, `apps/` and `tools/`, and exits 2 when it finds no Java source. The helpers that force a search to the caller's scope, beyond a `force*(` call, come from the `audit` section of `.claude/simplix.json` (`scopeForcingCalls`).
-
-**No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one**, so every rule carries both samples and the selftest fails on a rule that omits either. A genuine exception is marked at the line with `// simplix-audit-ignore[<rule-id>]: <reason>`; the reason is required, and each run reports how many lines were suppressed. Nothing about a particular repository - no path, class name or exception list - is baked into the script.
-
 ## Repository Layout
 
 ```text
@@ -297,22 +150,14 @@ simplecore-skills/
 ├── .claude-plugin/
 │   └── marketplace.json                  # Marketplace manifest
 ├── plugins/
-│   ├── simplecore/
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── commands/                     # /simplecore:* commands
-│   │   ├── hooks/                        # hooks.json, the SessionStart note, the write-time checks and gates
-│   │   ├── scripts/                      # detect-simplecore.mjs, test.sh, bidkit/ (the deck checks' library)
-│   │   ├── templates/                    # claude-md-section.md, the routing blocks /simplecore:init writes
-│   │   └── skills/                       # one directory per skill: SKILL.md beside its references/,
-│   │                                     #   assets/ and scripts/
-│   └── simplix/
+│   └── simplecore/
 │       ├── .claude-plugin/plugin.json
-│       ├── agents/                       # screen-auditor.md
-│       ├── commands/init.md
-│       ├── hooks/                        # hooks.json, the SessionStart note, the skill and completion gates
-│       ├── scripts/                      # the detector and the audit scripts the handbooks route to
-│       ├── templates/                    # claude-md-section.md, the routing blocks /simplix:init writes
-│       └── skills/                       # backend/, frontend/, frontend-e2e/: SKILL.md + references/
+│       ├── commands/                     # /simplecore:* commands
+│       ├── hooks/                        # hooks.json, the SessionStart note, the write-time checks and gates
+│       ├── scripts/                      # detect-simplecore.mjs, test.sh, bidkit/ (the deck checks' library)
+│       ├── templates/                    # claude-md-section.md, the routing blocks /simplecore:init writes
+│       └── skills/                       # one directory per skill: SKILL.md beside its references/,
+│                                         #   assets/ and scripts/
 ├── examples/
 │   └── CLAUDE.md                         # Global instruction file example
 ├── LICENSE
@@ -335,14 +180,12 @@ To work on the skills and have Claude Code pick up changes immediately, clone th
 git clone https://github.com/simplecore-inc/simplecore-skills.git
 cd simplecore-skills
 ln -s "$(pwd)/plugins/simplecore" ~/.claude/skills/simplecore
-ln -s "$(pwd)/plugins/simplix" ~/.claude/skills/simplix
 ```
 
 Claude Code loads any directory under `~/.claude/skills/` that carries a `.claude-plugin/plugin.json` as a plugin, so each link registers as `<name>@skills-dir` - its skills under their own namespace, plus any command and hook it ships, all read live from the working tree. Confirm what loaded with:
 
 ```bash
 claude plugin details simplecore@skills-dir
-claude plugin details simplix@skills-dir
 ```
 
 Installing from the marketplace copies a plugin into `~/.claude/plugins/cache/`, where edits do not propagate until you bump the version in its `plugin.json` and run `claude plugin update <name>@simplecore-skills`. Pick one method per plugin per machine: an installed plugin takes precedence over the linked copy and the linked copy is skipped with a name-conflict error.
@@ -373,9 +216,6 @@ The Node tools prove their own rules both ways:
 
 ```bash
 node plugins/simplecore/skills/korean-docs/scripts/l10n.mjs rules --test   # the rule pack against its hit and miss examples
-node plugins/simplix/scripts/audit-backend.mjs --selftest
-node plugins/simplix/scripts/audit-frontend.mjs --selftest
-node plugins/simplix/scripts/audit-rendered.mjs --selftest                 # drives a browser over generated pages
 ```
 
 
